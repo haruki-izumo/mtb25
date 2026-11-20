@@ -83,6 +83,10 @@ export async function getProfileDetail(
       experiences: { orderBy: { startDate: "desc" } },
       assignedMembers: { select: { id: true, name: true, avatarColor: true } },
       interviewer: { select: { id: true, name: true, email: true } },
+      apiKeys: {
+        select: { id: true, mode: true, label: true, createdAt: true, key: true },
+        orderBy: { createdAt: "asc" },
+      },
       processes: {
         orderBy: { updatedAt: "desc" },
         include: {
@@ -92,7 +96,20 @@ export async function getProfileDetail(
       },
     },
   });
-  return profile;
+  if (!profile) return null;
+  return {
+    ...profile,
+    apiKeys: profile.apiKeys.map((k) => ({
+      id: k.id,
+      mode: k.mode,
+      label: k.label,
+      createdAt: k.createdAt,
+      keyPreview:
+        k.key.length > 8
+          ? `${k.key.slice(0, 4)}…${k.key.slice(-4)}`
+          : "****",
+    })),
+  };
 }
 
 export async function listInterviewers() {

@@ -29,6 +29,72 @@ export async function toggleProfileStar(profileId: string) {
   revalidatePath("/profiles");
 }
 
+/** Add a Free/Pro Gemini (or OpenAI) key for extension resume generation. */
+export async function addProfileApiKey(input: {
+  profileId: string;
+  mode: "FREE" | "PRO";
+  key: string;
+  label?: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const session = await requireSession();
+    const parsed = z
+      .object({
+        profileId: z.string().min(1),
+        mode: z.enum(["FREE", "PRO"]),
+        key: z.string().min(8),
+        label: z.string().max(100).optional(),
+      })
+      .parse(input);
+
+    await assertCanAccessProfile(
+      session.user.id,
+      session.user.role,
+      parsed.profileId,
+    );
+
+    await prisma.profileApiKey.create({
+      data: {
+        profileId: parsed.profileId,
+        mode: parsed.mode,
+        key: parsed.key.trim(),
+        label: parsed.label?.trim() || null,
+      },
+    });
+    revalidatePath("/profiles");
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Failed to add API key",
+    };
+  }
+}
+
+export async function deleteProfileApiKey(
+  id: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const session = await requireSession();
+    z.string().min(1).parse(id);
+    const row = await prisma.profileApiKey.findUnique({ where: { id } });
+    if (!row) return { ok: false, error: "Key not found" };
+    await assertCanAccessProfile(
+      session.user.id,
+      session.user.role,
+      row.profileId,
+    );
+    await prisma.profileApiKey.delete({ where: { id } });
+    revalidatePath("/profiles");
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Failed to delete API key",
+    };
+  }
+}
+
 /** Admin assigns the single interviewer for a profile. */
 export async function setProfileInterviewer(input: {
   profileId: string;

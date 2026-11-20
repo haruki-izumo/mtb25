@@ -4,8 +4,7 @@ import { auth } from "@/lib/auth";
 export const proxy = auth((req) => {
   const { pathname } = req.nextUrl;
   const isLoggedIn = !!req.auth;
-  const isPublic =
-    pathname.startsWith("/login") || pathname.startsWith("/api/auth");
+  const isPublic = pathname.startsWith("/login");
 
   if (!isLoggedIn && !isPublic) {
     const url = req.nextUrl.clone();
@@ -25,7 +24,9 @@ export const proxy = auth((req) => {
 });
 
 export const config = {
+  // Exclude /api/* so Auth.js does not consume the extension's Bearer JWT
+  // (Authorization header). Extension + NextAuth API routes handle their own auth.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!api/|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

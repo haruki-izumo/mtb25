@@ -1,0 +1,15 @@
+import { requireExtensionUser } from "@/lib/rb5/auth-jwt";
+import { jsonError, jsonOk, optionsOk } from "@/lib/rb5/http";
+
+export function OPTIONS() {
+  return optionsOk();
+}
+
+export async function PATCH(req: Request) {
+  try {
+    await requireExtensionUser(req);
+    return jsonOk({ ok: true });
+  } catch (err) {
+    return jsonError(err, 401);
+  }
+}

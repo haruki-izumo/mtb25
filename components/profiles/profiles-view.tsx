@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { Copy, LayoutGrid, List, Star } from "lucide-react";
 import {
+  addProfileApiKey,
+  deleteProfileApiKey,
   setProfileInterviewer,
   toggleProfileStar,
 } from "@/app/actions/profiles";
@@ -55,6 +57,13 @@ type Detail = {
   }[];
   assignedMembers: { id: string; name: string; avatarColor: string }[];
   interviewer: { id: string; name: string; email: string } | null;
+  apiKeys?: {
+    id: string;
+    mode: "FREE" | "PRO";
+    label: string | null;
+    createdAt: string | Date;
+    keyPreview: string;
+  }[];
   processes: {
     id: string;
     companyName: string;
@@ -346,6 +355,13 @@ export function ProfilesView({
 
               {tab === "settings" ? (
                 <div className="space-y-3 text-sm text-slate-600">
+                  <ApiKeysEditor
+                    profileId={detail.id}
+                    keys={detail.apiKeys || []}
+                    pending={pending}
+                    startTransition={startTransition}
+                    onDone={() => router.refresh()}
+                  />
                   <div>
                     <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
                       Interviewer
@@ -441,6 +457,120 @@ export function ProfilesView({
 
       {/* keep counts used for sidebar parent - filter chips live in page sidebar */}
       <span className="hidden">{filter}{counts.all}</span>
+    </div>
+  );
+}
+
+function ApiKeysEditor({
+  profileId,
+  keys,
+  pending,
+  startTransition,
+  onDone,
+}: {
+  profileId: string;
+  keys: {
+    id: string;
+    mode: "FREE" | "PRO";
+    label: string | null;
+    keyPreview: string;
+  }[];
+  pending: boolean;
+  startTransition: (fn: () => void) => void;
+  onDone: () => void;
+}) {
+  const [mode, setMode] = useState<"FREE" | "PRO">("FREE");
+  const [key, setKey] = useState("");
+  const [label, setLabel] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+        Extension API keys
+      </p>
+      <p className="text-xs text-slate-400">
+        Free/Pro keys used by the Chrome extension for resume generation.
+      </p>
+      <ul className="space-y-1">
+        {keys.length === 0 ? (
+          <li className="text-xs text-slate-500">No keys yet</li>
+        ) : (
+          keys.map((k) => (
+            <li
+              key={k.id}
+              className="flex items-center justify-between gap-2 rounded-lg border border-slate-100 px-2 py-1.5 text-xs"
+            >
+              <span>
+                <span className="font-semibold text-slate-700">{k.mode}</span>
+                {k.label ? ` · ${k.label}` : ""} · {k.keyPreview}
+              </span>
+              <button
+                type="button"
+                disabled={pending}
+                className="text-red-600 hover:underline"
+                onClick={() => {
+                  startTransition(async () => {
+                    const result = await deleteProfileApiKey(k.id);
+                    if (!result.ok) setError(result.error);
+                    else onDone();
+                  });
+                }}
+              >
+                Remove
+              </button>
+            </li>
+          ))
+        )}
+      </ul>
+      <div className="space-y-1.5 rounded-xl border border-slate-100 bg-slate-50 p-2">
+        <select
+          value={mode}
+          onChange={(e) => setMode(e.target.value as "FREE" | "PRO")}
+          className="h-8 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs"
+        >
+          <option value="FREE">Free</option>
+          <option value="PRO">Pro</option>
+        </select>
+        <input
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          placeholder="Label (optional)"
+          className="h-8 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs"
+        />
+        <input
+          value={key}
+          onChange={(e) => setKey(e.target.value)}
+          placeholder="API key"
+          className="h-8 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs"
+        />
+        <button
+          type="button"
+          disabled={pending || key.trim().length < 8}
+          className="h-8 w-full rounded-lg bg-slate-900 text-xs font-medium text-white disabled:opacity-50"
+          onClick={() => {
+            setError(null);
+            startTransition(async () => {
+              const result = await addProfileApiKey({
+                profileId,
+                mode,
+                key: key.trim(),
+                label: label.trim() || undefined,
+              });
+              if (!result.ok) {
+                setError(result.error);
+                return;
+              }
+              setKey("");
+              setLabel("");
+              onDone();
+            });
+          }}
+        >
+          Add key
+        </button>
+        {error ? <p className="text-xs text-red-600">{error}</p> : null}
+      </div>
     </div>
   );
 }

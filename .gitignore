@@ -23,6 +23,8 @@
 # uploaded resumes (keep folder)
 /public/uploads/resumes/*
 !/public/uploads/resumes/.gitkeep
+/public/uploads/applications/*
+!/public/uploads/applications/.gitkeep
 
 # misc
 .DS_Store

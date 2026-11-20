@@ -62,6 +62,7 @@ export default async function ProfilesPage({
         })),
         assignedMembers: rawDetail.assignedMembers,
         interviewer: rawDetail.interviewer,
+        apiKeys: rawDetail.apiKeys,
         processes: rawDetail.processes.map((p) => ({
           id: p.id,
           companyName: p.companyName,

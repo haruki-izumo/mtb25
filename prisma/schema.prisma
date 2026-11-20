@@ -62,6 +62,11 @@ enum ApplicationStatus {
   WITHDRAWN
 }
 
+enum ApiKeyMode {
+  FREE
+  PRO
+}
+
 model User {
   id           String   @id @default(cuid())
   name         String
@@ -79,6 +84,7 @@ model User {
   interviewingProfiles Profile[] @relation("ProfileInterviewer")
   ownedProcesses       InterviewProcess[] @relation("ProcessOwner")
   bookedRounds         Round[]            @relation("RoundBookedBy")
+  ownedApplications    Application[]      @relation("ApplicationOwner")
 
   availabilityRules     UserAvailabilityRule[]
   availabilityOverrides UserAvailabilityOverride[]
@@ -107,6 +113,18 @@ model Profile {
   starred       Boolean  @default(false)
   createdAt     DateTime @default(now())
 
+  /** Extension / resume-generation fields */
+  firstName          String?
+  lastName           String?
+  education          Json     @default("[]")
+  certifications     Json     @default("[]")
+  bulletMin          Int      @default(10)
+  bulletMax          Int      @default(12)
+  resumeTemplateId   String   @default("style2")
+  autoFillPrefs      Json     @default("{}")
+  promptId           String?
+  autoFillPromptId   String?
+
   /** One designated interviewer for this profile */
   interviewerId String?
   interviewer   User?    @relation("ProfileInterviewer", fields: [interviewerId], references: [id], onDelete: SetNull)
@@ -118,8 +136,23 @@ model Profile {
   availabilityOverrides  AvailabilityOverride[]
   processes              InterviewProcess[]
   applications           Application[]
+  apiKeys                ProfileApiKey[]
 
   @@index([interviewerId])
+}
+
+model ProfileApiKey {
+  id        String    @id @default(cuid())
+  profileId String
+  mode      ApiKeyMode
+  /** Gemini / provider API key (server-only; never list raw to clients) */
+  key       String
+  label     String?
+  createdAt DateTime  @default(now())
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, mode])
 }
 
 model Experience {
@@ -245,15 +278,29 @@ model Announcement {
 }
 
 model Application {
-  id        String            @id @default(cuid())
-  profileId String
-  company   String
-  jobTitle  String
-  url       String?
-  status    ApplicationStatus @default(SAVED)
-  appliedAt DateTime?
+  id             String            @id @default(cuid())
+  profileId      String
+  ownerId        String?
+  company        String
+  jobTitle       String
+  url            String?
+  status         ApplicationStatus @default(APPLIED)
+  appliedAt      DateTime?
+  applied        Boolean           @default(true)
+  submitted      Boolean           @default(false)
+  mode           String?
+  resumeTemplate String?
+  keyPreview     String?
+  resultInfo     Json?
+  resumePdfUrl   String?
+  coverPdfUrl    String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
 
   profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  owner   User?   @relation("ApplicationOwner", fields: [ownerId], references: [id], onDelete: SetNull)
 
   @@index([profileId])
+  @@index([ownerId])
+  @@index([createdAt])
 }
