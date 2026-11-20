@@ -2,6 +2,31 @@ import type { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { profileAccessWhere } from "@/lib/access";
 
+export type ProfileCertification = {
+  id: string;
+  name: string;
+  date: string;
+};
+
+export function normalizeProfileCertifications(
+  raw: unknown,
+): ProfileCertification[] {
+  if (!Array.isArray(raw)) return [];
+  const out: ProfileCertification[] = [];
+  raw.forEach((item, index) => {
+    if (!item || typeof item !== "object") return;
+    const obj = item as Record<string, unknown>;
+    const name = String(obj.name || "").trim();
+    if (!name) return;
+    out.push({
+      id: String(obj.id || `legacy-${index}`),
+      name,
+      date: String(obj.date || "").trim(),
+    });
+  });
+  return out;
+}
+
 export async function getProfilesList(
   userId: string,
   role: Role,

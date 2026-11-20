@@ -3,12 +3,12 @@ import { AppShell } from "@/components/layout/app-shell";
 import { ProfilesSidebar } from "@/components/profiles/profiles-sidebar";
 import { ProfilesView } from "@/components/profiles/profiles-view";
 import { requireSession } from "@/lib/auth-helpers";
-import { normalizeProfileCertifications } from "@/app/actions/profiles";
 import {
   getProfileDetail,
   getProfilesList,
   listAssignableMembers,
   listInterviewers,
+  normalizeProfileCertifications,
 } from "@/lib/profiles-data";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;

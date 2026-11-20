@@ -11,6 +11,7 @@ import {
   requireRole,
   assertCanAccessProfile,
 } from "@/lib/auth-helpers";
+import { normalizeProfileCertifications } from "@/lib/profiles-data";
 
 const createProfileSchema = z.object({
   code: z
@@ -316,31 +317,6 @@ const certificationSchema = z.object({
   /** YYYY-MM */
   date: z.string().regex(/^\d{4}-\d{2}$/, "Date must be YYYY-MM"),
 });
-
-export type ProfileCertification = {
-  id: string;
-  name: string;
-  date: string;
-};
-
-export function normalizeProfileCertifications(
-  raw: unknown,
-): ProfileCertification[] {
-  if (!Array.isArray(raw)) return [];
-  const out: ProfileCertification[] = [];
-  raw.forEach((item, index) => {
-    if (!item || typeof item !== "object") return;
-    const obj = item as Record<string, unknown>;
-    const name = String(obj.name || "").trim();
-    if (!name) return;
-    out.push({
-      id: String(obj.id || `legacy-${index}`),
-      name,
-      date: String(obj.date || "").trim(),
-    });
-  });
-  return out;
-}
 
 function monthToUtcDate(ym: string) {
   const match = /^(\d{4})-(\d{2})$/.exec(ym);
