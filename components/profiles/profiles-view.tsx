@@ -20,6 +20,7 @@ import {
   updateProfileEducation,
   updateProfileExperience,
 } from "@/app/actions/profiles";
+import { CountrySelect } from "@/components/profiles/country-select";
 import { countryFlag, DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { cn } from "@/lib/utils";
 
@@ -34,12 +35,39 @@ const PROFILE_TIMEZONES = [
 ] as const;
 
 const PROFILE_COUNTRIES = [
-  { code: "US", label: "United States" },
-  { code: "CA", label: "Canada" },
-  { code: "GB", label: "United Kingdom" },
   { code: "AU", label: "Australia" },
+  { code: "AT", label: "Austria" },
+  { code: "BE", label: "Belgium" },
+  { code: "BR", label: "Brazil" },
+  { code: "BG", label: "Bulgaria" },
+  { code: "CA", label: "Canada" },
+  { code: "HR", label: "Croatia" },
+  { code: "CY", label: "Cyprus" },
+  { code: "CZ", label: "Czechia" },
+  { code: "DK", label: "Denmark" },
+  { code: "EE", label: "Estonia" },
+  { code: "FI", label: "Finland" },
+  { code: "FR", label: "France" },
   { code: "DE", label: "Germany" },
+  { code: "GR", label: "Greece" },
+  { code: "HU", label: "Hungary" },
   { code: "IN", label: "India" },
+  { code: "IE", label: "Ireland" },
+  { code: "IT", label: "Italy" },
+  { code: "LV", label: "Latvia" },
+  { code: "LT", label: "Lithuania" },
+  { code: "LU", label: "Luxembourg" },
+  { code: "MT", label: "Malta" },
+  { code: "NL", label: "Netherlands" },
+  { code: "PL", label: "Poland" },
+  { code: "PT", label: "Portugal" },
+  { code: "RO", label: "Romania" },
+  { code: "SK", label: "Slovakia" },
+  { code: "SI", label: "Slovenia" },
+  { code: "ES", label: "Spain" },
+  { code: "SE", label: "Sweden" },
+  { code: "GB", label: "United Kingdom" },
+  { code: "US", label: "United States" },
 ] as const;
 
 type ProfileRow = {
@@ -733,20 +761,14 @@ function CreateProfileDialog({
         </label>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className="block text-sm">
+          <div className="block text-sm">
             <span className="mb-1 block font-medium text-slate-700">Country</span>
-            <select
+            <CountrySelect
               value={country}
-              onChange={(e) => setCountry(e.target.value)}
-              className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
-            >
-              {PROFILE_COUNTRIES.map((c) => (
-                <option key={c.code} value={c.code}>
-                  {countryFlag(c.code)} {c.label}
-                </option>
-              ))}
-            </select>
-          </label>
+              onChange={setCountry}
+              countries={PROFILE_COUNTRIES}
+            />
+          </div>
           <label className="block text-sm">
             <span className="mb-1 block font-medium text-slate-700">
               Timezone
