@@ -1,4 +1,5 @@
 import { addDays, format, startOfWeek } from "date-fns";
+import type { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { profileAccessWhere } from "@/lib/access";
 import {
@@ -9,12 +10,185 @@ import {
   type BusyInterval,
 } from "@/lib/availability";
 
+export type AvailabilityDay = {
+  dateKey: string;
+  dateIso: string;
+  weekday: number;
+  open: { startAt: string; endAt: string }[];
+  blocked: {
+    date: string;
+    startMinute: number | null;
+    endMinute: number | null;
+    type: "BLOCK" | "OPEN";
+  }[];
+  booked: { startAt: string; endAt: string }[];
+  bookedCount: number;
+};
+
+function buildWeekDays(params: {
+  weekStart: Date;
+  timeZone: string;
+  rules: { weekday: number; startMinute: number; endMinute: number }[];
+  overrides: {
+    date: string;
+    startMinute: number | null;
+    endMinute: number | null;
+    type: "BLOCK" | "OPEN";
+  }[];
+  busy: BusyInterval[];
+}) {
+  return Array.from({ length: 7 }, (_, i) => {
+    const day = addDays(params.weekStart, i);
+    const dateKey = format(day, "yyyy-MM-dd");
+    const dayStart = localMinutesToUtc(dateKey, 0, params.timeZone);
+    const dayEnd = localDayEndUtc(dateKey, params.timeZone);
+
+    const open = getOpenIntervalsForDay({
+      dateKey,
+      timeZone: params.timeZone,
+      rules: params.rules,
+      overrides: params.overrides,
+      busy: params.busy,
+    });
+
+    const blocked = params.overrides.filter(
+      (o) => o.date === dateKey && o.type === "BLOCK",
+    );
+
+    const booked = params.busy.filter(
+      (b) => b.startAt < dayEnd && b.endAt > dayStart,
+    );
+
+    return {
+      dateKey,
+      dateIso: day.toISOString(),
+      weekday: day.getDay(),
+      open: open.map((iv) => ({
+        startAt: iv.startAt.toISOString(),
+        endAt: iv.endAt.toISOString(),
+      })),
+      blocked,
+      booked: booked.map((b) => ({
+        startAt: b.startAt.toISOString(),
+        endAt: b.endAt.toISOString(),
+      })),
+      bookedCount: booked.length,
+    } satisfies AvailabilityDay;
+  });
+}
+
+function textSummaryFor(
+  timeZone: string,
+  rules: { weekday: number; startMinute: number; endMinute: number }[],
+  overrides: {
+    date: string;
+    startMinute: number | null;
+    endMinute: number | null;
+    type: "BLOCK" | "OPEN";
+  }[],
+  busy: BusyInterval[],
+) {
+  const abbr = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    timeZoneName: "short",
+  })
+    .formatToParts(new Date())
+    .find((p) => p.type === "timeZoneName")?.value;
+
+  return formatAvailabilityText({
+    fromDateKey: format(new Date(), "yyyy-MM-dd"),
+    days: 7,
+    timeZone,
+    timeZoneLabel: abbr ?? "local",
+    rules,
+    overrides,
+    busy,
+  });
+}
+
+export async function getInterviewerAvailabilityData(params: {
+  userId: string;
+  weekStart?: string;
+}) {
+  const user = await prisma.user.findUnique({
+    where: { id: params.userId },
+    include: {
+      availabilityRules: true,
+      availabilityOverrides: true,
+      bookedRounds: {
+        where: { outcome: { not: "CANCELED" } },
+        select: { startAt: true, endAt: true },
+      },
+    },
+  });
+
+  if (!user) {
+    return {
+      mode: "interviewer" as const,
+      interviewer: null,
+      weekStart: null,
+      days: [] as AvailabilityDay[],
+      textSummary: "",
+    };
+  }
+
+  const weekStart = startOfWeek(
+    params.weekStart ? new Date(params.weekStart) : new Date(),
+    { weekStartsOn: 0 },
+  );
+
+  const rules = user.availabilityRules.map((r) => ({
+    weekday: r.weekday,
+    startMinute: r.startMinute,
+    endMinute: r.endMinute,
+  }));
+  const overrides = user.availabilityOverrides.map((o) => ({
+    date: format(o.date, "yyyy-MM-dd"),
+    startMinute: o.startMinute,
+    endMinute: o.endMinute,
+    type: o.type as "BLOCK" | "OPEN",
+  }));
+  const busy: BusyInterval[] = user.bookedRounds.map((r) => ({
+    startAt: r.startAt,
+    endAt: r.endAt,
+  }));
+
+  const days = buildWeekDays({
+    weekStart,
+    timeZone: user.timezone,
+    rules,
+    overrides,
+    busy,
+  });
+
+  return {
+    mode: "interviewer" as const,
+    interviewer: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      timezone: user.timezone,
+      rules: user.availabilityRules,
+    },
+    weekStart: weekStart.toISOString(),
+    days,
+    textSummary: textSummaryFor(user.timezone, rules, overrides, busy),
+  };
+}
+
 export async function getAvailabilityPageData(params: {
   userId: string;
-  role: "ADMIN" | "MEMBER";
+  role: Role;
   profileId?: string;
   weekStart?: string;
 }) {
+  if (params.role === "INTERVIEWER") {
+    return getInterviewerAvailabilityData({
+      userId: params.userId,
+      weekStart: params.weekStart,
+    });
+  }
+
   const access = profileAccessWhere(params.userId, params.role);
   const profiles = await prisma.profile.findMany({
     where: access,
@@ -31,10 +205,11 @@ export async function getAvailabilityPageData(params: {
   const profileId = params.profileId || profiles[0]?.id;
   if (!profileId) {
     return {
+      mode: "profile" as const,
       profiles,
       profile: null,
       weekStart: null,
-      days: [] as never[],
+      days: [] as AvailabilityDay[],
       textSummary: "",
     };
   }
@@ -57,10 +232,11 @@ export async function getAvailabilityPageData(params: {
 
   if (!profile) {
     return {
+      mode: "profile" as const,
       profiles,
       profile: null,
       weekStart: null,
-      days: [] as never[],
+      days: [] as AvailabilityDay[],
       textSummary: "",
     };
   }
@@ -87,63 +263,16 @@ export async function getAvailabilityPageData(params: {
     type: o.type as "BLOCK" | "OPEN",
   }));
 
-  const days = Array.from({ length: 7 }, (_, i) => {
-    const day = addDays(weekStart, i);
-    const dateKey = format(day, "yyyy-MM-dd");
-    const dayStart = localMinutesToUtc(dateKey, 0, profile.timezone);
-    const dayEnd = localDayEndUtc(dateKey, profile.timezone);
-
-    const open = getOpenIntervalsForDay({
-      dateKey,
-      timeZone: profile.timezone,
-      rules,
-      overrides,
-      busy,
-    });
-
-    const blocked = overrides.filter(
-      (o) => o.date === dateKey && o.type === "BLOCK",
-    );
-
-    const booked = busy.filter(
-      (b) => b.startAt < dayEnd && b.endAt > dayStart,
-    );
-
-    return {
-      dateKey,
-      dateIso: day.toISOString(),
-      weekday: day.getDay(),
-      open: open.map((iv) => ({
-        startAt: iv.startAt.toISOString(),
-        endAt: iv.endAt.toISOString(),
-      })),
-      blocked,
-      booked: booked.map((b) => ({
-        startAt: b.startAt.toISOString(),
-        endAt: b.endAt.toISOString(),
-      })),
-      bookedCount: booked.length,
-    };
-  });
-
-  const abbr = new Intl.DateTimeFormat("en-US", {
+  const days = buildWeekDays({
+    weekStart,
     timeZone: profile.timezone,
-    timeZoneName: "short",
-  })
-    .formatToParts(new Date())
-    .find((p) => p.type === "timeZoneName")?.value;
-
-  const textSummary = formatAvailabilityText({
-    fromDateKey: format(new Date(), "yyyy-MM-dd"),
-    days: 7,
-    timeZone: profile.timezone,
-    timeZoneLabel: abbr ?? "local",
     rules,
     overrides,
     busy,
   });
 
   return {
+    mode: "profile" as const,
     profiles,
     profile: {
       id: profile.id,
@@ -155,6 +284,6 @@ export async function getAvailabilityPageData(params: {
     },
     weekStart: weekStart.toISOString(),
     days,
-    textSummary,
+    textSummary: textSummaryFor(profile.timezone, rules, overrides, busy),
   };
 }

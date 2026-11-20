@@ -11,17 +11,19 @@ import { AVATAR_COLORS } from "@/lib/team";
 const inviteSchema = z.object({
   name: z.string().trim().min(1).max(100),
   email: z.string().trim().email(),
-  role: z.enum(["ADMIN", "MEMBER"]),
+  role: z.enum(["ADMIN", "MEMBER", "INTERVIEWER"]),
   password: z.string().min(8).max(100),
   avatarColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+  timezone: z.string().min(1).optional(),
 });
 
 const updateSchema = z.object({
   memberId: z.string().min(1),
   name: z.string().trim().min(1).max(100),
   email: z.string().trim().email(),
-  role: z.enum(["ADMIN", "MEMBER"]),
+  role: z.enum(["ADMIN", "MEMBER", "INTERVIEWER"]),
   avatarColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  timezone: z.string().min(1).optional(),
   newPassword: z.string().max(100).optional(),
 });
 
@@ -52,6 +54,7 @@ export async function inviteMember(input: z.infer<typeof inviteSchema>) {
         passwordHash,
         teamId: team?.id,
         avatarColor,
+        timezone: parsed.timezone ?? "America/New_York",
       },
     });
   } catch (err) {
@@ -95,6 +98,7 @@ export async function updateMember(input: z.infer<typeof updateSchema>) {
     email: parsed.email.toLowerCase(),
     role: parsed.role,
     avatarColor: parsed.avatarColor,
+    ...(parsed.timezone ? { timezone: parsed.timezone } : {}),
   };
 
   if (parsed.newPassword) {
@@ -117,52 +121,77 @@ export async function updateMember(input: z.infer<typeof updateSchema>) {
   revalidatePath("/settings");
 }
 
-export async function removeMember(memberId: string) {
-  const session = await requireRole(["ADMIN"]);
-  z.string().min(1).parse(memberId);
+export type RemoveMemberResult =
+  | { ok: true }
+  | { ok: false; error: string };
 
-  if (memberId === session.user.id) {
-    throw new Error("You cannot remove yourself");
-  }
+export async function removeMember(
+  memberId: string,
+): Promise<RemoveMemberResult> {
+  try {
+    const session = await requireRole(["ADMIN"]);
+    z.string().min(1).parse(memberId);
 
-  const target = await prisma.user.findUnique({
-    where: { id: memberId },
-    include: {
-      _count: {
-        select: { ownedProcesses: true, bookedRounds: true },
-      },
-    },
-  });
-  if (!target) throw new Error("Member not found");
-
-  if (target.role === "ADMIN") {
-    const adminCount = await prisma.user.count({ where: { role: "ADMIN" } });
-    if (adminCount <= 1) {
-      throw new Error("Cannot remove the last admin");
+    if (memberId === session.user.id) {
+      return { ok: false, error: "You cannot remove yourself" };
     }
-  }
 
-  // Reassign ownership / bookings to the acting admin, then delete
-  await prisma.$transaction(async (tx) => {
-    await tx.interviewProcess.updateMany({
-      where: { ownerMemberId: memberId },
-      data: { ownerMemberId: session.user.id },
-    });
-    await tx.round.updateMany({
-      where: { bookedById: memberId },
-      data: { bookedById: session.user.id },
-    });
-    await tx.user.update({
+    const target = await prisma.user.findUnique({
       where: { id: memberId },
-      data: { assignedProfiles: { set: [] } },
     });
-    await tx.user.delete({ where: { id: memberId } });
-  });
+    if (!target) return { ok: false, error: "Member not found" };
 
-  revalidatePath("/team");
-  revalidatePath("/interviews");
-  revalidatePath("/meetings");
-  revalidatePath("/profiles");
+    if (target.role === "ADMIN") {
+      const adminCount = await prisma.user.count({ where: { role: "ADMIN" } });
+      if (adminCount <= 1) {
+        return { ok: false, error: "Cannot remove the last admin" };
+      }
+    }
+
+    // Reassign ownership / bookings, clear relations, then delete
+    await prisma.$transaction(async (tx) => {
+      await tx.interviewProcess.updateMany({
+        where: { ownerMemberId: memberId },
+        data: { ownerMemberId: session.user.id },
+      });
+      await tx.round.updateMany({
+        where: { bookedById: memberId },
+        data: { bookedById: session.user.id },
+      });
+      await tx.userAvailabilityRule.deleteMany({ where: { userId: memberId } });
+      await tx.userAvailabilityOverride.deleteMany({
+        where: { userId: memberId },
+      });
+      await tx.user.update({
+        where: { id: memberId },
+        data: { assignedProfiles: { set: [] }, teamId: null },
+      });
+      await tx.user.delete({ where: { id: memberId } });
+    });
+
+    revalidatePath("/team");
+    revalidatePath("/interviews");
+    revalidatePath("/meetings");
+    revalidatePath("/profiles");
+    revalidatePath("/availability");
+    return { ok: true };
+  } catch (err) {
+    // Don't swallow Next.js control-flow errors (e.g. redirect from requireRole)
+    if (
+      err &&
+      typeof err === "object" &&
+      "digest" in err &&
+      typeof (err as { digest?: string }).digest === "string" &&
+      (err as { digest: string }).digest.startsWith("NEXT_")
+    ) {
+      throw err;
+    }
+    console.error("removeMember failed", err);
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Failed to remove member",
+    };
+  }
 }
 
 export async function setMemberProfileAssignments(input: {

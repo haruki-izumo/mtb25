@@ -10,6 +10,7 @@ datasource db {
 enum Role {
   ADMIN
   MEMBER
+  INTERVIEWER
 }
 
 enum OverrideType {
@@ -68,6 +69,7 @@ model User {
   passwordHash String
   role         Role     @default(MEMBER)
   avatarColor  String   @default("#2563eb")
+  timezone     String   @default("America/New_York")
   createdAt    DateTime @default(now())
 
   teamId String?
@@ -76,6 +78,9 @@ model User {
   assignedProfiles Profile[] @relation("ProfileAssignments")
   ownedProcesses   InterviewProcess[] @relation("ProcessOwner")
   bookedRounds     Round[]            @relation("RoundBookedBy")
+
+  availabilityRules     UserAvailabilityRule[]
+  availabilityOverrides UserAvailabilityOverride[]
 }
 
 model Team {
@@ -147,6 +152,32 @@ model AvailabilityOverride {
   profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@index([profileId, date])
+}
+
+/** Personal availability for INTERVIEWER users */
+model UserAvailabilityRule {
+  id          String @id @default(cuid())
+  userId      String
+  weekday     Int
+  startMinute Int
+  endMinute   Int
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model UserAvailabilityOverride {
+  id          String       @id @default(cuid())
+  userId      String
+  date        DateTime     @db.Date
+  startMinute Int?
+  endMinute   Int?
+  type        OverrideType
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
 }
 
 model InterviewProcess {

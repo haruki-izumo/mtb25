@@ -1,4 +1,4 @@
-import type { ProcessStatus, RoundType } from "@prisma/client";
+import type { ProcessStatus, Role, RoundType } from "@prisma/client";
 import {
   endOfDay,
   startOfDay,
@@ -59,7 +59,7 @@ function rangeBounds(filters: InterviewFilters): { gte?: Date; lte?: Date } {
 
 export async function getInterviewSidebarCounts(
   userId: string,
-  role: "ADMIN" | "MEMBER",
+  role: Role,
 ) {
   const now = new Date();
   const processes = await prisma.interviewProcess.findMany({
@@ -95,7 +95,7 @@ export async function getInterviewSidebarCounts(
 
 export async function getInterviewProcesses(
   userId: string,
-  role: "ADMIN" | "MEMBER",
+  role: Role,
   filters: InterviewFilters,
 ) {
   const now = new Date();
@@ -215,7 +215,7 @@ export async function getInterviewProcesses(
 
 export async function getInterviewFilterOptions(
   userId: string,
-  role: "ADMIN" | "MEMBER",
+  role: Role,
 ) {
   const access = processAccessWhere(userId, role);
   const [profiles, members] = await Promise.all([

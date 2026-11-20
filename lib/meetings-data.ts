@@ -5,13 +5,13 @@ import {
   startOfDay,
   startOfWeek,
 } from "date-fns";
-import type { RoundType } from "@prisma/client";
+import type { Role, RoundType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { processAccessWhere } from "@/lib/access";
 
 export async function getMeetingsWeek(params: {
   userId: string;
-  role: "ADMIN" | "MEMBER";
+  role: Role;
   weekStart?: string;
   memberId?: string;
   profileId?: string;

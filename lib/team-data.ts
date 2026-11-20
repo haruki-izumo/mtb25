@@ -32,6 +32,7 @@ export async function getTeamPageData() {
         email: m.email,
         role: m.role,
         avatarColor: m.avatarColor,
+        timezone: m.timezone,
         profiles: m.assignedProfiles,
         byCountry,
       };

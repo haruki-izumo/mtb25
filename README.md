@@ -97,6 +97,7 @@ Password for all users: `password123`
 | chris@example.com | MEMBER |
 | avery@example.com | MEMBER |
 | drew@example.com | MEMBER |
+| morgan@example.com | INTERVIEWER |
 
 Seed includes 6 profiles (US/UK/CA), weekly availability, ~25 interview processes with rounds across the current and previous week, and team announcements.
 

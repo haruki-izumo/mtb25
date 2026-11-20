@@ -11,6 +11,12 @@ import {
   updateAvailabilityRule,
   addOpenOverride,
 } from "@/app/actions/availability";
+import {
+  addInterviewerOpenOverride,
+  createInterviewerAvailabilityRule,
+  deleteInterviewerAvailabilityRule,
+  updateInterviewerAvailabilityRule,
+} from "@/app/actions/interviewer-availability";
 import { BookingDialog } from "@/components/booking/booking-dialog";
 import { countryFlag, formatTimezoneLabel } from "@/lib/timezone";
 import { cn } from "@/lib/utils";
@@ -33,14 +39,24 @@ type DayBlock = {
 const HOURS = Array.from({ length: 12 }, (_, i) => i + 8);
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+type RuleRow = {
+  id: string;
+  weekday: number;
+  startMinute: number;
+  endMinute: number;
+};
+
 export function AvailabilityView({
+  mode = "profile",
   profiles,
   profile,
+  interviewer,
   weekStartIso,
   days,
   textSummary,
   isAdmin = false,
 }: {
+  mode?: "profile" | "interviewer";
   profiles: {
     id: string;
     code: string;
@@ -54,18 +70,28 @@ export function AvailabilityView({
     displayName: string;
     country: string;
     timezone: string;
-    rules: {
-      id: string;
-      weekday: number;
-      startMinute: number;
-      endMinute: number;
-    }[];
+    rules: RuleRow[];
+  } | null;
+  interviewer?: {
+    id: string;
+    name: string;
+    email: string;
+    timezone: string;
+    rules: RuleRow[];
   } | null;
   weekStartIso: string | null;
   days: DayBlock[];
   textSummary: string;
   isAdmin?: boolean;
 }) {
+  const isInterviewerMode = mode === "interviewer";
+  const subjectTimezone =
+    (isInterviewerMode ? interviewer?.timezone : profile?.timezone) || "UTC";
+  const subjectRules: RuleRow[] = isInterviewerMode
+    ? (interviewer?.rules ?? [])
+    : (profile?.rules ?? []);
+  const canEdit = isInterviewerMode ? !!interviewer : !!profile;
+  const canBook = !isInterviewerMode && !!profile;
   const router = useRouter();
   const searchParams = useSearchParams();
   const [pending, startTransition] = useTransition();
@@ -101,7 +127,7 @@ export function AvailabilityView({
   }
 
   const cellMap = useMemo(() => {
-    const tz = profile?.timezone || "UTC";
+    const tz = subjectTimezone;
     const map = new Map<string, "open" | "blocked" | "booked" | "empty">();
 
     function hourCovered(
@@ -134,32 +160,45 @@ export function AvailabilityView({
       }
     }
     return map;
-  }, [days, profile?.timezone]);
+  }, [days, subjectTimezone]);
 
-  if (!profile) {
+  if (!canEdit) {
     return (
       <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
-        No profiles available.
+        {isInterviewerMode
+          ? "Interviewer account not found."
+          : "No profiles available."}
       </div>
     );
   }
 
   function finishDrag() {
-    if (!drag || !profile) return;
+    if (!drag || !canEdit) return;
     const startHour = Math.min(drag.startHour, drag.endHour);
     const endHour = Math.max(drag.startHour, drag.endHour) + 1;
+    const dateKey = drag.dateKey;
     setDrag(null);
     setError(null);
     startTransition(async () => {
       try {
-        await addOpenOverride({
-          profileId: profile.id,
-          dateKey: drag.dateKey,
-          startMinute: startHour * 60,
-          endMinute: endHour * 60,
-        });
+        if (isInterviewerMode && interviewer) {
+          await addInterviewerOpenOverride({
+            dateKey,
+            startMinute: startHour * 60,
+            endMinute: endHour * 60,
+          });
+        } else if (profile) {
+          await addOpenOverride({
+            profileId: profile.id,
+            dateKey,
+            startMinute: startHour * 60,
+            endMinute: endHour * 60,
+          });
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to add availability");
+        setError(
+          err instanceof Error ? err.message : "Failed to add availability",
+        );
       }
     });
   }
@@ -168,23 +207,30 @@ export function AvailabilityView({
     <div className={cn("space-y-4", pending && "opacity-70")}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Availability</h1>
+          <h1 className="text-xl font-semibold text-slate-900">
+            {isInterviewerMode ? "My availability" : "Availability"}
+          </h1>
           <p className="text-sm text-slate-500">
-            {formatTimezoneLabel(profile.timezone)}
+            {formatTimezoneLabel(subjectTimezone)}
+            {isInterviewerMode && interviewer
+              ? ` · ${interviewer.name}`
+              : null}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={profile.id}
-            onChange={(e) => navigate({ profileId: e.target.value })}
-            className="h-9 min-w-[220px] rounded-xl border border-slate-200 bg-white px-3 text-sm"
-          >
-            {profiles.map((p) => (
-              <option key={p.id} value={p.id}>
-                {countryFlag(p.country)} {p.code}.{p.displayName}
-              </option>
-            ))}
-          </select>
+          {!isInterviewerMode && profile ? (
+            <select
+              value={profile.id}
+              onChange={(e) => navigate({ profileId: e.target.value })}
+              className="h-9 min-w-[220px] rounded-xl border border-slate-200 bg-white px-3 text-sm"
+            >
+              {profiles.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {countryFlag(p.country)} {p.code}.{p.displayName}
+                </option>
+              ))}
+            </select>
+          ) : null}
           <button
             type="button"
             onClick={() => setShowText(true)}
@@ -251,7 +297,9 @@ export function AvailabilityView({
               </span>
             </div>
             <p className="text-xs text-slate-500">
-              Click green to book · drag empty cells to add open time
+              {canBook
+                ? "Click green to book · drag empty cells to add open time"
+                : "Drag empty cells to add open time · edit weekly rules in the Rules tab"}
             </p>
           </div>
 
@@ -301,9 +349,11 @@ export function AvailabilityView({
                           state === "empty" && "hover:bg-slate-50",
                           inDrag && "bg-blue-200/70",
                         )}
-                        title={
+                          title={
                           state === "open"
-                            ? "Available — click to book"
+                            ? canBook
+                              ? "Available — click to book"
+                              : "Available"
                             : state === "empty"
                               ? "Drag to add open availability"
                               : state
@@ -324,7 +374,7 @@ export function AvailabilityView({
                         }}
                         onMouseUp={() => {
                           if (drag) finishDrag();
-                          else if (state === "open") {
+                          else if (state === "open" && canBook) {
                             setBooking({
                               dateKey: d.dateKey,
                               hour,
@@ -370,10 +420,10 @@ export function AvailabilityView({
             </button>
           </div>
           <ul className="mt-4 space-y-2">
-            {profile.rules.length === 0 ? (
+            {subjectRules.length === 0 ? (
               <li className="text-sm text-slate-500">No rules yet</li>
             ) : (
-              profile.rules
+              subjectRules
                 .slice()
                 .sort(
                   (a, b) =>
@@ -411,7 +461,11 @@ export function AvailabilityView({
                         onClick={() => {
                           if (!confirm("Delete this rule?")) return;
                           startTransition(async () => {
-                            await deleteAvailabilityRule(r.id);
+                            if (isInterviewerMode) {
+                              await deleteInterviewerAvailabilityRule(r.id);
+                            } else {
+                              await deleteAvailabilityRule(r.id);
+                            }
                           });
                         }}
                       >
@@ -454,7 +508,7 @@ export function AvailabilityView({
         </div>
       ) : null}
 
-      {booking ? (
+      {booking && profile && canBook ? (
         <BookingDialog
           open
           onClose={() => setBooking(null)}
@@ -476,20 +530,37 @@ export function AvailabilityView({
             setError(null);
             startTransition(async () => {
               try {
-                if (data.id) {
-                  await updateAvailabilityRule({
-                    id: data.id,
-                    weekday: data.weekday,
-                    startMinute: data.startMinute,
-                    endMinute: data.endMinute,
-                  });
-                } else {
-                  await createAvailabilityRule({
-                    profileId: profile.id,
-                    weekday: data.weekday,
-                    startMinute: data.startMinute,
-                    endMinute: data.endMinute,
-                  });
+                if (isInterviewerMode) {
+                  if (data.id) {
+                    await updateInterviewerAvailabilityRule({
+                      id: data.id,
+                      weekday: data.weekday,
+                      startMinute: data.startMinute,
+                      endMinute: data.endMinute,
+                    });
+                  } else {
+                    await createInterviewerAvailabilityRule({
+                      weekday: data.weekday,
+                      startMinute: data.startMinute,
+                      endMinute: data.endMinute,
+                    });
+                  }
+                } else if (profile) {
+                  if (data.id) {
+                    await updateAvailabilityRule({
+                      id: data.id,
+                      weekday: data.weekday,
+                      startMinute: data.startMinute,
+                      endMinute: data.endMinute,
+                    });
+                  } else {
+                    await createAvailabilityRule({
+                      profileId: profile.id,
+                      weekday: data.weekday,
+                      startMinute: data.startMinute,
+                      endMinute: data.endMinute,
+                    });
+                  }
                 }
                 setEditingRule(null);
               } catch (err) {

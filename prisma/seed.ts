@@ -337,6 +337,8 @@ async function main() {
   await prisma.application.deleteMany();
   await prisma.availabilityOverride.deleteMany();
   await prisma.availabilityRule.deleteMany();
+  await prisma.userAvailabilityOverride.deleteMany();
+  await prisma.userAvailabilityRule.deleteMany();
   await prisma.experience.deleteMany();
   await prisma.announcement.deleteMany();
   await prisma.profile.deleteMany();
@@ -385,7 +387,31 @@ async function main() {
     );
   }
 
-  console.log(`Created team "${team.name}" with 1 admin + ${members.length} members`);
+  const interviewer = await prisma.user.create({
+    data: {
+      name: "Morgan Reed",
+      email: "morgan@example.com",
+      passwordHash,
+      role: Role.INTERVIEWER,
+      avatarColor: "#4f46e5",
+      timezone: "America/New_York",
+      teamId: team.id,
+      availabilityRules: {
+        create: [
+          { weekday: 1, startMinute: 9 * 60, endMinute: 12 * 60 },
+          { weekday: 1, startMinute: 13 * 60, endMinute: 17 * 60 },
+          { weekday: 2, startMinute: 10 * 60, endMinute: 16 * 60 },
+          { weekday: 3, startMinute: 9 * 60, endMinute: 15 * 60 },
+          { weekday: 4, startMinute: 11 * 60, endMinute: 17 * 60 },
+          { weekday: 5, startMinute: 9 * 60, endMinute: 13 * 60 },
+        ],
+      },
+    },
+  });
+
+  console.log(
+    `Created team "${team.name}" with 1 admin + ${members.length} members + interviewer ${interviewer.email}`,
+  );
 
   const profiles = [];
   for (let i = 0; i < PROFILES.length; i++) {
@@ -594,6 +620,7 @@ async function main() {
   console.log(`  chris@example.com / ${PASSWORD}`);
   console.log(`  avery@example.com / ${PASSWORD}`);
   console.log(`  drew@example.com / ${PASSWORD}`);
+  console.log(`  morgan@example.com / ${PASSWORD}  (INTERVIEWER)`);
 }
 
 main()

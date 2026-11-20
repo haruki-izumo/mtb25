@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Pencil, Shield, Trash2, User } from "lucide-react";
 import {
   inviteMember,
@@ -11,13 +12,16 @@ import {
 import { AVATAR_COLORS } from "@/lib/team";
 import { countryFlag } from "@/lib/timezone";
 import { cn } from "@/lib/utils";
+import type { Role } from "@prisma/client";
+import { ROLE_LABELS } from "@/lib/roles";
 
 type Member = {
   id: string;
   name: string;
   email: string;
-  role: "ADMIN" | "MEMBER";
+  role: Role;
   avatarColor: string;
+  timezone?: string;
   profiles: {
     id: string;
     code: string;
@@ -45,6 +49,7 @@ export function TeamView({
   isAdmin: boolean;
   currentUserId: string;
 }) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
@@ -130,7 +135,7 @@ export function TeamView({
                       ) : (
                         <User className="size-3.5" />
                       )}
-                      {m.role}
+                      {ROLE_LABELS[m.role]}
                     </span>
                   </td>
                   <td className="px-4 py-3">
@@ -152,14 +157,16 @@ export function TeamView({
                   {isAdmin ? (
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
-                        <button
-                          type="button"
-                          title="Assign profiles"
-                          className="rounded-lg px-2 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50"
-                          onClick={() => setAssigning(m)}
-                        >
-                          Assign
-                        </button>
+                        {m.role !== "INTERVIEWER" ? (
+                          <button
+                            type="button"
+                            title="Assign profiles"
+                            className="rounded-lg px-2 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50"
+                            onClick={() => setAssigning(m)}
+                          >
+                            Assign
+                          </button>
+                        ) : null}
                         <button
                           type="button"
                           title="Edit member"
@@ -190,15 +197,12 @@ export function TeamView({
                             }
                             setError(null);
                             startTransition(async () => {
-                              try {
-                                await removeMember(m.id);
-                              } catch (err) {
-                                setError(
-                                  err instanceof Error
-                                    ? err.message
-                                    : "Failed to remove",
-                                );
+                              const result = await removeMember(m.id);
+                              if (!result.ok) {
+                                setError(result.error);
+                                return;
                               }
+                              router.refresh();
                             });
                           }}
                         >
@@ -230,12 +234,13 @@ export function TeamView({
             setError(null);
             startTransition(async () => {
               try {
-                await inviteMember({
+                  await inviteMember({
                   name: values.name,
                   email: values.email,
                   role: values.role,
                   password: values.password,
                   avatarColor: values.avatarColor,
+                  timezone: values.timezone,
                 });
                 setShowAdd(false);
               } catch (err) {
@@ -256,6 +261,7 @@ export function TeamView({
             email: editing.email,
             role: editing.role,
             avatarColor: editing.avatarColor,
+            timezone: editing.timezone ?? "America/New_York",
           }}
           onClose={() => setEditing(null)}
           onSubmit={(values) => {
@@ -268,6 +274,7 @@ export function TeamView({
                   email: values.email,
                   role: values.role,
                   avatarColor: values.avatarColor,
+                  timezone: values.timezone,
                   newPassword: values.password || "",
                 });
                 setEditing(null);
@@ -315,25 +322,28 @@ function MemberFormDialog({
   initial?: {
     name: string;
     email: string;
-    role: "ADMIN" | "MEMBER";
+    role: Role;
     avatarColor: string;
+    timezone?: string;
   };
   onClose: () => void;
   onSubmit: (values: {
     name: string;
     email: string;
-    role: "ADMIN" | "MEMBER";
+    role: Role;
     avatarColor: string;
+    timezone: string;
     password: string;
   }) => void;
 }) {
   const [name, setName] = useState(initial?.name ?? "");
   const [email, setEmail] = useState(initial?.email ?? "");
-  const [role, setRole] = useState<"ADMIN" | "MEMBER">(
-    initial?.role ?? "MEMBER",
-  );
+  const [role, setRole] = useState<Role>(initial?.role ?? "MEMBER");
   const [avatarColor, setAvatarColor] = useState(
     initial?.avatarColor ?? AVATAR_COLORS[0],
+  );
+  const [timezone, setTimezone] = useState(
+    initial?.timezone ?? "America/New_York",
   );
   const [password, setPassword] = useState("");
 
@@ -343,7 +353,7 @@ function MemberFormDialog({
         className="w-full max-w-md space-y-3 rounded-2xl bg-white p-5 shadow-xl"
         onSubmit={(e) => {
           e.preventDefault();
-          onSubmit({ name, email, role, avatarColor, password });
+          onSubmit({ name, email, role, avatarColor, timezone, password });
         }}
       >
         <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
@@ -373,13 +383,35 @@ function MemberFormDialog({
           <span className="mb-1 block font-medium text-slate-700">Role</span>
           <select
             value={role}
-            onChange={(e) => setRole(e.target.value as "ADMIN" | "MEMBER")}
+            onChange={(e) => setRole(e.target.value as Role)}
             className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
           >
-            <option value="MEMBER">MEMBER</option>
-            <option value="ADMIN">ADMIN</option>
+            <option value="MEMBER">Member</option>
+            <option value="INTERVIEWER">Interviewer</option>
+            <option value="ADMIN">Admin</option>
           </select>
         </label>
+
+        {(role === "INTERVIEWER" || initial?.timezone) && (
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-slate-700">
+              Timezone
+            </span>
+            <select
+              value={timezone}
+              onChange={(e) => setTimezone(e.target.value)}
+              className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
+            >
+              <option value="America/New_York">America/New_York</option>
+              <option value="America/Chicago">America/Chicago</option>
+              <option value="America/Denver">America/Denver</option>
+              <option value="America/Los_Angeles">America/Los_Angeles</option>
+              <option value="America/Toronto">America/Toronto</option>
+              <option value="Europe/London">Europe/London</option>
+              <option value="UTC">UTC</option>
+            </select>
+          </label>
+        )}
 
         <div>
           <p className="mb-1 text-sm font-medium text-slate-700">Avatar color</p>

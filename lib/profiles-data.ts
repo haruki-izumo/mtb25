@@ -1,9 +1,10 @@
+import type { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { profileAccessWhere } from "@/lib/access";
 
 export async function getProfilesList(
   userId: string,
-  role: "ADMIN" | "MEMBER",
+  role: Role,
   opts: { filter?: string; q?: string } = {},
 ) {
   const access = profileAccessWhere(userId, role);
@@ -72,7 +73,7 @@ export async function getProfilesList(
 
 export async function getProfileDetail(
   userId: string,
-  role: "ADMIN" | "MEMBER",
+  role: Role,
   profileId: string,
 ) {
   const access = profileAccessWhere(userId, role);
