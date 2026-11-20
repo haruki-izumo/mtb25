@@ -34,6 +34,7 @@ export function BookingDialog({
   initialHour,
   openIntervals,
   isAdmin,
+  defaultInterviewerName = null,
 }: {
   open: boolean;
   onClose: () => void;
@@ -44,6 +45,7 @@ export function BookingDialog({
   initialHour: number;
   openIntervals: OpenInterval[];
   isAdmin: boolean;
+  defaultInterviewerName?: string | null;
 }) {
   const [pending, startTransition] = useTransition();
   const [processes, setProcesses] = useState<ProcessOption[]>([]);
@@ -54,10 +56,13 @@ export function BookingDialog({
   const [duration, setDuration] = useState<BookingDuration>(60);
   const [startAt, setStartAt] = useState("");
   const [type, setType] = useState<RoundType>("TECH");
-  const [interviewerName, setInterviewerName] = useState("");
+  const [interviewerName, setInterviewerName] = useState(
+    defaultInterviewerName ?? "",
+  );
   const [meetingLink, setMeetingLink] = useState("");
   const [overrideAvailability, setOverrideAvailability] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const interviewerLocked = Boolean(defaultInterviewerName);
 
   const slots = useMemo(() => {
     const intervals = openIntervals.map((iv) => ({
@@ -74,7 +79,7 @@ export function BookingDialog({
     setCreateNew(false);
     setCompanyName("");
     setJobTitle("");
-    setInterviewerName("");
+    setInterviewerName(defaultInterviewerName ?? "");
     setMeetingLink("");
 
     startTransition(async () => {
@@ -212,13 +217,19 @@ export function BookingDialog({
             <span className="mb-1 block font-medium text-slate-700">
               Interviewer
             </span>
-            <input
-              value={interviewerName}
-              onChange={(e) => setInterviewerName(e.target.value)}
-              required
-              className="h-10 w-full rounded-xl border border-slate-200 px-3"
-              placeholder="Name"
-            />
+            {interviewerLocked ? (
+              <div className="flex h-10 items-center rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700">
+                {interviewerName}
+              </div>
+            ) : (
+              <input
+                value={interviewerName}
+                onChange={(e) => setInterviewerName(e.target.value)}
+                required
+                className="h-10 w-full rounded-xl border border-slate-200 px-3"
+                placeholder="Assign an interviewer on the profile"
+              />
+            )}
           </label>
 
           <label className="block text-sm">

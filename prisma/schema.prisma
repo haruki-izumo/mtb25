@@ -75,9 +75,10 @@ model User {
   teamId String?
   team   Team?   @relation(fields: [teamId], references: [id])
 
-  assignedProfiles Profile[] @relation("ProfileAssignments")
-  ownedProcesses   InterviewProcess[] @relation("ProcessOwner")
-  bookedRounds     Round[]            @relation("RoundBookedBy")
+  assignedProfiles     Profile[] @relation("ProfileAssignments")
+  interviewingProfiles Profile[] @relation("ProfileInterviewer")
+  ownedProcesses       InterviewProcess[] @relation("ProcessOwner")
+  bookedRounds         Round[]            @relation("RoundBookedBy")
 
   availabilityRules     UserAvailabilityRule[]
   availabilityOverrides UserAvailabilityOverride[]
@@ -106,6 +107,10 @@ model Profile {
   starred       Boolean  @default(false)
   createdAt     DateTime @default(now())
 
+  /** One designated interviewer for this profile */
+  interviewerId String?
+  interviewer   User?    @relation("ProfileInterviewer", fields: [interviewerId], references: [id], onDelete: SetNull)
+
   assignedMembers User[] @relation("ProfileAssignments")
 
   experiences            Experience[]
@@ -113,6 +118,8 @@ model Profile {
   availabilityOverrides  AvailabilityOverride[]
   processes              InterviewProcess[]
   applications           Application[]
+
+  @@index([interviewerId])
 }
 
 model Experience {

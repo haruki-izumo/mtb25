@@ -4,7 +4,10 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 import { Copy, LayoutGrid, List, Star } from "lucide-react";
-import { toggleProfileStar } from "@/app/actions/profiles";
+import {
+  setProfileInterviewer,
+  toggleProfileStar,
+} from "@/app/actions/profiles";
 import { countryFlag } from "@/lib/timezone";
 import { cn } from "@/lib/utils";
 
@@ -51,6 +54,7 @@ type Detail = {
     endDate: string | null;
   }[];
   assignedMembers: { id: string; name: string; avatarColor: string }[];
+  interviewer: { id: string; name: string; email: string } | null;
   processes: {
     id: string;
     companyName: string;
@@ -60,6 +64,8 @@ type Detail = {
     roundCount: number;
   }[];
 } | null;
+
+type InterviewerOption = { id: string; name: string; email: string };
 
 function CopyField({ label, value }: { label: string; value: string | null }) {
   if (!value) return null;
@@ -88,11 +94,15 @@ export function ProfilesView({
   counts,
   selected,
   detail,
+  interviewers = [],
+  isAdmin = false,
 }: {
   profiles: ProfileRow[];
   counts: { all: number; starred: number; byCountry: Record<string, number> };
   selected: string | null;
   detail: Detail;
+  interviewers?: InterviewerOption[];
+  isAdmin?: boolean;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -335,7 +345,47 @@ export function ProfilesView({
               ) : null}
 
               {tab === "settings" ? (
-                <div className="space-y-2 text-sm text-slate-600">
+                <div className="space-y-3 text-sm text-slate-600">
+                  <div>
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Interviewer
+                    </p>
+                    {isAdmin ? (
+                      <select
+                        value={detail.interviewer?.id ?? ""}
+                        disabled={pending}
+                        onChange={(e) => {
+                          const interviewerId = e.target.value || null;
+                          startTransition(async () => {
+                            const result = await setProfileInterviewer({
+                              profileId: detail.id,
+                              interviewerId,
+                            });
+                            if (!result.ok) {
+                              window.alert(result.error);
+                              return;
+                            }
+                            router.refresh();
+                          });
+                        }}
+                        className="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm"
+                      >
+                        <option value="">No interviewer</option>
+                        {interviewers.map((i) => (
+                          <option key={i.id} value={i.id}>
+                            {i.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <p className="text-slate-800">
+                        {detail.interviewer?.name ?? "None assigned"}
+                      </p>
+                    )}
+                    <p className="mt-1 text-xs text-slate-400">
+                      One interviewer per profile; used when booking interviews.
+                    </p>
+                  </div>
                   <p>
                     Assigned members:{" "}
                     {detail.assignedMembers.map((m) => m.name).join(", ") ||

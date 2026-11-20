@@ -158,6 +158,10 @@ export async function removeMember(
         where: { bookedById: memberId },
         data: { bookedById: session.user.id },
       });
+      await tx.profile.updateMany({
+        where: { interviewerId: memberId },
+        data: { interviewerId: null },
+      });
       await tx.userAvailabilityRule.deleteMany({ where: { userId: memberId } });
       await tx.userAvailabilityOverride.deleteMany({
         where: { userId: memberId },

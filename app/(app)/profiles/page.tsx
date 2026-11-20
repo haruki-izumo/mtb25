@@ -3,7 +3,11 @@ import { AppShell } from "@/components/layout/app-shell";
 import { ProfilesSidebar } from "@/components/profiles/profiles-sidebar";
 import { ProfilesView } from "@/components/profiles/profiles-view";
 import { requireSession } from "@/lib/auth-helpers";
-import { getProfileDetail, getProfilesList } from "@/lib/profiles-data";
+import {
+  getProfileDetail,
+  getProfilesList,
+  listInterviewers,
+} from "@/lib/profiles-data";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -22,11 +26,10 @@ export default async function ProfilesPage({
   const q = first(sp.q);
   const selectedId = first(sp.id);
 
-  const { profiles, counts } = await getProfilesList(
-    session.user.id,
-    session.user.role,
-    { filter, q },
-  );
+  const [{ profiles, counts }, interviewers] = await Promise.all([
+    getProfilesList(session.user.id, session.user.role, { filter, q }),
+    listInterviewers(),
+  ]);
 
   const detailId = selectedId || profiles[0]?.id || null;
   const rawDetail = detailId
@@ -58,6 +61,7 @@ export default async function ProfilesPage({
           endDate: e.endDate?.toISOString() ?? null,
         })),
         assignedMembers: rawDetail.assignedMembers,
+        interviewer: rawDetail.interviewer,
         processes: rawDetail.processes.map((p) => ({
           id: p.id,
           companyName: p.companyName,
@@ -90,6 +94,8 @@ export default async function ProfilesPage({
             counts={counts}
             selected={detailId}
             detail={detail}
+            interviewers={interviewers}
+            isAdmin={session.user.role === "ADMIN"}
           />
         </Suspense>
       </div>

@@ -82,6 +82,7 @@ export async function getProfileDetail(
     include: {
       experiences: { orderBy: { startDate: "desc" } },
       assignedMembers: { select: { id: true, name: true, avatarColor: true } },
+      interviewer: { select: { id: true, name: true, email: true } },
       processes: {
         orderBy: { updatedAt: "desc" },
         include: {
@@ -92,4 +93,12 @@ export async function getProfileDetail(
     },
   });
   return profile;
+}
+
+export async function listInterviewers() {
+  return prisma.user.findMany({
+    where: { role: "INTERVIEWER" },
+    select: { id: true, name: true, email: true },
+    orderBy: { name: "asc" },
+  });
 }

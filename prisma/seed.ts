@@ -457,6 +457,7 @@ async function main() {
             };
           }),
         },
+        interviewerId: interviewer.id,
         availabilityRules: {
           create: p.rules,
         },

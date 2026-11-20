@@ -220,6 +220,7 @@ export async function getAvailabilityPageData(params: {
     include: {
       availabilityRules: true,
       availabilityOverrides: true,
+      interviewer: { select: { name: true } },
       processes: {
         select: {
           rounds: {
@@ -282,6 +283,7 @@ export async function getAvailabilityPageData(params: {
       country: profile.country,
       timezone: profile.timezone,
       rules: profile.availabilityRules,
+      interviewerName: profile.interviewer?.name ?? null,
     },
     weekStart: weekStart.toISOString(),
     days,

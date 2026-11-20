@@ -38,7 +38,7 @@ const bookSchema = z.object({
     "FINAL",
     "OTHER",
   ]),
-  interviewerName: z.string().min(1).max(200),
+  interviewerName: z.string().max(200).optional(),
   meetingLink: z.string().url().optional().or(z.literal("")),
   overrideAvailability: z.boolean().optional(),
 });
@@ -80,15 +80,38 @@ export async function bookRound(input: BookRoundInput): Promise<BookRoundResult>
   const endAt = addMinutes(startAt, data.durationMinutes);
 
   try {
+    if (session.user.role === "INTERVIEWER") {
+      return { ok: false, error: "Interviewers cannot create bookings" };
+    }
+
     const result = await prisma.$transaction(async (tx) => {
+      const owner = await tx.user.findUnique({
+        where: { id: session.user.id },
+        select: { id: true, role: true },
+      });
+      if (!owner || owner.role === "INTERVIEWER") {
+        throw new Error("Session expired — sign out and sign in again");
+      }
+
       const profile = await tx.profile.findUnique({
         where: { id: data.profileId },
         include: {
           availabilityRules: true,
           availabilityOverrides: true,
+          interviewer: { select: { id: true, name: true, role: true } },
         },
       });
       if (!profile) throw new Error("Profile not found");
+
+      const interviewerName =
+        data.interviewerName?.trim() ||
+        profile.interviewer?.name ||
+        "";
+      if (!interviewerName) {
+        throw new Error(
+          "Assign an interviewer to this profile before booking",
+        );
+      }
 
       const overlapping = await tx.round.findMany({
         where: {
@@ -106,6 +129,28 @@ export async function bookRound(input: BookRoundInput): Promise<BookRoundResult>
         )
       ) {
         throw new Error("Time slot conflicts with an existing round");
+      }
+
+      // Block if the assigned interviewer already has a round at this time
+      if (profile.interviewer) {
+        const interviewerConflicts = await tx.round.findMany({
+          where: {
+            outcome: { not: "CANCELED" },
+            interviewerName: profile.interviewer.name,
+            startAt: { lt: endAt },
+            endAt: { gt: startAt },
+          },
+          select: { id: true, startAt: true, endAt: true },
+        });
+        if (
+          interviewerConflicts.some((r) =>
+            rangesOverlap(r.startAt, r.endAt, startAt, endAt),
+          )
+        ) {
+          throw new Error(
+            "Assigned interviewer is already booked for this time",
+          );
+        }
       }
 
       if (!data.overrideAvailability) {
@@ -152,7 +197,7 @@ export async function bookRound(input: BookRoundInput): Promise<BookRoundResult>
             companyName: data.newProcess.companyName,
             jobTitle: data.newProcess.jobTitle,
             jobUrl: data.newProcess.jobUrl || null,
-            ownerMemberId: session.user.id,
+            ownerMemberId: owner.id,
             status: "FIRST_STEP",
           },
         });
@@ -177,9 +222,9 @@ export async function bookRound(input: BookRoundInput): Promise<BookRoundResult>
           type: data.type,
           startAt,
           endAt,
-          interviewerName: data.interviewerName,
+          interviewerName,
           meetingLink: data.meetingLink || null,
-          bookedById: session.user.id,
+          bookedById: owner.id,
           outcome: "PENDING",
         },
       });
@@ -229,4 +274,78 @@ export async function getProfileProcessesForBooking(profileId: string) {
     },
     orderBy: { updatedAt: "desc" },
   });
+}
+
+/** Open bookable slots for a profile on a calendar day (profile TZ). */
+export async function getOpenSlotsForProfileDay(input: {
+  profileId: string;
+  dateKey: string;
+  durationMinutes: BookingDuration;
+}) {
+  const session = await requireSession();
+  const parsed = z
+    .object({
+      profileId: z.string().min(1),
+      dateKey: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      durationMinutes: z.number().refine((n): n is BookingDuration =>
+        (BOOKING_DURATIONS as readonly number[]).includes(n),
+      ),
+    })
+    .parse(input);
+
+  await assertCanAccessProfile(
+    session.user.id,
+    session.user.role,
+    parsed.profileId,
+  );
+
+  const profile = await prisma.profile.findUnique({
+    where: { id: parsed.profileId },
+    include: {
+      availabilityRules: true,
+      availabilityOverrides: true,
+      interviewer: { select: { id: true, name: true } },
+      processes: {
+        select: {
+          rounds: {
+            where: { outcome: { not: "CANCELED" } },
+            select: { startAt: true, endAt: true },
+          },
+        },
+      },
+    },
+  });
+  if (!profile) throw new Error("Profile not found");
+
+  const busy = profile.processes.flatMap((p) => p.rounds);
+  const open = getOpenIntervalsForDay({
+    dateKey: parsed.dateKey,
+    timeZone: profile.timezone,
+    rules: profile.availabilityRules.map((r) => ({
+      weekday: r.weekday,
+      startMinute: r.startMinute,
+      endMinute: r.endMinute,
+    })),
+    overrides: profile.availabilityOverrides.map((o) => ({
+      date: calendarDateKey(o.date),
+      startMinute: o.startMinute,
+      endMinute: o.endMinute,
+      type: o.type,
+    })),
+    busy,
+  });
+
+  const slots = getBookableSlots(open, parsed.durationMinutes).map((d) =>
+    d.toISOString(),
+  );
+
+  return {
+    timeZone: profile.timezone,
+    interviewer: profile.interviewer,
+    openIntervals: open.map((iv) => ({
+      startAt: iv.startAt.toISOString(),
+      endAt: iv.endAt.toISOString(),
+    })),
+    slots,
+  };
 }

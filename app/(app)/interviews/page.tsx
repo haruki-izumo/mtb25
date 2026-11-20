@@ -3,6 +3,7 @@ import type { RoundType } from "@prisma/client";
 import { AppShell } from "@/components/layout/app-shell";
 import { StatusSidebar } from "@/components/interviews/status-sidebar";
 import { InterviewToolbar } from "@/components/interviews/interview-toolbar";
+import { CreateInterviewButton } from "@/components/interviews/create-interview-button";
 import { ProcessCard } from "@/components/interviews/process-card";
 import { requireSession } from "@/lib/auth-helpers";
 import {
@@ -56,11 +57,22 @@ export default async function InterviewsPage({
       }
     >
       <div className="space-y-4">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Interviews</h1>
-          <p className="text-sm text-slate-500">
-            {processes.length} process{processes.length === 1 ? "" : "es"}
-          </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-semibold text-slate-900">Interviews</h1>
+            <p className="text-sm text-slate-500">
+              {processes.length} process{processes.length === 1 ? "" : "es"}
+            </p>
+          </div>
+          {session.user.role !== "INTERVIEWER" ? (
+            <CreateInterviewButton
+              isAdmin={session.user.role === "ADMIN"}
+              profiles={options.profiles.map((p) => ({
+                id: p.id,
+                label: `${countryFlag(p.country)} ${p.code}.${p.displayName}`,
+              }))}
+            />
+          ) : null}
         </div>
 
         <Suspense fallback={null}>

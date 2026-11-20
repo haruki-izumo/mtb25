@@ -73,6 +73,7 @@ export function AvailabilityView({
     country: string;
     timezone: string;
     rules: RuleRow[];
+    interviewerName?: string | null;
   } | null;
   interviewer?: {
     id: string;
@@ -574,6 +575,7 @@ export function AvailabilityView({
           initialHour={booking.hour}
           openIntervals={booking.open}
           isAdmin={isAdmin}
+          defaultInterviewerName={profile.interviewerName ?? null}
         />
       ) : null}
 
