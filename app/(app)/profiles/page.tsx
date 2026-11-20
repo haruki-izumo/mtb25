@@ -9,6 +9,7 @@ import {
   listAssignableMembers,
   listInterviewers,
   normalizeProfileCertifications,
+  normalizeProfileEducation,
 } from "@/lib/profiles-data";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -63,6 +64,7 @@ export default async function ProfilesPage({
           startDate: e.startDate.toISOString(),
           endDate: e.endDate?.toISOString() ?? null,
         })),
+        education: normalizeProfileEducation(rawDetail.education),
         certifications: normalizeProfileCertifications(
           rawDetail.certifications,
         ),

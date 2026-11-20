@@ -7,14 +7,17 @@ import { Copy, LayoutGrid, List, Pencil, Plus, Star, Trash2 } from "lucide-react
 import {
   addProfileApiKey,
   addProfileCertification,
+  addProfileEducation,
   addProfileExperience,
   createProfile,
   deleteProfile,
   deleteProfileApiKey,
   deleteProfileCertification,
+  deleteProfileEducation,
   deleteProfileExperience,
   setProfileInterviewer,
   toggleProfileStar,
+  updateProfileEducation,
   updateProfileExperience,
 } from "@/app/actions/profiles";
 import { countryFlag, DEFAULT_TIMEZONE } from "@/lib/timezone";
@@ -79,6 +82,13 @@ type Detail = {
     location: string | null;
     startDate: string;
     endDate: string | null;
+  }[];
+  education: {
+    id: string;
+    school: string;
+    degree: string;
+    start: string;
+    end: string;
   }[];
   certifications: {
     id: string;
@@ -407,6 +417,13 @@ export function ProfilesView({
                   <ExperienceEditor
                     profileId={detail.id}
                     experiences={detail.experiences}
+                    pending={pending}
+                    startTransition={startTransition}
+                    onDone={() => router.refresh()}
+                  />
+                  <EducationEditor
+                    profileId={detail.id}
+                    education={detail.education}
                     pending={pending}
                     startTransition={startTransition}
                     onDone={() => router.refresh()}
@@ -1109,6 +1126,303 @@ function ExperienceEditor({
                 }
               />
               Currently working here
+            </label>
+
+            <div className="flex justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditing(null);
+                  setError(null);
+                }}
+                className="h-10 rounded-xl px-4 text-sm font-medium text-slate-600 hover:bg-slate-100"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={pending}
+                className="h-10 rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+              >
+                {pending ? "Saving…" : editing.id ? "Save" : "Add"}
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function formatEducationRange(start: string, end: string) {
+  if (!start) return end || "—";
+  return `${start} – ${end || "Present"}`;
+}
+
+function EducationEditor({
+  profileId,
+  education,
+  pending,
+  startTransition,
+  onDone,
+}: {
+  profileId: string;
+  education: {
+    id: string;
+    school: string;
+    degree: string;
+    start: string;
+    end: string;
+  }[];
+  pending: boolean;
+  startTransition: (fn: () => void) => void;
+  onDone: () => void;
+}) {
+  const [editing, setEditing] = useState<{
+    id?: string;
+    school: string;
+    degree: string;
+    startMonth: string;
+    endMonth: string;
+    current: boolean;
+  } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  function openCreate() {
+    setError(null);
+    setEditing({
+      school: "",
+      degree: "",
+      startMonth: "",
+      endMonth: "",
+      current: false,
+    });
+  }
+
+  function openEdit(e: {
+    id: string;
+    school: string;
+    degree: string;
+    start: string;
+    end: string;
+  }) {
+    setError(null);
+    setEditing({
+      id: e.id,
+      school: e.school,
+      degree: e.degree,
+      startMonth: e.start,
+      endMonth: e.end,
+      current: !e.end,
+    });
+  }
+
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          Education
+        </p>
+        <button
+          type="button"
+          onClick={openCreate}
+          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50"
+        >
+          <Plus className="size-3.5" />
+          Add
+        </button>
+      </div>
+
+      {education.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-slate-200 px-3 py-4 text-center text-sm text-slate-500">
+          No education yet
+        </p>
+      ) : (
+        <ul className="space-y-2">
+          {education.map((e) => (
+            <li
+              key={e.id}
+              className="rounded-xl border border-slate-100 px-3 py-2"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-900">
+                    {e.school}
+                  </p>
+                  {e.degree ? (
+                    <p className="text-xs text-slate-500">{e.degree}</p>
+                  ) : null}
+                  <p className="text-xs text-slate-400">
+                    {formatEducationRange(e.start, e.end)}
+                  </p>
+                </div>
+                <div className="flex shrink-0 gap-1">
+                  <button
+                    type="button"
+                    title="Edit"
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                    onClick={() => openEdit(e)}
+                  >
+                    <Pencil className="size-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    title="Delete"
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                    onClick={() => {
+                      if (!confirm(`Delete education at ${e.school}?`)) return;
+                      setError(null);
+                      startTransition(async () => {
+                        const result = await deleteProfileEducation({
+                          profileId,
+                          educationId: e.id,
+                        });
+                        if (!result.ok) {
+                          setError(result.error);
+                          return;
+                        }
+                        onDone();
+                      });
+                    }}
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {error ? (
+        <p className="mt-2 text-xs text-red-600">{error}</p>
+      ) : null}
+
+      {editing ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+          <form
+            className="w-full max-w-md space-y-3 rounded-2xl bg-white p-5 shadow-xl"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const payload = {
+                school: editing.school,
+                degree: editing.degree,
+                startMonth: editing.startMonth,
+                endMonth: editing.current ? "" : editing.endMonth,
+              };
+              setError(null);
+              startTransition(async () => {
+                const result = editing.id
+                  ? await updateProfileEducation({
+                      profileId,
+                      educationId: editing.id,
+                      ...payload,
+                    })
+                  : await addProfileEducation({ profileId, ...payload });
+                if (!result.ok) {
+                  setError(result.error);
+                  return;
+                }
+                setEditing(null);
+                onDone();
+              });
+            }}
+          >
+            <h3 className="text-lg font-semibold text-slate-900">
+              {editing.id ? "Edit education" : "Add education"}
+            </h3>
+            {error ? (
+              <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+                {error}
+              </p>
+            ) : null}
+
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-slate-700">
+                School
+              </span>
+              <input
+                value={editing.school}
+                onChange={(e) =>
+                  setEditing((prev) =>
+                    prev ? { ...prev, school: e.target.value } : prev,
+                  )
+                }
+                required
+                placeholder="UMFST-UMCH University"
+                className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
+              />
+            </label>
+
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-slate-700">
+                Degree
+              </span>
+              <input
+                value={editing.degree}
+                onChange={(e) =>
+                  setEditing((prev) =>
+                    prev ? { ...prev, degree: e.target.value } : prev,
+                  )
+                }
+                placeholder="B.Sc. Computer Science"
+                className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
+              />
+            </label>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block text-sm">
+                <span className="mb-1 block font-medium text-slate-700">
+                  Start
+                </span>
+                <input
+                  type="month"
+                  value={editing.startMonth}
+                  onChange={(e) =>
+                    setEditing((prev) =>
+                      prev ? { ...prev, startMonth: e.target.value } : prev,
+                    )
+                  }
+                  required
+                  className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
+                />
+              </label>
+              <label className="block text-sm">
+                <span className="mb-1 block font-medium text-slate-700">
+                  End
+                </span>
+                <input
+                  type="month"
+                  value={editing.endMonth}
+                  disabled={editing.current}
+                  onChange={(e) =>
+                    setEditing((prev) =>
+                      prev ? { ...prev, endMonth: e.target.value } : prev,
+                    )
+                  }
+                  required={!editing.current}
+                  className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm disabled:bg-slate-50 disabled:text-slate-400"
+                />
+              </label>
+            </div>
+
+            <label className="flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={editing.current}
+                onChange={(e) =>
+                  setEditing((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          current: e.target.checked,
+                          endMonth: e.target.checked ? "" : prev.endMonth,
+                        }
+                      : prev,
+                  )
+                }
+              />
+              Currently studying here
             </label>
 
             <div className="flex justify-end gap-2 pt-1">

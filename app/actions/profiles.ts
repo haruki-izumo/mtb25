@@ -11,7 +11,10 @@ import {
   requireRole,
   assertCanAccessProfile,
 } from "@/lib/auth-helpers";
-import { normalizeProfileCertifications } from "@/lib/profiles-data";
+import {
+  normalizeProfileCertifications,
+  normalizeProfileEducation,
+} from "@/lib/profiles-data";
 
 const createProfileSchema = z.object({
   code: z
@@ -318,6 +321,19 @@ const certificationSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}$/, "Date must be YYYY-MM"),
 });
 
+const educationSchema = z.object({
+  school: z.string().trim().min(1).max(160),
+  degree: z.string().trim().max(160).optional().or(z.literal("")),
+  /** YYYY-MM */
+  startMonth: z.string().regex(/^\d{4}-\d{2}$/, "Start month must be YYYY-MM"),
+  /** YYYY-MM or empty for Present */
+  endMonth: z
+    .string()
+    .regex(/^\d{4}-\d{2}$/, "End month must be YYYY-MM")
+    .optional()
+    .or(z.literal("")),
+});
+
 function monthToUtcDate(ym: string) {
   const match = /^(\d{4})-(\d{2})$/.exec(ym);
   if (!match) throw new Error("Invalid month");
@@ -552,6 +568,184 @@ export async function deleteProfileCertification(input: {
       ok: false,
       error:
         err instanceof Error ? err.message : "Failed to delete certification",
+    };
+  }
+}
+
+/** Add an education entry to a profile (JSON list). */
+export async function addProfileEducation(input: {
+  profileId: string;
+  school: string;
+  degree?: string;
+  startMonth: string;
+  endMonth?: string;
+}): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+  try {
+    const session = await requireSession();
+    const parsed = educationSchema
+      .extend({ profileId: z.string().min(1) })
+      .parse(input);
+    await assertCanAccessProfile(
+      session.user.id,
+      session.user.role,
+      parsed.profileId,
+    );
+
+    if (
+      parsed.endMonth &&
+      monthToUtcDate(parsed.endMonth) < monthToUtcDate(parsed.startMonth)
+    ) {
+      return { ok: false, error: "End month must be on or after start month" };
+    }
+
+    const profile = await prisma.profile.findUnique({
+      where: { id: parsed.profileId },
+      select: { education: true },
+    });
+    if (!profile) return { ok: false, error: "Profile not found" };
+
+    const id = crypto.randomUUID();
+    const next = [
+      ...normalizeProfileEducation(profile.education),
+      {
+        id,
+        school: parsed.school,
+        degree: parsed.degree?.trim() || "",
+        start: parsed.startMonth,
+        end: parsed.endMonth || "",
+      },
+    ];
+    await prisma.profile.update({
+      where: { id: parsed.profileId },
+      data: { education: next },
+    });
+    revalidatePath("/profiles");
+    return { ok: true, id };
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return {
+        ok: false,
+        error: err.issues[0]?.message || "Invalid education",
+      };
+    }
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Failed to add education",
+    };
+  }
+}
+
+/** Update an education entry by id on a profile. */
+export async function updateProfileEducation(input: {
+  profileId: string;
+  educationId: string;
+  school: string;
+  degree?: string;
+  startMonth: string;
+  endMonth?: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const session = await requireSession();
+    const parsed = educationSchema
+      .extend({
+        profileId: z.string().min(1),
+        educationId: z.string().min(1),
+      })
+      .parse(input);
+    await assertCanAccessProfile(
+      session.user.id,
+      session.user.role,
+      parsed.profileId,
+    );
+
+    if (
+      parsed.endMonth &&
+      monthToUtcDate(parsed.endMonth) < monthToUtcDate(parsed.startMonth)
+    ) {
+      return { ok: false, error: "End month must be on or after start month" };
+    }
+
+    const profile = await prisma.profile.findUnique({
+      where: { id: parsed.profileId },
+      select: { education: true },
+    });
+    if (!profile) return { ok: false, error: "Profile not found" };
+
+    const current = normalizeProfileEducation(profile.education);
+    const idx = current.findIndex((e) => e.id === parsed.educationId);
+    if (idx < 0) return { ok: false, error: "Education not found" };
+
+    const next = [...current];
+    next[idx] = {
+      id: parsed.educationId,
+      school: parsed.school,
+      degree: parsed.degree?.trim() || "",
+      start: parsed.startMonth,
+      end: parsed.endMonth || "",
+    };
+    await prisma.profile.update({
+      where: { id: parsed.profileId },
+      data: { education: next },
+    });
+    revalidatePath("/profiles");
+    return { ok: true };
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return {
+        ok: false,
+        error: err.issues[0]?.message || "Invalid education",
+      };
+    }
+    return {
+      ok: false,
+      error:
+        err instanceof Error ? err.message : "Failed to update education",
+    };
+  }
+}
+
+/** Remove an education entry by id from a profile. */
+export async function deleteProfileEducation(input: {
+  profileId: string;
+  educationId: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const session = await requireSession();
+    const parsed = z
+      .object({
+        profileId: z.string().min(1),
+        educationId: z.string().min(1),
+      })
+      .parse(input);
+    await assertCanAccessProfile(
+      session.user.id,
+      session.user.role,
+      parsed.profileId,
+    );
+
+    const profile = await prisma.profile.findUnique({
+      where: { id: parsed.profileId },
+      select: { education: true },
+    });
+    if (!profile) return { ok: false, error: "Profile not found" };
+
+    const current = normalizeProfileEducation(profile.education);
+    const next = current.filter((e) => e.id !== parsed.educationId);
+    if (next.length === current.length) {
+      return { ok: false, error: "Education not found" };
+    }
+
+    await prisma.profile.update({
+      where: { id: parsed.profileId },
+      data: { education: next },
+    });
+    revalidatePath("/profiles");
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      error:
+        err instanceof Error ? err.message : "Failed to delete education",
     };
   }
 }
