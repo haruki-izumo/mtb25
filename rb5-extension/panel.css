@@ -1,0 +1,6212 @@
+/* Lato, self-hosted (fonts/) rather than pulled from the Google Fonts CDN, so
+   the panel always has it even with no network / under a strict extension
+   CSP — otherwise text silently falls back to Arial. Copied verbatim from
+   the BCD web app's own copy (client/src/index.css / client/public/fonts).
+   Weights 400 + 700 + 900, latin + latin-ext. Lato ships no 600 or 800 face,
+   so any rule asking for one resolves to 700. */
+@font-face {
+  font-family: "Lato";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/lato-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Lato";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/lato-400-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Lato";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("fonts/lato-700-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Lato";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("fonts/lato-700-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Lato";
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url("fonts/lato-900-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Lato";
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url("fonts/lato-900-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* Palette below is BCD's own (client/src/index.css's :root), under the same
+   variable NAMES this file already used — every component that reads
+   var(--bg-elevated)/var(--accent)/etc picks up BCD's exact colors without
+   needing its own rule touched. No dark theme — this extension is light
+   only. Glassmorphism (backdrop-blur "frosted" panels) is OFF — BCD uses
+   flat, solid surfaces, no blur, no gradient tint washes — so --glass-filter
+   is 'none' and the --glass-* tokens just equal the plain surface/input
+   colors instead of a translucent variant. */
+:root {
+  --bg-app: #ffffff;
+  --bg-surface: #ffffff;
+  --bg-surface-2: #fafbfc;
+  --bg-elevated: #ffffff;
+  --bg-input: #ffffff;
+  --bg-input-focus: #ffffff;
+
+  --border: #e6e6e9;
+  --border-strong: #d6d6da;
+  --border-focus: #0e72ed;
+
+  --text-primary: #1c1c28;
+  --text-secondary: #4a4a57;
+  --text-muted: #86868b;
+  --text-faint: #86868b;
+
+  /* Accent — BCD's own blue. Overridden per preset by the [data-accent="…"]
+     blocks below if a user picks one; --accent-soft / --accent-ring stay
+     derived so a preset only declares two values. */
+  --accent: #0e72ed;
+  --accent-hover: #0b5ecb;
+  --accent-soft: color-mix(in srgb, var(--accent) 10%, transparent);
+  --accent-ring: color-mix(in srgb, var(--accent) 30%, transparent);
+
+  --success: #2bb673;
+  --danger: #e8443b;
+  --danger-soft: rgba(232, 68, 59, 0.1);
+  --warning: #f59e0b;
+
+  --overlay-1: rgba(15, 23, 42, 0.04);
+  --overlay-2: rgba(15, 23, 42, 0.07);
+  --overlay-3: rgba(15, 23, 42, 0.1);
+  --overlay-strong: rgba(15, 23, 42, 0.18);
+
+  --header-bg: #ffffff;
+  --modal-overlay: rgba(15, 23, 42, 0.45);
+  --modal-card-bg: #ffffff;
+  --code-bg: #f1f5f9;
+  --tint-1: transparent;
+  --tint-2: transparent;
+  --tint-3: transparent;
+
+  --glass-bg: var(--bg-surface);
+  --glass-bg-strong: var(--bg-elevated);
+  --glass-border: var(--border);
+  --glass-highlight: var(--border-strong);
+  --glass-shadow: var(--shadow-md);
+  --glass-input: var(--bg-input);
+  --glass-input-focus: var(--bg-input-focus);
+  --glass-filter: none;
+
+  --status-success-text: #15803d;
+  --status-error-text: #b91c1c;
+  --status-loading-text: #0e72ed;
+
+  --r-xs: 6px;
+  --r-sm: 8px;
+  --r-md: 10px;
+  --r-lg: 14px;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 6px 20px rgba(0, 0, 0, 0.12);
+
+  color-scheme: light;
+}
+
+/* =====================================================================
+   Accent presets — set via data-accent on <html> by theme-colors.js, and
+   mirrored from the dashboard (proactive-dashboard/src/index.css) so both
+   surfaces of the product offer the same palette.
+
+     • no data-accent (default) → bright blue #00a1ff (see :root)
+     • data-accent="azure"      → deep blue   #0074ba
+     • data-accent="cyan"       → teal-cyan   #01c0c8
+     • data-accent="violet"     → purple      #8b5cf6
+     • data-accent="emerald"    → green       #10b981
+     • data-accent="rose"       → coral       #f43f5e
+
+   These MUST stay below :root: an attribute selector and :root carry the
+   same specificity, so the later declaration is what wins. Only --accent /
+   --accent-hover are set; the soft fill and focus ring derive from --accent
+   up in :root.
+   ===================================================================== */
+[data-accent="azure"] {
+  --accent: #0074ba;
+  --accent-hover: #1786c9;
+}
+[data-accent="cyan"] {
+  --accent: #01c0c8;
+  --accent-hover: #26d5dc;
+}
+[data-accent="violet"] {
+  --accent: #8b5cf6;
+  --accent-hover: #a78bfa;
+}
+[data-accent="emerald"] {
+  --accent: #10b981;
+  --accent-hover: #34d399;
+}
+[data-accent="rose"] {
+  --accent: #f43f5e;
+  --accent-hover: #fb7185;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  /* Lato — matches BCD's own body font (client/src/index.css's --font). Lato
+     has no 500/600/800 weight face there either, so this inherits the same
+     nearest-real-weight mapping BCD itself relies on. */
+  font-family: "Lato", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  /* Same pastel gradient backdrop as the sign-in page (.login-shell below). */
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0) 15%, rgba(255, 255, 255, 1) 50%, rgba(255, 255, 255, 1) 100%),
+    linear-gradient(90deg, #ffe3c2 0%, #ffd9ec 50%, #dbe6ff 100%);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  /* height (not min-height) + overflow:hidden caps the page at exactly the
+     panel's viewport instead of growing past it when a tab's content
+     overflows — .tab-panel below is what actually scrolls in that case,
+     not the whole page (which pushed the header/segment tabs out of view
+     along with it). */
+  height: 100vh;
+  overflow: hidden;
+  line-height: 1.5;
+  font-size: 14px;
+}
+
+/* Form controls (buttons, inputs, selects, textareas) do NOT inherit
+   font-family by default — they fall back to the browser/OS UI font. Force
+   Lato on all of them so literally every piece of text in the panel
+   (buttons, the job-description textarea, dropdowns, etc.) uses it — same
+   fix the BCD web app itself needs (client/src/index.css). */
+button,
+input,
+select,
+textarea,
+optgroup {
+  font-family: inherit;
+}
+
+/* =====================================================================
+   Header
+   ===================================================================== */
+/* Three zones — logo / account (centered) / actions — via grid rather than
+   flex so the middle column centers on the header's own width regardless of
+   how wide the left (logo) and right (two icon buttons) zones are; equal-
+   width flex justify-content tricks only center when the two sides match. */
+/* Two rows now: the brand/account/actions grid, then the Account/Profile/
+   Apply segmented tabs — both above the divider (border-bottom), which used
+   to sit right under the grid row alone. */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  /* Was pulled flush (0, then a -5px margin on top of that) — read as too
+     cramped right above the logo row, so it's back to a real top padding.
+     Left/right matches .main-content's own 9.5px (the white card's outer
+     edge) — was 26px, visibly more inset than the card sitting right below
+     it, which read as the header/tab-strip floating independently instead
+     of lining up with the page beneath them. */
+  padding: 14px 9.5px 12px;
+  /* Sits directly on the page's own gradient backdrop now, like the sign-in
+     logo — no separate solid bar or dividing line. */
+  background: transparent;
+  border-bottom: none;
+}
+
+.app-header-top {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  /* +5px on top of .app-header's own 9.5px left/right padding — just this
+     logo/mode/avatar row, not the Job/Apply/Profile tab strip below
+     (.seg-tabs is a separate sibling of this element, not a child, so it
+     keeps the plain 9.5px). */
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  justify-self: start;
+  /* Clickable — opens the web dashboard (see sidepanel.js's brand click
+     handler) — but no hover fill any more: it covered the version tag too
+     (they share this one hoverable block), reading as an odd grey box
+     behind "v2.7.x" rather than a hover state on the logo. */
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.brand-mark {
+  width: 30px;
+  height: 30px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.brand-mark svg,
+.brand-mark img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  border-radius: inherit;
+}
+
+.brand-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Extension version, right of the logo (see EXTENSION_VERSION in
+   sidepanel.js's init) — a small muted tag, not a wordmark, so it doesn't
+   compete with the logo for attention. */
+.brand-version {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-faint);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.header-meta {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-self: center;
+}
+
+.header-actions {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-self: end;
+}
+
+/* The Resume Mode toggle, now a plain .cd-card in the Settings tab's own
+   Shortcuts sub-tab (sidepanel.html) — used to be the gear icon's own
+   floating anchored dropdown; .settings-menu-wrap/.settings-menu (the
+   popup positioning/chrome) are gone with it, these inner classes are all
+   that's left, reused as-is. */
+.settings-menu__row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.settings-menu__row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.settings-menu__label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.settings-menu__hint {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.settings-menu__hint--error {
+  color: var(--red, #dc2626);
+}
+#manualChatGptUrlInput.input-invalid {
+  color: var(--red, #dc2626);
+}
+.settings-menu__seg {
+  display: flex;
+  padding: 2px;
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+.settings-menu__seg-btn {
+  flex: 1 1 0;
+  padding: 5px 0;
+  border: none;
+  border-radius: calc(var(--r-md) - 2px);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.settings-menu__seg-btn.active {
+  background: var(--bg-elevated);
+  color: var(--accent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.dashboard-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  height: 32px;
+  font-size: 11.5px;
+  font-weight: 600;
+  flex-shrink: 0;
+  background: var(--overlay-1);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.dashboard-link:hover {
+  background: var(--overlay-2);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.dashboard-link.icon-only {
+  width: 32px;
+  padding: 0;
+}
+
+
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  /* Even on all sides now that .user-name (below) is hidden — the header
+     chip shows just the avatar, so there's no trailing text to pad out
+     for any more. */
+  padding: 4px;
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease;
+  max-width: 220px;
+}
+
+
+.user-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  /* Solid, not a gradient — BCD's own avatar fallback (client/src/lib/
+     avatarGen.js) is always a flat colour, never a gradient. */
+  background: var(--accent);
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* Account dropdown — opens off #userMenuBtn (the avatar+name chip),
+   anchored to #loggedInBar (.header-actions already has position:relative).
+   Avatar+name+email header, then Profile/Settings/Sign out rows, same
+   divider-separated shape as the reference screenshot. */
+.user-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 30;
+  width: 220px;
+  padding: 8px;
+  background: var(--bg-elevated, #fff);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow, 0 8px 24px rgba(0, 0, 0, 0.14));
+}
+.user-menu__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px 10px;
+}
+.user-menu__avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  flex-shrink: 0;
+  background-size: cover;
+  background-position: center;
+}
+.user-menu__who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.user-menu__name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.user-menu__email {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.user-menu__divider {
+  height: 1px;
+  margin: 4px 2px;
+  background: var(--border);
+}
+.user-menu__item {
+  display: flex;
+  align-items: center;
+  /* Overrides the generic button { justify-content: center } rule — without
+     this, icon+label centers in the row instead of hugging the left edge. */
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.user-menu__item:hover {
+  background: var(--overlay-1);
+}
+.user-menu__item--danger {
+  color: var(--red, #dc2626);
+}
+.user-menu__item--danger:hover {
+  background: rgba(220, 38, 38, 0.08);
+}
+
+/* Header chip (#userMenuBtn) shows avatar only now — the name still
+   renders (and is still set from sidepanel.js) inside the account dropdown
+   itself (.user-menu__name), just not here next to the avatar. */
+.user-name {
+  display: none;
+}
+/* The avatar's own dropdown indicator — same shape/behavior as
+   .select-chevron elsewhere, just sized down for this smaller chip. No JS
+   changes needed: #userMenuBtn already toggles its own aria-expanded on
+   open/close (sidepanel.js), this just reads that. */
+.user-chip__chevron {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  transition: transform 0.18s ease;
+}
+#userMenuBtn[aria-expanded="true"] .user-chip__chevron {
+  transform: rotate(180deg);
+  color: var(--text-secondary);
+}
+
+/* =====================================================================
+   Buttons
+   ===================================================================== */
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border-radius: var(--r-md);
+  font-weight: 600;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    transform 0.05s ease,
+    box-shadow 0.12s ease,
+    color 0.12s ease;
+  border: 1px solid var(--border-strong);
+  background: var(--overlay-1);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button.primary {
+  /* Derived from --accent (was hardcoded blue) so every primary follows the
+     accent picker. */
+  background: linear-gradient(
+    180deg,
+    var(--accent) 0%,
+    color-mix(in srgb, var(--accent) 72%, #000) 100%
+  );
+  border: none;
+  color: white;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+button.primary:hover:not(:disabled) {
+  background: linear-gradient(
+    180deg,
+    var(--accent-hover) 0%,
+    color-mix(in srgb, var(--accent) 58%, #000) 100%
+  );
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+button.primary:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px var(--accent-ring),
+    0 6px 18px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+/* Ask (follow-up) send button — transparent instead of the filled primary
+   look: drop the gradient fill and glow, keep just the icon + label with a
+   subtle outline so it still reads as a button. */
+#askBtn.primary {
+  background: transparent;
+  border-color: var(--border);
+  box-shadow: none;
+  color: var(--text-primary);
+}
+
+#askBtn.primary:hover:not(:disabled) {
+  background: var(--overlay-1);
+  border-color: var(--border-strong);
+}
+
+#askBtn.primary:focus-visible {
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+button.secondary {
+  background: var(--overlay-1);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+/* "Detect from page" — sits above the company/role fields. Subtle accent
+   tint so it reads as the magic-action without overpowering the primary
+   Generate button below. */
+/* ---- Neon pill buttons (Detect / Generate) ------------------------------
+   Shared skeleton: leading glyph, hairline divider, centred label, trailing
+   chevron, in a full-radius pill. Detect is the outlined variant, Generate the
+   filled one; both derive every colour from --accent so the accent picker
+   drives them. */
+.neon-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: normal;
+  font-family: inherit;
+  /* BCD's own .btn-primary/.btn-ghost radius (client/src/App.css), not a pill. */
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+/* The label takes the slack so it stays centred between the glyph and the
+   chevron, whatever the button's width. */
+.neon-btn .btn-text {
+  flex: 1 1 auto;
+  text-align: center;
+  /* min-width:0 + ellipsis so a longer swapped-in label ("Generating…") can't
+     push the chevron out of the pill — buttons are nowrap globally. */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.neon-btn .nb-icon,
+.neon-btn .nb-chevron {
+  flex: 0 0 auto;
+  display: block;
+}
+.neon-btn .nb-chevron {
+  opacity: 0.7;
+}
+.neon-btn .nb-divider {
+  flex: 0 0 auto;
+  align-self: stretch;
+  width: 1px;
+  margin: 1px 0;
+  background: currentColor;
+  opacity: 0.25;
+}
+.neon-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+.neon-btn:disabled {
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Job Details' title row — the section label stretches (its own ::after
+   still draws the trailing rule, now running up to the pill instead of the
+   row's raw edge) and the Detect status pill sits at the end. */
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+.section-head .section-label {
+  flex: 1 1 auto;
+  margin-top: 0;
+}
+/* Job Details' own top space — 3px less than the shared 20px above. */
+#jobDetailsHead {
+  margin-top: 12px;
+}
+/* Job Description sits first in .apply-scroll, right under Company/Role —
+   trimmed further off its own top space (was 20px shared, then 15px, then
+   12px, now 7px). */
+#jdField .section-head {
+  margin-top: 7px;
+}
+/* Resume — 5px off its own top space too (was the shared 20px above); it's
+   the first row in the Resume/Cover Letter/Auto-fill checklist, so this is
+   its spacing from Auto-fill's button above. Cover Letter's OWN top margin
+   is zeroed instead (see below) — it's a middle row now, so .field-row-pair's
+   own gap is what spaces it from Resume, not a second margin stacked on
+   top of that gap (that mismatch was why Resume-to-Cover Letter read as a
+   bigger gap than Cover Letter-to-Auto-fill). */
+#resumeField .section-head {
+  margin-top: 15px;
+}
+#coverField .section-head {
+  margin-top: 0;
+}
+
+/* Detect reads as a status pill, not an action button — detection already
+   runs on its own when a job posting's tab opens (AUTO_DETECT_ENABLED in
+   sidepanel.js); this is "here's what happened" with a small manual re-run
+   affordance, not "press to detect". Green success tint for the check +
+   label, the refresh glyph muted since it's the secondary action. */
+.detect-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  height: 26px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 999px;
+  background: var(--success-soft, rgba(34, 197, 94, 0.12));
+  color: var(--success);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  /* The page's own body rule sets line-height:1.5 (21px at 14px font) —
+     inherited here even at this button's own smaller 11px size, and Lato's
+     ascent/descent isn't symmetric around that tall a line box, so the
+     label read as sitting a couple px below true-center despite the flex
+     align-items:center centering the box itself correctly. A tight
+     line-height removes the extra leading so the glyphs — not just the
+     box — end up centered. */
+  line-height: 1;
+  cursor: pointer;
+}
+/* The global button:active press-down (transform: translateY(1px)) read as
+   the whole pill bobbing up and down on click — cancel it here; the refresh
+   icon spinning below is this button's only click feedback. */
+.detect-pill:active:not(:disabled) {
+  transform: none;
+}
+.detect-pill .detect-pill__refresh {
+  color: var(--text-faint);
+}
+.detect-pill:hover:not(:disabled) .detect-pill__refresh {
+  color: var(--text-secondary);
+}
+.detect-pill:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+/* Detecting… (disabled while the async detect call is in flight) — the
+   refresh glyph spins clockwise in place instead of the button moving. */
+.detect-pill:disabled .detect-pill__refresh {
+  animation: spin 0.8s linear infinite;
+}
+
+/* Auto Apply — same pill shape as .detect-pill (Job Details' "Auto-detected"
+   readout right above), but blue/accent instead of green: this one is a
+   press-to-start action + live running state, not a passive "here's what
+   happened" status. */
+.auto-apply-pill {
+  background: var(--accent-soft, rgba(14, 114, 237, 0.12));
+  color: var(--accent, #0e72ed);
+}
+.auto-apply-pill:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+/* Running — the play icon spins into a stop square via CSS alone (no
+   separate SVG swap needed): rotate the triangle 90° and square its
+   corners off. Paired with the label swapping to a live "N / total" count
+   (see runAutoApply). */
+.auto-apply-pill.running {
+  background: var(--danger-soft, rgba(232, 68, 59, 0.12));
+  color: var(--danger, #e8443b);
+}
+.auto-apply-pill.running .auto-apply-pill__icon {
+  animation: pulse-soft 1.4s ease-in-out infinite;
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+/* Generate — BCD's .btn-primary: solid accent fill, white text, no gradient,
+   no glow. .neon-btn.primary outranks button.primary on specificity, so this
+   wins wherever the two overlap. */
+.neon-btn.primary {
+  border: 1px solid transparent;
+  color: #fff;
+  background: var(--accent);
+}
+.neon-btn.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+.neon-btn.primary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+button.secondary:hover:not(:disabled) {
+  background: var(--overlay-2);
+  border-color: var(--overlay-strong);
+}
+
+button.ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-muted);
+}
+
+button.ghost:hover:not(:disabled) {
+  background: var(--overlay-2);
+  color: var(--text-primary);
+}
+
+button.xs {
+  padding: 5px 9px;
+  font-size: 12px;
+  border-radius: var(--r-sm);
+  gap: 5px;
+}
+
+button.icon-only {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  gap: 0;
+}
+
+button.w-full {
+  width: 100%;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pop-in {
+  from {
+    transform: translateY(-4px) scale(0.98);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* =====================================================================
+   Layout
+   ===================================================================== */
+.main-content {
+  /* Left/right: halved from 15px to 7.5px, then +2px — the gap between the
+     card and the window edge read as too big; the card's OWN inner padding
+     went the other way (see .tab-panel's -2px below) so its content doesn't
+     end up sitting hard against its own border instead. Top: pulled back
+     down — the gap between the segmented tabs and the white card below
+     read as too big again. */
+  padding: 4px 9.5px 8px;
+  display: flex;
+  flex-direction: column;
+  /* Was 10px — trimmed 5px off the gap between the segmented tabs and the
+     card below so the card (the "white board") itself reads ~5px taller,
+     without touching .main-content's own outer padding. */
+  gap: 5px;
+  /* Fill the space under the sticky header (body is a height:100vh flex
+     column) so the composer's `margin-top: auto` has leftover room to claim and
+     can sit at the bottom of the panel even when the form is short. min-height:0
+     lets this actually shrink to that space instead of growing past it — a
+     flex item's default min-height is auto (its content's own height), which
+     is what let overflowing tab content push the whole page taller instead
+     of scrolling inside .tab-panel below. */
+  flex: 1;
+  min-height: 0;
+}
+
+/* Account / Profile / Apply section switcher, right under the header — the
+   EXACT same rounded-track-with-a-floating-pill styling as the main BCD app's
+   own .seg-tabs (Profile/Member detail panel, right below the avatar+name
+   header) — same radii, padding, font size, and the pill's box-shadow rather
+   than a flat highlight fill. */
+.seg-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  /* It's a child of .app-header (not .main-content) — that header's own
+     left/right padding already lines this track's edge up with the logo
+     above it and the white card's own outer edge below (.main-content's
+     padding), no margin of its own needed. */
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  flex: 0 0 auto;
+}
+.seg-tabs-btn {
+  position: relative;
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.seg-tabs-btn:hover {
+  color: var(--text-primary);
+}
+/* Settings — icon only, no label, so it shouldn't claim an equal 1/4 share
+   of the strip the way Job/Profile/Tabsync's own text labels need; sized to
+   its own content instead, letting the other three split the rest. A left
+   divider sets it apart from the labelled tabs beside it, reading as its
+   own "utility" entry rather than a fourth equal section. A short ::before
+   line (same shape as .download-btn-wrap::before) rather than a plain
+   border-left — a real border picks up .seg-tabs-btn's own border-radius at
+   the corners and reads as curved instead of a straight divider. */
+.seg-tabs-btn--icon {
+  /* Fixed width (not flex:0 0 auto sizing to content) — Tabsync's own icon
+     (18px) and Settings' gear (15px) are different sizes, which otherwise
+     made the two buttons different widths. */
+  flex: 0 0 38px;
+  justify-content: center;
+  padding: 6px 10px;
+  margin-left: 3px;
+}
+.seg-tabs-btn--icon::before {
+  content: "";
+  position: absolute;
+  left: -2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 16px;
+  background: rgba(17, 24, 39, 0.15);
+}
+/* Settings sits directly beside Tabsync now that Tabsync is icon-only too
+   (no labelled tab between them any more) — the divider only still makes
+   sense between a labelled tab and an icon one, not between two icon ones
+   back to back. */
+.seg-tabs-btn--icon[data-tab="account"]::before {
+  display: none;
+}
+.seg-tabs-btn.active {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+/* Tabsync's not-yet-applied LinkedIn Jobs count — a small red circle right
+   after the "Tabsync" label, inside the tab's own box (flows as a normal
+   flex item, using .seg-tabs-btn's own gap for the spacing — not pinned to
+   a corner any more), same "urgent" red-badge language as the main app's
+   .kanban-nav__count (not a plain muted number: this is meant to be
+   noticed). Caps at "99+" past 99 — see setTabsyncBadge in sidepanel.js. */
+.seg-tabs-badge {
+  flex: 0 0 auto;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 15px;
+  text-align: center;
+}
+/* Tabsync went icon-only (no more "Tabsync" label for this to sit beside)
+   — a small plain dot pinned to the icon's corner instead, no count text
+   (see setTabsyncBadge in sidepanel.js), smaller than the old 15px circle. */
+.seg-tabs-badge--dot {
+  position: absolute;
+  top: 2px;
+  right: 3px;
+  width: 8px;
+  height: 8px;
+  min-width: 0;
+  padding: 0;
+  line-height: 0;
+}
+
+/* Quick-copy row for the selected profile's contact fields (email / phone /
+   address / ZIP / LinkedIn / GitHub / last company) — lives in the Apply
+   tab's own white card, right below the Profile picker (Apply-only: the
+   fields it copies are specific to whichever profile Apply has selected,
+   so it doesn't belong on Profile/Settings/Tabsync). No track background of
+   its own — just bare icon buttons sitting directly on the white card. Not
+   the first thing in the card any more (Profile is), so no special
+   top-margin here — same standard gap under Profile as any other field. */
+.profile-shortcuts {
+  display: flex;
+  align-items: center;
+  /* space-between spreads the buttons/dividers out to fill the row edge to
+     edge (matching the Profile field's own width above it) — gap is still
+     the FLOOR spacing between them, space-between just distributes
+     whatever's left over on top of that. */
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0;
+  flex: 0 0 auto;
+}
+/* Between the contact / links / company groups. */
+.profile-shortcuts__divider {
+  width: 1px;
+  height: 18px;
+  background: var(--glass-border);
+  flex: 0 0 auto;
+}
+.profile-shortcut-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+/* var(--overlay-2), not var(--bg-surface) — this now sits ON var(--bg-surface)
+   (the white card itself), same on-white hover fill .cd-field__copy uses. */
+.profile-shortcut-btn:hover:not(:disabled) {
+  background: var(--overlay-2);
+  color: var(--text-primary);
+}
+.profile-shortcut-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+/* Chromium can retroactively flag a just-clicked button :focus-visible on
+   the next keypress (e.g. Shift) even though the focus itself came from a
+   mouse click — same default-outline quirk every other icon button in this
+   file already neutralizes (.header-icon-btn, .autofill-btn, etc.). Without
+   this, tapping a shortcut then touching Shift/Ctrl/any key draws a hard
+   black ring around it that never goes away until something else is clicked. */
+.profile-shortcut-btn:focus-visible {
+  outline: none;
+}
+/* Same "swap to a check mark" feedback as the account menu's own copy
+   buttons (see showCopiedCheck in sidepanel.js) — briefly green on copy. */
+.profile-shortcut-btn.copied {
+  color: var(--success, #22c55e);
+}
+/* Apply's own children (update banner, .panel, the qa-composer that pins to
+   the bottom via margin-top:auto) used to be direct flex children of
+   .main-content — flex:1, filling the viewport, which is what let the
+   composer's own margin-top:auto claim the leftover space. Now one level
+   deeper inside this wrapper, so it needs the exact same treatment itself,
+   or both the 14px gap and the pinned-composer behaviour break. */
+#applyTabPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1 1 auto;
+  /* .apply-scroll (inside .panel) does the scrolling now, between the fixed
+     Profile/Job-Details/Company/Role header and the fixed #qaPanel footer —
+     this card itself no longer scrolls as one unit. */
+  overflow: hidden;
+  min-height: 0;
+}
+/* The card itself: light grey background. Each field is now its own white
+   sub-card (see .cd-field below) rather than a bordered-bottom row, so the
+   gap here is what separates them — no divider needed between items either.
+   Shared by the Account tab's Downloads/Keyboard Shortcuts cards and the
+   Profile detail view. */
+.cd-card {
+  margin-top: 16px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* A specific grey, not whatever --bg-surface-2 itself resolves to (a token
+     other things also share). */
+  background: #f6f8fa;
+  border-radius: 12px;
+}
+/* Settings' own sub-tabs (Prompt/File Names/Shortcuts, #settingsSubTabs) sit above
+   every .cd-card now — same .seg-tabs track/pill as the top-level Apply/
+   Profile/Settings/Tabsync switcher, just re-tinted for a plain white card
+   background instead of the header's own gradient (rgba(255,255,255,0.2)
+   read as nearly invisible there). Each sub-panel's first .cd-card keeps
+   its normal 16px margin-top — that's the gap below the sub-tabs bar, not
+   a double-margin against .tab-panel's own padding any more (the sub-tabs
+   bar is what sits flush against that now). */
+.seg-tabs--sub {
+  background: var(--overlay-1);
+}
+.cd-card__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 700;
+}
+/* Short description under a .cd-card__title — e.g. Bullet Range's own
+   explanation of what it does and the {{token}} it depends on. */
+.cd-card__hint {
+  margin: -2px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.cd-card__hint code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--overlay-1);
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+/* Settings > File Names — one label-above-input pair per file type. */
+.filename-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
+}
+.filename-field label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.filename-field input {
+  font-size: 13px;
+}
+
+/* Job tab, above Generate — the Resume-mode-specific row (ChatGPT URL in
+   Manual mode, API Key check in Auto mode — see sidepanel.html/
+   syncResumeModeUI). Underline-only style: an optional label line, then a
+   leading icon + borderless text + a trailing button sharing one bottom
+   hairline (no boxed input look). The ChatGPT URL row skips the label —
+   its own leading icon (the ChatGPT logomark) already says what it is. */
+.chatgpt-url-field {
+  /* Extra space above this row, on top of .apply-scroll's own 6px flex
+     gap (so Job Description -> this row is 6+8=14px, clearly more open
+     than the uniform 6px gap used everywhere else — explicit request to
+     widen just this one gap). */
+  margin-top: 8px;
+  /* Lines the icon up with Generate's own "1" badge (.gd-main__badge,
+     pinned 8px in from the button's left edge) — this row had no inset of
+     its own, so its icon sat 8px further left than the badge above/below
+     it (confirmed real complaint). */
+  padding-left: 8px;
+}
+.chatgpt-url-field__label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.chatgpt-url-field__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* Forces the API-key row and the ChatGPT-URL row to the exact same
+     height — only one is ever visible at a time (Auto vs Manual mode),
+     and without this their natural heights drifted slightly (an <input>
+     vs a plain <span> render a little differently), shifting Generate's
+     position by a couple px every time the mode toggled (confirmed real
+     complaint). */
+  min-height: 20px;
+}
+.chatgpt-url-field__icon {
+  flex: 0 0 auto;
+  color: var(--text-muted);
+}
+/* Key icon / ChatGPT icon are click targets now (Test/Open buttons removed
+   — see checkMyApiKey/openManualChatGptUrl in sidepanel.js). No hover
+   color change and no focus outline — stays visually identical whether
+   idle, hovered, or just clicked (confirmed real complaint: hover changed
+   its color, clicking drew a black focus ring; neither should happen). */
+.chatgpt-url-field__icon--action {
+  cursor: pointer;
+  outline: none;
+}
+.chatgpt-url-field__value[role="button"] {
+  outline: none;
+}
+#manualChatGptUrlInput.chatgpt-url-field__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+  padding: 0;
+  /* Stops short of the row's full width by Generate's own right padding
+     (.gd-main's 10px) instead of running flush to the same edge the
+     Generate pill's outer edge reaches. */
+  margin-right: 10px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  font-size: 13px;
+}
+#manualChatGptUrlInput.chatgpt-url-field__input:focus {
+  background: transparent;
+}
+/* API Key row's own read-only value (span, not an input — nothing to type
+   here, see getMyApiKeyPreview) sharing the same row shape. Clickable now
+   too (runs the same test the key icon does — Test button removed). */
+.chatgpt-url-field__value {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-family: "Lato", monospace;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.chatgpt-url-field__value--empty {
+  color: var(--text-faint);
+  font-family: inherit;
+}
+
+/* Test result — green check / red X in the old Test button's spot (see
+   checkMyApiKey in sidepanel.js). Same 14px size as the row's own icons. */
+.key-test-result {
+  flex: 0 0 auto;
+  display: inline-flex;
+}
+.key-test-result--ok {
+  color: #16a34a;
+}
+.key-test-result--error {
+  color: #dc2626;
+}
+/* In-flight state (checkMyApiKey) — same spin keyframe every other loading
+   glyph in this panel already uses (.detect-pill's own refresh icon,
+   Auto Apply's running pill, etc). */
+.key-test-result--testing {
+  color: var(--text-muted);
+}
+.key-test-result--testing svg {
+  animation: spin 0.8s linear infinite;
+}
+
+/* Group key cycling (</> + "2/5") — only shown when the resolved key is a
+   Group (a pool of keys, see the BCD web app's API Key modal Single/Group
+   toggle). Sits at the end of the API Key row, right of the test result
+   dot. See renderApiKeyGroupUI in sidepanel.js. */
+.apikey-groupnav {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.apikey-groupnav__btn {
+  /* Overrides the generic button rule's own padding/border/min-width —
+     without this, that padding (9px 14px) inflates a flex item's
+     min-content size past an explicit width that's smaller than it, so
+     the 18px below got silently ignored and the button rendered pill-wide
+     instead of a tight square. */
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  min-width: 0;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  outline: none;
+}
+.apikey-groupnav__btn:hover {
+  background: var(--bg-hover, rgba(0, 0, 0, 0.06));
+  color: var(--text-primary);
+}
+.apikey-groupnav__btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+  background: transparent;
+}
+.apikey-groupnav__index {
+  flex: 0 0 auto;
+  min-width: 26px;
+  text-align: center;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+/* Click a {{token}} name (Bullet Range's {{bullet_count}}, more to come) to
+   copy it — cursor + hover say it's clickable, .copied is a brief confirmation
+   pulse (text stays put, only the background flashes). */
+.token-copy {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--overlay-1);
+  color: var(--text-secondary);
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.token-copy:hover {
+  background: var(--overlay-2, var(--overlay-1));
+  color: var(--text);
+}
+.token-copy.copied {
+  background: var(--accent-soft, #dcfce7);
+  color: var(--accent, #16a34a);
+}
+
+.cd-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg-surface);
+  border-radius: 10px;
+}
+.cd-field__icon {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+}
+/* Field name (Full Name / Email / Phone / …), optionally prefixed with a
+   small icon (Location/LinkedIn/GitHub) — same fixed-width label column as
+   the main BCD app's own Profile detail panel (client/src/App.css's
+   .cd-field__label), so rows line up in a column instead of each value
+   starting wherever its own label happens to end. */
+.cd-field__label {
+  flex: 0 0 auto;
+  width: 78px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+/* Settings > Prompt tab's Apply Settings card has longer labels ("Auto-fill
+   Prompt", "Education Dates") than .cd-field__label's shared 78px column
+   (sized for short ones like Email/Phone/Location elsewhere) comfortably
+   fits — widened just here rather than for every .cd-field in the panel. */
+#settingsPromptPanel .cd-field__label {
+  width: 120px;
+}
+.cd-field__value {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+/* LinkedIn/GitHub render their value as a real link. */
+a.cd-field__value {
+  color: var(--accent, #2563eb);
+  text-decoration: none;
+}
+a.cd-field__value:hover {
+  text-decoration: underline;
+}
+.cd-field__copy {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.cd-field__copy:hover {
+  background: var(--overlay-2);
+  color: var(--text-primary);
+}
+.cd-field__copy.copied {
+  color: var(--success);
+}
+.cd-field__copy:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* Profile tab: same custom-select dropdown as Apply's own Profile picker
+   (#profileSelect/#profileTabSelect share the .custom-select/.select-*
+   classes below), plus the picked profile's Resume rendered as plain
+   .cd-card blocks (Profile/Experience/Education) directly into
+   #profileTabDetail — see populateProfileTabSelect/chooseProfileTabView/
+   renderProfileTabDetail in sidepanel.js. No accordion/card-list any more. */
+
+/* Education/Experience entries (profile card's expanded detail panel) — each
+   is its own small grey card, not a border-bottom-divided row. The
+   secondary details (company/location/period for Experience,
+   University/Year for Education) sit in their own nested white sub-box(es)
+   so they read as distinct from the entry's own grey surface. */
+.cd-entry {
+  padding: 12px 0;
+  background: #f6f8fa;
+  border-radius: 10px;
+}
+.cd-entry + .cd-entry {
+  margin-top: 8px;
+}
+/* "Major" (Education only) — a small label above the degree title. */
+.cd-entry__label {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.cd-entry__title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+/* The role, right under the company title (expEntryHtml) — "N/A" same as
+   location below when a profile has none set. */
+.cd-entry__sub {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+/* A real role is set — same red as the Role field's own warning treatment
+   in the main app's AddProfileModal (better to leave it blank). */
+.cd-entry__sub--warn {
+  color: #e8443b;
+}
+/* The small numbered index next to each entry's title. */
+.cd-entry__num {
+  margin-left: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  vertical-align: super;
+}
+/* Experience: company/location + period, one white pill below the title. */
+.cd-entry__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: var(--bg-surface);
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+.cd-entry__row span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cd-entry__row span:last-child {
+  flex: 0 0 auto;
+  color: var(--text-muted);
+}
+/* Education: University (white) and Year (grey, tinted a step darker than
+   the entry card itself so it still reads as its own box) side by side. */
+.cd-entry__cols {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.cd-entry__col {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 8px 10px;
+  background: var(--bg-surface);
+  border-radius: 8px;
+}
+.cd-entry__col--year {
+  flex: 0 0 auto;
+  background: var(--overlay-2);
+}
+.cd-entry__flabel {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.cd-entry__fvalue {
+  display: block;
+  margin-top: 1px;
+  font-size: 12.5px;
+  color: var(--text-primary);
+}
+
+/* Shared full-height card for all four tabs (Apply/Profile/Settings/Tabsync)
+   — the card always fills the space under the header/segmented tabs (flex:1
+   inside .main-content's own flex column), so it reads as one consistent
+   surface even when a tab's content is short. The card itself never grows
+   past that — min-height:0 lets it actually shrink to the space .main-content
+   gives it (a flex item's default min-height is its own content's height,
+   which is what let a tall tab push the whole PAGE taller and scroll
+   instead); overflow-y:auto makes the card scroll its own content
+   internally once it doesn't fit, with the header/segmented tabs above it
+   staying put. */
+.tab-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: var(--bg-surface);
+  border: 1px solid var(--glass-border);
+  /* Down from an earlier 20px — a whole-viewport card read as too round at
+     that radius. */
+  border-radius: 12px;
+  /* Left/right: 1.5x the old 15px (22.5px), then -2px — the card's own
+     content (the profile dropdown, Company/Role fields) was sitting almost
+     flush against its border. */
+  padding: 22px 20.5px 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.tab-panel-placeholder {
+  margin: 24px 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* The card surface itself now lives on .tab-panel (shared by all three
+   tabs, so Profile/Settings get the same full-height card) — .panel is just
+   Apply's own flex layout inside it: .controls above, .qa-composer pinned
+   to the bottom via margin-top:auto (see .tab-panel below). */
+.panel {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.panel-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.header-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Apply tab's middle section — Job Description through the dupe banner. The
+   fixed fields above (Profile/Job Details/Company/Role, still in .controls)
+   and the Ask composer below (#qaPanel) stay put; only this scrolls. */
+.apply-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  /* Without this, the last row (Mark as Applied) sits flush against this
+     scroll container's own bottom clipping edge — its pill border/shadow
+     reads as visibly cut off there, even though #qaPanel right below still
+     has its own separate clearance. */
+  padding-bottom: 10px;
+  /* .tab-panel's own right padding (20.5px) sits OUTSIDE this element, so its
+     scrollbar — which hugs its OWN border, not .tab-panel's — was rendering
+     20.5px in from the card's true edge. Bleed this element's box out into
+     that padding with a negative margin, then reclaim the same amount as
+     this element's own padding so the content lines up exactly as before —
+     only the scrollbar itself moves, out to the card's real edge. */
+  margin-right: -20.5px;
+  padding-right: 20.5px;
+}
+
+/* Profile tab — same fixed-header/scrolling-body split as .apply-scroll
+   above (identical bleed-the-scrollbar-to-the-card-edge trick), just for
+   the picker dropdown + Resume instead of Apply's own fields. */
+.profile-tab-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin-right: -20.5px;
+  padding-right: 20.5px;
+}
+
+/* With the field labels removed in favour of placeholders, drop the
+   internal field stack so the input takes the full row. */
+.field {
+  gap: 0;
+}
+
+/* The hidden attribute must beat display:flex set on .field etc. */
+[hidden] {
+  display: none !important;
+}
+
+/* The header's right-side icon buttons — just Sign out now (see
+   .header-actions in sidepanel.html for the Resume-mode toggle sitting
+   next to it). */
+.header-icon-btn {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--ic, var(--text-secondary));
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+.header-icon-btn:not(:disabled):hover {
+  color: var(--ic, var(--accent));
+  background: color-mix(in srgb, var(--ic, var(--accent)) 16%, transparent);
+  transform: translateY(-1px);
+}
+
+.header-icon-btn:not(:disabled):active {
+  transform: translateY(0);
+}
+
+.header-icon-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ic, var(--accent)) 40%, transparent);
+}
+
+.header-icon-btn:disabled {
+  opacity: 0.32;
+  cursor: not-allowed;
+}
+
+/* Resume mode (Auto/Manual) — used to be its own "Resume Mode" card in the
+   Settings tab's Shortcuts sub-tab; same id/JS (syncResumeModeUI,
+   initResumeModeToggle in sidepanel.js), just a compact header pill now,
+   reachable from every tab. Fully rounded track + the SAME translucent
+   glass background as the main tab strip (#mainTabs/.seg-tabs) right below
+   it in the header — was a flat near-opaque box with its own border, which
+   read as a different, heavier component instead of a small sibling of
+   that strip. Sized to content instead of stretching (.settings-menu__seg's
+   flex:1 1 0 per button would be wrong for a tight header rail). */
+.header-mode-toggle {
+  display: flex;
+  flex-shrink: 0;
+  padding: 2px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+}
+.header-mode-toggle__btn {
+  padding: 4px 9px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.header-mode-toggle__btn.active {
+  background: var(--bg-elevated);
+  color: var(--accent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+/* Icon buttons, not text — grey at rest (no background pill behind the
+   active one any more, same flat look idle/hover/active share otherwise).
+   Icons are icons/pro.webp, icons/free.webp, icons/manual.webp — the
+   project's own source PNGs (icons/Pro.png etc.), recolored to each
+   mode's own color (pink/green/blue) and exported as webp. Since they're
+   flat raster images (not currentColor-able SVGs), the grey "at rest"
+   look is done with a grayscale filter instead, lifted on .active —
+   same palette as the Generate/Auto-fill step badge and row border (see
+   body[data-resume-mode] in this file). */
+.header-mode-toggle--icons {
+  position: relative;
+  gap: 6px;
+  /* 2px top/bottom — slightly more breathing room than the 26px avatar
+     height alone called for, +2px total on top of that exact match.
+     Left/right down from 7px — that read as visibly more pill than the 3
+     buttons it holds, extra gradient showing past where the icons
+     actually sit (confirmed real complaint: "mode background rounded box
+     seems bigger than it"). 3px hugs the buttons instead. */
+  padding: 2px 3px;
+  /* Vivid version of the gradient — same pink->purple->green stops as the
+     border ring below. Auto-fill's own fill's EXACT pastel color was
+     tried (and reverted back to this) — it's a near-white tint made for
+     sitting on a plain white card, and reads as grey/washed-out against
+     this header's own colorful gradient backdrop. A plain `background`
+     (not the double-background-image border trick) is safe here
+     regardless of being opaque or translucent — the ring is its own
+     separate ::before layer below, painted ON TOP, so it never interacts
+     with whatever this element's own background is. */
+  background: linear-gradient(90deg, rgba(255, 179, 209, 0.2), rgba(201, 179, 255, 0.2), rgba(169, 232, 201, 0.2));
+}
+/* Gradient ring — same pink->purple->green angle as Generate's own border,
+   deepened a step past its exact stops (explicit request: thicker-looking
+   COLOR, not a thicker width — the width stays 1.5px, same as Generate's).
+   A pseudo-element masked down to just the border-width band
+   (mask-composite: exclude cuts the padding-box out of the border-box,
+   leaving only the ring) so it paints ON TOP of, but never blends with,
+   the translucent fill above — the fix for the bleed-through problem the
+   single-element double-background version had. inset: 0 (not a
+   negative outset) keeps the ring flush with the box's own existing
+   edge, same as a real `border` (box-sizing: border-box) would.
+   Ring thickness comes from a REAL `border` here, not `padding` + the
+   default/content-box mask layer — that version rendered visibly
+   uneven (thick top, thin bottom — confirmed real complaint, A/B-tested
+   side by side: border+padding-box/border-box rendered a perfectly even
+   ring, padding+content-box did not, on this exact Chromium build). */
+.header-mode-toggle--icons::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1.5px solid transparent;
+  background: linear-gradient(90deg, #ff85c0, #a78bfa, #6ee7b7) border-box;
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0) border-box;
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.header-mode-toggle--icons .header-mode-toggle__btn {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 24px;
+  padding: 0;
+}
+.header-mode-toggle--icons .header-mode-toggle__btn.active {
+  background: transparent;
+  box-shadow: none;
+}
+.header-mode-toggle__icon {
+  display: block;
+  /* max-width/height + auto, not a fixed width/height — the three source
+     icons aren't all the same aspect ratio once cropped tight to their own
+     shape (the lightning bolt is taller than wide, the leaf wider than
+     tall), so a fixed square box stretched them. This caps the LARGER
+     dimension at 16px and lets the other scale proportionally. */
+  width: auto;
+  height: auto;
+  max-width: 16px;
+  max-height: 16px;
+  filter: grayscale(1) opacity(0.55);
+  transition: filter 0.12s ease;
+}
+.header-mode-toggle__btn.active .header-mode-toggle__icon {
+  filter: none;
+}
+
+.action-row {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 8px;
+}
+
+/* Three action buttons (Detect / Download CV / Generate) on one row. */
+.action-row-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.action-row-3 > button {
+  width: 100%;
+  padding: 9px 6px;
+  font-size: 11.5px;
+  gap: 6px;
+  min-width: 0;
+}
+
+.action-row-3 .btn-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.action-row-3 svg {
+  flex-shrink: 0;
+}
+
+/* Download CV — standalone, between Job description and Tone. */
+/* =====================================================================
+   Download CV — animated "botao" button. A compact pill that morphs into
+   a spinner circle with a bouncing download arrow on hover. The morph only
+   fires once a CV is READY (:not(:disabled)); while disabled it stays a
+   muted "not ready yet" pill so the state still reads clearly.
+   ===================================================================== */
+/* Fixed-size hover target. The morph is triggered from THIS stable box, not
+   from the button itself: a button that shrinks on its own :hover slips out
+   from under a stationary cursor, which ends :hover, which grows it back
+   under the cursor, which starts :hover again — an infinite flicker loop.
+   The wrapper never resizes, so the cursor stays over it throughout. */
+/* Basic Auto-fill — full-width borderless colorful pill, standalone at the
+   bottom of the panel (the final action, below Generate and the download
+   cluster). Attaches the generated CV + cover letter straight to the
+   application form (no local download). Deeper wash + lift on hover; muted
+   when disabled. */
+/* Same height/font/colour AND the same colourful gradient-ring border as
+   the sign-in page's "Sign in using Google" button (.login-google-btn) —
+   the padding-box/border-box two-layer background trick, not a flat grey
+   border. Radius matches the Ask-anything input (--r-md), not a full pill. */
+.autofill-btn {
+  position: relative;
+  /* Clips its own progress fill (below) to the button's rounded shape. */
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  /* .btn-text is absolutely positioned now (see below) — with only
+     .btn-hotkey left in normal flow, flex-end is what puts it flush at the
+     right edge instead of centering it (the sole flex item otherwise). */
+  justify-content: flex-end;
+  gap: 6px;
+  /* flex-grow must be 0: this sits directly in .apply-scroll, a column flex
+     container, so a grow of 1 (the old value) let it stretch taller than
+     38px to soak up whatever vertical space the column had left over —
+     the same growth bug #copyOpenTabsBtn was separately pinned against
+     below. Width still fills the row via .apply-scroll's default
+     align-items:stretch, so dropping grow doesn't affect that. */
+  flex: 0 0 auto;
+  width: 100%;
+  /* height alone doesn't clip overflowing inline content (icon + text) —
+     .gd-main (Generate) avoids that with display:inline-flex + align-items,
+     which is what actually keeps its height fixed; this had neither, so its
+     content could push it taller than the 38px it was nominally set to. */
+  height: 38px;
+  /* More breathing room above it than .controls' own 6px gap gives every
+     row — Generate/Download and Auto-fill read as two distinct actions,
+     not one continuous stack. */
+  margin-top: 8px;
+  /* Right halved (was 20px both sides) — the gap past the hotkey chip read
+     as too big. */
+  padding: 0 10px 0 20px;
+  border: 1.5px solid transparent;
+  border-radius: var(--r-md);
+  /* Plain white at rest — the fill (below) is what turns light-gradient,
+     first sweeping in as progress, then staying that colour once done
+     (never reverts back to white after a completed run). */
+  background-image: linear-gradient(#fff, #fff), linear-gradient(90deg, #ffb3d1, #c9b3ff, #a9e8c9);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  color: #111827;
+  font-weight: 700;
+  font-size: 0.8rem;
+  transition: filter 0.15s ease;
+}
+/* Auto-fill's own progress fill — same clip-path-reveal mechanism as
+   Generate's .gd-main__fill (see setAutofillProgress in sidepanel.js), a
+   fully separate/independent fill driven off Auto-fill's own real
+   checkpoints rather than Generate's timer. A light tint of the border's
+   own gradient (same pairing as App.css's .mtg-event--brand meeting chip),
+   not the vivid border colour itself — the border alone stays vivid. A
+   direct child of .autofill-row (sidepanel.html — both the Job tab's own
+   row and the Form Questions modal's footer row), not of the autofill-btn
+   it visually fills, so inset:0 spans the WHOLE row including the attached
+   segment (view-forms / Stop) instead of stopping at the button's own
+   share of it — same reasoning as .gd-main__fill/.generate-row. */
+.autofill-btn__fill {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(90deg, #fff4f8, #f7f4ff, #f2fcf7);
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 0.4s ease-out;
+}
+.autofill-btn .btn-hotkey {
+  position: relative;
+  z-index: 1;
+}
+/* Absolutely positioned (was flex:1 1 auto + text-align:center, which only
+   centered the label within whatever space was left after .btn-hotkey's
+   own width — it visibly drifted as the hotkey's width changed). left:0/
+   right:0 spans the button's FULL box regardless of the hotkey, so
+   centering is completely independent of it; the hotkey free-floats at the
+   right via the button's own flex-end. Same fix as .gd-main .btn-text, just
+   without that one's extra Download-compensation transform (Auto-fill
+   isn't split). */
+.autofill-btn .btn-text {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  text-align: center;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.autofill-btn:focus-visible {
+  outline: none;
+  border-color: #111827;
+}
+
+.autofill-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Wraps the Job tab's #autofillBtn into a pill row — also reused as-is by
+   the Apply tab's own Commit/Stop row (#autofillReviewCommitBtn +
+   #autofillReviewStopBtn), same split-segment shape when a Stop button is
+   attached. Same pattern as .generate-row/#downloadCvBtn above (and the
+   identical gradient — .autofill-btn's own colours already matched
+   .generate-row's). Duplicated rather than sharing .generate-row's class:
+   same look, different row, and the two buttons' own classes (.gd-main vs
+   .autofill-btn) aren't interchangeable, so there's nothing real to factor
+   out. */
+.autofill-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-top: 8px;
+  height: 38px;
+  border: 1.5px solid transparent;
+  border-radius: var(--r-md);
+  background-image: linear-gradient(#fff, #fff), linear-gradient(90deg, #ffb3d1, #c9b3ff, #a9e8c9);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  overflow: hidden;
+}
+/* .autofill-btn normally draws its OWN full pill (border/background) when
+   standing alone (e.g. the Form Questions modal's own commit button) — as
+   the row's left segment instead, the ROW draws that, so this segment just
+   needs to go transparent/flexible. border-color stays "transparent" from
+   the base rule (unchanged) rather than being zeroed here, so
+   .autofill-btn:focus-visible's own border-color swap still shows a focus
+   ring without a specificity fight over which rule wins. background-color
+   DOES need zeroing though, separately from background-image — the plain
+   `button` element rule (panel.css) sets background: var(--overlay-1), a
+   faint dark tint, as a bare background-color; background-image: none
+   above only ever cancelled .autofill-btn's OWN image layers, never that
+   tint, so it sat there unnoticed underneath the gradient the whole time
+   and only became visible once the image layers were removed — read as a
+   flat grey wash across the whole segment instead of the row's own white. */
+.autofill-row > .autofill-btn {
+  flex: 1 1 auto;
+  width: auto;
+  height: 100%;
+  margin-top: 0;
+  background-image: none;
+  background-color: transparent;
+}
+
+/* The Job tab's own Auto-fill row — icon + title/subtitle instead of the
+   plain centered label every other .autofill-row/.generate-row use. Taller
+   to fit two lines, so the fixed 38px height/radius both need their own
+   override here rather than touching the shared base rules (which the
+   Form Questions modal's own commit button still relies on as-is). */
+/* height/border-radius otherwise inherit straight from the shared
+   .autofill-row base (38px, same as Generate's own row) — no override
+   needed now that the subtitle's gone and this is single-line content
+   again, same height class as every other split-row button. */
+.autofill-row--card > .autofill-btn {
+  justify-content: flex-start;
+  /* Left reduced to match the badge's own top/bottom gap (same reasoning
+     as .gd-main__badge above) — right stays 10px, that's spacing before
+     the title text, not the badge. */
+  padding: 0 10px 0 8px;
+  gap: 8px;
+}
+/* .btn-text's own absolute-centered positioning (the plain-label rows'
+   layout) doesn't apply here — this button has no element of that class,
+   just the icon + title laid out in normal flow. */
+/* buttons/auto-fill.png already has its own rounded pink background/shape
+   baked in — this is just sizing, not a CSS-drawn box behind it. Smaller
+   than its own first pass (36px) so it fits the shared 38px row height
+   with a bit of breathing room, same as the hotkey chips/view icon beside
+   it. */
+/* Plain numbered badge — Auto-fill's own icon spot (1) and the attached
+   view-forms button's own icon spot (2), replacing the image/SVG that used
+   to sit in each. Same shared style both places. */
+.autofill-step-badge {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  /* Lato's digit glyphs sit slightly low within a line-height:1 box (more
+     gap above the glyph than below it under plain grid place-items:center),
+     confirmed by overlaying a center guideline on a zoomed render — this
+     bottom padding nudges the glyph up to actually look centered. */
+  padding: 0 0 2px;
+  border-radius: 6px;
+  /* 80% opacity, not the fully solid pink this started as — a softer,
+     slightly see-through tint instead of a flat vivid block. Manual
+     mode's own color (the default/fallback below is this one — Manual
+     keeps "the current color" unchanged, only Pro/Free override it, see
+     body[data-resume-mode] below). */
+  background: linear-gradient(135deg, rgba(251, 113, 133, 0.8), rgba(236, 72, 153, 0.8));
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+}
+/* Recolors Generate/Auto-fill's own "1"/"2" badge per Resume mode (see
+   syncResumeModeUI in sidepanel.js, which sets this attribute) — same
+   palette as the header's own mode-toggle icons (icons/pro.webp etc.,
+   recolored from the project's own icons/Pro.png source set): pink (Pro),
+   green (Free), blue (Manual). */
+body[data-resume-mode="auto"] .autofill-step-badge {
+  background: #ec4899;
+}
+body[data-resume-mode="free"] .autofill-step-badge {
+  background: #22a71e;
+}
+body[data-resume-mode="manual"] .autofill-step-badge {
+  background: #12c1f3;
+}
+/* Generate's own badge (1) — a normal-flow sibling inside #autofillBtn's
+   row works for Auto-fill (2) since that whole row is already left-aligned
+   flex content, but Generate's own button still centers its label across
+   the WHOLE split pill (see .gd-main .btn-text below), so this one is
+   pinned absolutely to the button's left edge instead, with the label's
+   own left inset making room for it (both idle and busy — see that rule's
+   own comment on why the two no longer need different positioning). */
+.gd-main__badge {
+  position: absolute;
+  /* Matches the badge's own top/bottom gap to the 38px row (vertically
+     centered via translateY below, ~8px each side) — was 10px, visibly
+     wider than that vertical gap. */
+  left: 8px;
+  top: 50%;
+  z-index: 1;
+  transform: translateY(-50%);
+}
+.autofill-btn__text {
+  min-width: 0;
+  text-align: left;
+}
+.autofill-btn__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Own segment outside #autofillBtn (unlike Generate's hotkey, nested inside
+   #generateBtn) — no dividers either side of it any more (redundant next to
+   .download-btn-wrap's own divider right after it); position+z-index keeps
+   it above .autofill-btn__fill (z-index:0) once that progress sweep reaches
+   full width, same as .gd-main .btn-hotkey does for Generate's own hotkey. */
+.autofill-row--card .btn-hotkey {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  /* .autofill-row's own gap:0 left this chip flush against
+     .download-btn-wrap's divider right after it — Generate's own hotkey
+     gets this same gap for free from .gd-main's right padding. */
+  margin-right: 10px;
+}
+.autofill-row--card .download-btn-wrap,
+.autofill-row--card .gd-download {
+  height: 100%;
+}
+
+/* ============================================================
+   Tabsync — copy open tabs' URLs to the clipboard / open a pasted list.
+   Feedback for both buttons is a panelToast (see copyOpenTabsToClipboard/
+   openPastedTabs in sidepanel.js) — neither button's own label/icon
+   changes on click.
+   ============================================================ */
+.tabsync-stats {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+/* LinkedIn Jobs sub-tab: Location + Role filters, 2-in-a-line above the
+   list (see applyTabsyncLinkedinFilter). Denser than the base select/
+   input[type="text"] rules above (34px-ish default is too tall for this
+   sidebar). */
+.tabsync-filter-row {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.tabsync-filter-row select,
+.tabsync-filter-row input[type="text"] {
+  width: 100%;
+  height: 32px;
+  /* Matches .cd-card's own 12px — the Settings tab's own cards' padding —
+     instead of a narrower value of its own. */
+  padding: 0 12px;
+  font-size: 12.5px;
+}
+.tabsync-filter-row select {
+  cursor: pointer;
+}
+/* Solid black, full width — the main action pinned at the bottom of the
+   panel on both Tabsync sub-tabs (.autofill-btn's own var(--r-md) radius). */
+.tabsync-open-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 38px;
+  padding: 0 20px;
+  border: none;
+  border-radius: var(--r-md);
+  background: #111827;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tabsync-open-btn:hover:not(:disabled) {
+  filter: brightness(1.25);
+}
+.tabsync-open-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Pins Open Tabs at the very bottom of the panel, full width — Copy Links
+   used to split this row 50/50 with it; it's moved into the Links panel
+   itself now (Links-only, .tabsync-copy-btn below), so this is just a
+   spacing wrapper around the one remaining button. */
+.tabsync-actions-row {
+  flex: 0 0 auto;
+}
+
+/* Copy Links — Links-tab-only now (see sidepanel.html's #tabsyncManualPanel),
+   same white-fill/gradient-border look as Generate (.generate-row) instead
+   of Open Tabs' solid black, so the two read as different weight: this one
+   optional/supporting, Open Tabs the main action. */
+.tabsync-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 38px;
+  margin-top: 10px;
+  padding: 0 20px;
+  border: 1.5px solid transparent;
+  border-radius: var(--r-md);
+  background-image: linear-gradient(#fff, #fff), linear-gradient(90deg, #ffb3d1, #c9b3ff, #a9e8c9);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  color: #111827;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tabsync-copy-btn:hover {
+  filter: brightness(0.97);
+}
+
+/* Full-height layout: the Links textarea grows to fill the space between
+   the sub-tabs and the stats row, and Copy Tabs/Open Tabs sit pinned at the
+   very bottom of the panel. L/R padding is just .tab-panel's own now — no
+   extra needed on top of it any more. */
+#tabsyncTabPanel .controls {
+  flex: 1;
+  min-height: 0;
+}
+/* LinkedIn Jobs / Links sub-tab bar — fixed height, doesn't compete with
+   .tabsync-subpanel below it for the column's flexible space. */
+#tabsyncSubTabs {
+  flex: 0 0 auto;
+}
+/* Whichever sub-panel is visible (see switchTabsyncSubTab) claims the same
+   flexible space .field alone used to own directly under .controls — this
+   wrapper is what .field's own 4:1 split (below) is now relative to. */
+.tabsync-subpanel {
+  flex: 1 1 0%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* .controls' own 6px flex gap above this wasn't enough on its own — plus
+     this 10px totals 16px below #tabsyncSubTabs, matching .cd-card's own
+     margin-top (the gap below Settings' own sub-tabs bar). */
+  margin-top: 10px;
+}
+/* The Links field now fills its whole share of the sub-panel's space (up to
+   the Copy Links button below it) — .tabsync-spacer used to claim 20% of it
+   as blank space on purpose, reading as more breathing room, but the
+   textarea itself needed to be taller more than that blank gap was worth. */
+#tabsyncTabPanel .field {
+  flex: 1 1 0%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.tabsync-spacer {
+  flex: 0 0 0%;
+  min-height: 0;
+}
+#tabsyncInput {
+  flex: 1;
+  min-height: 0;
+  resize: none;
+}
+
+/* LinkedIn Jobs sub-tab: a bordered table — the whole list gets an outer
+   border (rounded, like a real table), each row a hairline separator below
+   it instead of the old floating hover-card rows. Per row: flag on the
+   left, centered against the row's full height; role top-right of the flag
+   with the date pinned to that row's own top-right corner; link runs
+   full-width on its own line underneath (see tabsyncLinkedinRowHtml). */
+.tabsync-linkedin-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid var(--border-color, var(--glass-border));
+  border-radius: var(--r-sm, 6px);
+}
+.tabsync-linkedin-row {
+  display: grid;
+  grid-template-columns: 20px 1fr auto;
+  grid-template-rows: auto auto;
+  column-gap: 8px;
+  row-gap: 2px;
+}
+a.tabsync-linkedin-row {
+  box-sizing: border-box;
+  width: 100%;
+  /* Horizontal matches .cd-card's own 12px (Settings tab's Resume/Prompt/
+     Other cards) — was a narrower 10px. Vertical stays 7px, unrelated to
+     that comparison (row height, not inset). */
+  padding: 7px 12px;
+  color: var(--text-primary);
+  text-decoration: none;
+  border-bottom: 1px solid var(--border-color, var(--glass-border));
+}
+.tabsync-linkedin-list a.tabsync-linkedin-row:last-child {
+  border-bottom: none;
+}
+a.tabsync-linkedin-row:hover {
+  background: var(--bg-hover);
+}
+.tabsync-linkedin-row__flagcol {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tabsync-linkedin-row__flag {
+  flex: 0 0 auto;
+  display: block;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+.tabsync-linkedin-row__flag-emoji {
+  flex: 0 0 auto;
+  font-size: 13px;
+  line-height: 1;
+}
+.tabsync-linkedin-row__role {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.tabsync-linkedin-row__date {
+  grid-column: 3;
+  grid-row: 1;
+  align-self: start;
+  white-space: nowrap;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.tabsync-linkedin-row__link {
+  grid-column: 2 / 4;
+  grid-row: 2;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* Prev/Page N of M/Next, pinned under the list — hidden entirely when
+   everything fits on one page (see renderTabsyncLinkedinList). */
+.tabsync-pager {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding-top: 8px;
+}
+.tabsync-pager__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 84px;
+  text-align: center;
+}
+
+/* Generate + Download CV, combined into one seamless split button — now the
+   SAME white-fill/gradient-border look as Auto-fill (.autofill-btn) instead
+   of a solid dark pill, so the two read as one visual family. The gradient
+   ring wraps the whole ROW (not each segment) via the same padding-box/
+   border-box two-layer background trick Auto-fill uses; .gd-main/.gd-download
+   are plain transparent segments inside it, split by a hairline divider.
+   overflow:hidden clips Generate's own progress fill (below) to the row's
+   rounded shape. */
+.generate-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  /* .apply-scroll's own 6px gap already spaces every child uniformly —
+     this margin-top stacks ON TOP of that (margin and flex gap add, they
+     don't collapse), so the space below the mode row (API key/Free
+     notice/ChatGPT URL, whichever is showing) read as noticeably bigger
+     than the space above it (confirmed real complaint: "small top, big
+     bottom"). Down from the original 10px — a smaller first pass at 8px
+     (bottom 16px -> 14px total) read as no change at all, so this is a
+     more decisive cut. */
+  margin-top: 4px;
+  height: 38px;
+  border: 1.5px solid transparent;
+  border-radius: var(--r-md);
+  /* Plain white at rest — the fill (.gd-main__fill below, a direct child of
+     this row) is what turns light-gradient, sweeping in as progress then
+     staying that colour once done (never reverts to white after a
+     completed run) — across the row's FULL width, Generate and Download
+     both, since both segments' own backgrounds stay transparent. */
+  background-image: linear-gradient(#fff, #fff), linear-gradient(90deg, #ffb3d1, #c9b3ff, #a9e8c9);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  overflow: hidden;
+}
+/* No more Pro-mode gradient reversal here — Pro's own color is pink now
+   (see icons/pro.webp / the step badge above), which is already this
+   gradient's own default leading color, so the plain unreversed version
+   above already matches without an override. */
+
+.gd-main {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  /* .btn-text is absolutely positioned now (see below) — with only
+     .btn-hotkey left in normal flow, flex-end is what puts it flush at the
+     right edge instead of centering it (the sole flex item otherwise). */
+  justify-content: flex-end;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  /* Right halved (was 20px both sides) — the gap past the hotkey chip read
+     as too big. */
+  padding: 0 10px 0 20px;
+  border: none;
+  background: transparent;
+  color: #111827;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+/* Progress fill — a clip-path reveal (see setGenProgress in sidepanel.js,
+   which just grows this from 0% to 100% via clip-path instead of animating
+   a separate bar's width) of a light tint of the row's own border gradient
+   (same pairing as App.css's .mtg-event--brand meeting chip) — not the
+   vivid border colour itself, that stays vivid. A direct child of
+   .generate-row (see sidepanel.html), sized to the WHOLE row via inset:0
+   against it, so the sweep reaches the row's actual right edge instead of
+   stopping at .gd-main's own share of it. Sits behind everything else in
+   the row (z-index 0, and first in DOM order). */
+.gd-main__fill {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(90deg, #fff4f8, #f7f4ff, #f2fcf7);
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 0.4s ease-out;
+}
+.gd-main .btn-hotkey {
+  position: relative;
+  z-index: 1;
+}
+/* Absolutely positioned (was flex:1 1 auto + text-align:center) — that
+   centered the label only within the space left over AFTER .btn-hotkey's
+   own width, so the label visibly drifted left/right as the hotkey's
+   width changed (Ctrl Q vs Ctrl Shift Q) or was hidden entirely mid-
+   generation. left:0/right:0 spans .gd-main's FULL box regardless of the
+   hotkey, so centering is completely independent of it. Left-aligned with
+   room for .gd-main__badge (the "1" badge) now, same inset in both idle
+   and busy states — used to only be true while busy (confined to .gd-main's
+   own share so long in-progress stage labels stopped before Download/Stop's
+   left edge instead of running underneath it, see setGenerateRunning's own
+   comment on the now-removed .gd-main--busy toggle); the badge means the
+   idle label needs that same left-aligned treatment too, so there's no
+   longer a reason for the two states to differ. */
+.gd-main .btn-text {
+  position: absolute;
+  /* badge's own left (8px) + width (22px) + the same 8px gap the badge
+     keeps from the row's own top/bottom edges. */
+  left: 38px;
+  right: 10px;
+  z-index: 1;
+  text-align: left;
+  white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Live keycap hint on Generate/Auto-fill — shows the current
+   chrome://extensions/shortcuts binding (e.g. Ctrl Q), kept in sync by
+   sidepanel.js's renderShortcuts()/renderHotkeyChip(). Empty (no kbd
+   children) when the command is unbound, so it takes up no space. Sits at
+   the right edge via its parent's justify-content:flex-end now that
+   .btn-text is out of flow (absolute) — see the buttons' own rules. */
+.btn-hotkey {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex: 0 0 auto;
+}
+.btn-hotkey kbd {
+  font-family: inherit;
+  line-height: 1;
+  padding: 4px 5px;
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+/* Both Generate and Auto-fill are the same white/light fill now — same dark
+   outlined chip on both. Through several passes now (0.07/0.16/solid
+   #111827 -> 0.045/0.12/0.65 -> 0.025/0.07/0.4, that last one read as too
+   washed out to read clearly) — settled here: light chip, but the glyph
+   itself stays legible. */
+.gd-main .btn-hotkey kbd,
+.autofill-row--card .btn-hotkey kbd {
+  background: rgba(17, 24, 39, 0.035);
+  border: 1px solid rgba(17, 24, 39, 0.09);
+  color: rgba(17, 24, 39, 0.55);
+}
+.gd-main:hover:not(:disabled) {
+  filter: brightness(0.97);
+}
+/* While generating, Generate is disabled but stays full-colour — its own
+   fill (above) is the "busy" signal, not a greyed-out button. Download
+   still dims when disabled (there's genuinely nothing to download yet), so
+   that one keeps the opacity. Explicit opacity:1 — the generic
+   button:disabled rule (0.5) otherwise still wins, since a more specific
+   rule not mentioning a property doesn't cancel a less specific one that
+   does. */
+.gd-main:disabled {
+  opacity: 1;
+  cursor: not-allowed;
+}
+.gd-download:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.download-btn-wrap {
+  position: relative;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 38px;
+}
+/* A plain, short, straight divider — was a border-left running the full
+   38px button height, which read as "curly" right where it met the row's
+   own rounded/gradient border at top and bottom. A dedicated short line,
+   centered and clear of both corners, has nothing to visually clash with —
+   same for the Stop swap-in (this is on the shared wrapper, not either
+   button, so it doesn't care which of the two is showing). */
+.download-btn-wrap::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 18px;
+  background: rgba(17, 24, 39, 0.15);
+}
+
+/* Download CV — the split button's right segment, same role as
+   .mtg-sjoin__caret. Transparent now (the row itself carries the white
+   fill) — a dark icon to match .gd-main's text colour; the divider is
+   .download-btn-wrap's own (above), not this button's border. */
+.gd-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 38px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #111827;
+  cursor: pointer;
+}
+.gd-download:hover:not(:disabled) {
+  filter: brightness(0.97);
+}
+.gd-download .download-btn-icon {
+  width: 16px;
+  height: 16px;
+}
+/* Stop swaps into the same box as Download while generating (same class,
+   see sidepanel.html, toggling the shared global .hidden) — just the icon
+   recoloured to read as a "stop" action, not a copy of Download's own
+   colour. */
+.gd-stop svg {
+  color: #ef4444;
+}
+
+/* Download folder picker row — a compact "Browse folder" chip, the Download
+   CV icon button right next to it, then a hint showing the current save
+   target (<base>/<Company>/) filling the rest of the row. */
+.download-folder-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.folder-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--overlay-1);
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.folder-btn:hover {
+  background: var(--overlay-2, rgba(148, 163, 184, 0.16));
+  color: var(--text);
+  border-color: var(--text-faint);
+}
+.folder-hint {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13.5px;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Job-fit warning modal (#fitWarningBackdrop) — its own explicit width
+   since it never goes through expandField()'s inline sizing (the shared
+   #fieldModalBackdrop's own .field-modal width/height come from there). No
+   header title/back button — the badge itself (skip/check) IS the header. */
+.fit-warning-modal {
+  width: 300px;
+  max-height: 82vh;
+}
+.fit-warning-modal .field-modal__head {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.fit-warning-modal__body {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+  padding: 6px 20px 20px;
+  overflow-y: auto;
+}
+.fit-modal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 400;
+}
+.fit-modal-badge--skip {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+.fit-modal-badge--check {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+.fit-warning-reasons {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13.5px;
+  color: var(--text-primary);
+}
+.fit-warning-note {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+/* "Already applied" gate's own note reads bigger than the fit-warning's
+   (a lighter-weight advisory note) — this one blocks Generate, so it
+   deserves more visual weight. The "X hours/days ago" span inside it is
+   bolded via the plain <strong> renderDupWarningModal wraps it in. */
+#dupWarningNote {
+  font-size: 13.5px;
+}
+#dupWarningNote strong {
+  font-weight: 700;
+}
+/* Same flat, no-shadow look as Generate (.gd-main) — deliberately not
+   button.primary, which is a gradient-filled, glowing/lifting button; this
+   just needs to read as a plain, solid action button. */
+.fit-warning-continue-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 36px;
+  border: none;
+  border-radius: var(--r-md);
+  background: #111827;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.fit-warning-continue-btn:hover {
+  filter: brightness(1.25);
+}
+
+/* Tabsync's "Mark as applied?" confirm (#tabsyncAppliedConfirmBackdrop) —
+   same .field-modal shell + real title (unlike the fit-warning modal above,
+   which uses its own badge as the header instead). */
+.tabsync-applied-confirm-modal {
+  width: 280px;
+}
+/* .field-modal__body's base rule (shared with the JD/cover-letter preview
+   modals) is a row flex with no direction set — here that squeezed the
+   message and the No/Yes row side by side instead of stacking them, which
+   also forced the message to wrap early. Same override fit-warning-modal
+   already needs for its own body. */
+.tabsync-applied-confirm-modal .field-modal__body {
+  flex-direction: column;
+}
+.tabsync-applied-confirm__msg {
+  margin: 0 0 16px;
+  padding: 16px 16px 0;
+  font-size: 13.5px;
+  color: var(--text-primary);
+}
+.tabsync-applied-confirm__actions {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 16px;
+}
+.tabsync-confirm-btn {
+  flex: 1 1 0%;
+  height: 36px;
+  border-radius: var(--r-md);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tabsync-confirm-btn--no {
+  border: 1px solid var(--glass-border);
+  background: transparent;
+  color: var(--text-primary);
+}
+.tabsync-confirm-btn--no:hover {
+  background: var(--bg-hover);
+}
+.tabsync-confirm-btn--yes {
+  border: none;
+  background: #111827;
+  color: #fff;
+}
+.tabsync-confirm-btn--yes:hover {
+  filter: brightness(1.25);
+}
+
+/* Keyboard shortcuts card (Account tab) — read-only rows showing the
+   current binding for each command, same .cd-field-like surface as the
+   Contact rows above it. */
+.shortcut-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg-surface);
+  border-radius: 10px;
+}
+.shortcut-row__label {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+}
+.shortcut-row__keys {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.shortcut-row__keys kbd {
+  padding: 2px 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+  background: var(--bg-surface-2);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* "Update available" banner — shown at the top of the panel when the server
+   reports a newer extension version than the one installed. */
+.update-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--accent-ring);
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--text-primary);
+}
+.update-banner-icon {
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+.update-banner-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.update-banner-body strong {
+  font-size: 13px;
+  font-weight: 700;
+}
+.update-banner-notes {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.update-btn {
+  flex: 0 0 auto;
+  height: 28px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.update-btn:hover {
+  background: var(--accent-hover);
+}
+.update-dismiss {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+.update-dismiss:hover {
+  background: var(--overlay-1);
+  color: var(--text-muted);
+}
+
+/* =====================================================================
+   Forms
+   ===================================================================== */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Inline row: label on the left, icon-led control filling the rest. Used by the
+   Job Details fields so the form reads as a compact list rather than a stack of
+   uppercase captions above full-width inputs. */
+.field-row {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+.field-row > .field-label {
+  /* Fixed basis so Company / Role — and their input boxes — align down a
+     common column at exactly the same width. Wider than before: the icon
+     now lives in here (to the left of the text) instead of inside the
+     input. */
+  flex: 0 0 78px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.field-label__icon {
+  flex: 0 0 auto;
+  color: var(--text-faint);
+}
+.field-row > .input-wrap,
+.field-row > .custom-select {
+  flex: 1 1 auto;
+  min-width: 0; /* let the control shrink instead of overflowing the panel */
+}
+
+/* Text input — no leading glyph anymore (moved to .field-label__icon,
+   to the left of the Company/Role title instead of inside the box). */
+.input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+/* Company row reserves the docked Update button's gutter permanently, so the
+   text never reflows when the button appears. */
+.input-wrap > input[type="text"]:not(:last-child) {
+  padding-right: 30px;
+}
+.input-wrap > .rename-icon-btn {
+  position: absolute;
+  right: 7px;
+}
+
+/* Profile select: the glyph is a flex child of the trigger, so the value has to
+   claim the free space or the chevron drifts in beside it. */
+.select-trigger > .input-icon {
+  flex: 0 0 auto;
+  color: var(--text-faint);
+}
+.select-trigger > .select-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Field label row that carries a trailing action (the Company name "update the
+   saved application" icon). Keeps the label baseline identical to every other
+   field — the icon just rides the right edge. */
+/* Icon-only "push the corrected company / role to the saved application"
+   button. Shown only when there's something to push (see refreshRenameRow),
+   so it reads as an action rather than permanent chrome. */
+.rename-icon-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+.rename-icon-btn:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.rename-icon-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.rename-icon-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+.rename-icon-btn svg {
+  display: block;
+}
+/* In-flight: spin the glyph (there's no text label to swap out). */
+.rename-icon-btn.busy svg {
+  animation: spin 0.7s linear infinite;
+}
+
+/* Section divider label — groups related fields into a clear step
+   ("Job Details"). */
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  /* Same font-size/weight as .cd-card__title (Contact/Downloads section
+     headers in Settings), so section headers read consistently across
+     tabs. No letter-spacing — that was tuned for the old small-caps look,
+     and at this size just reads as an odd, wider-than-Lato-should-be font. */
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+/* Tabsync's own two panel titles ("Jobs from LinkedIn" / "Paste URLs here")
+   now sit in a row with their own count (.tabsync-subpanel__head below) —
+   that row owns the top spacing instead, so this drops .section-label's own
+   margin-top to avoid doubling it. Left-aligned, same as every other
+   .section-label — the count on the row's other end is what's right-aligned. */
+.tabsync-subpanel__title {
+  margin-top: 0;
+}
+.tabsync-subpanel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* Job Description / Cover Letter / Resume: all three collapse to a short,
+   click-to-open summary (not directly typeable — see the "readonly"
+   attribute in the HTML). Clicking one reparents that same textarea into
+   the shared #fieldModalBackdrop (see expandField/closeFieldModal in
+   sidepanel.js and .field-modal* below), editable (Resume stays readonly —
+   it's a generated rendering, not a directly-authored field), with
+   everything behind it dimmed. Shared by #jobText, #coverText and
+   #resumeText — one class, not one each. */
+.field-collapsed {
+  /* 80% of the old 160px/400px, then +20px, then -18px — Job Description
+     (the only one of the three still shown inline; Resume/Cover Letter's
+     own textareas are permanently hidden now, see
+     .field-collapse-wrap--hidden) read as a little tall. */
+  height: 130px;
+  min-height: 0;
+  padding: 9px 12px;
+  resize: none;
+  overflow: hidden;
+  white-space: pre-wrap;
+  cursor: pointer;
+  color: var(--text-secondary);
+  /* A <textarea>'s UA-default display is inline-block, which leaves a few
+     px of descender gap under it inside a block-level wrapper (the classic
+     "image-in-a-div" baseline quirk) — .field-collapse-wrap (and so
+     .field-hover, sized to match it via inset:0) was rendering a few px
+     taller than this textarea's own declared height as a result. Block
+     removes it from that inline formatting context entirely. */
+  display: block;
+}
+/* Resume/Cover Letter only — 5px shorter than JD's own 128px. */
+#resumeText.field-collapsed,
+#coverText.field-collapsed {
+  height: 118px;
+}
+/* Job Description: the shared 130px (~5 visible lines at this 14.5px/1.55
+   line-height) read as too tall — 3 lines' worth is enough for a collapsed
+   preview, since clicking it opens the full text in the modal anyway. */
+#jobText.field-collapsed {
+  height: 83px;
+}
+
+/* Hover reveal on the collapsed JD/Cover Letter/Resume boxes — a grey tint
+   plus centered "View" text (Cover Letter/Resume also get Copy/Download).
+   Pure CSS: the overlay itself stays pointer-events:none so a click
+   anywhere on it actually lands on the textarea underneath, which already
+   has its own click-to-expand handler — only the action buttons opt back
+   into pointer-events so they're clickable, and since they live outside
+   the textarea's subtree a click on them never also bubbles into the
+   textarea's own listener. */
+.field-collapse-wrap {
+  position: relative;
+}
+.field-hover {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 8px;
+  /* Was a dark navy 60% tint — read as too heavy. A very light grey wash
+     instead, with a touch of blur so "View" still reads clearly over the
+     collapsed text without needing a dark backdrop to do it. */
+  background: rgba(15, 23, 42, 0.07);
+  backdrop-filter: blur(1.5px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+.field-collapse-wrap:hover .field-hover {
+  opacity: 1;
+}
+.field-collapse-wrap:has(textarea:disabled) .field-hover {
+  display: none;
+}
+.field-hover__view {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+  letter-spacing: 0.02em;
+}
+.field-hover__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+}
+/* Copy/Download inside the hover overlay: keep each button's own soft
+   colour-tinted chip background, but the icon itself goes dark (matching
+   "View" above it) instead of the accent colour it uses everywhere else. */
+.field-hover__actions .cover-icon-btn {
+  color: #111827;
+}
+
+/* Resume, Cover Letter, Resume Uploaded, Form auto filled and Mark as
+   Applied all sit in ONE flex column now, sharing a single gap — before,
+   Resume->Cover Letter came from .field-row-pair's own gap while every row
+   after it came from a separate margin-top stacked on .check-row, two
+   independent numbers that were easy to drift apart. One gap here means
+   there's only one number to keep in sync. */
+.resume-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  /* Same alignment fix as .chatgpt-url-field above — Resume/Cover Letter's
+     check icons line up with Generate's own "1" badge instead of sitting
+     8px further left than it. */
+  padding-left: 8px;
+}
+/* Resume + Cover Letter stack below Generate — a checklist, not a
+   side-by-side pair any more (each is its own full-width row: check+title,
+   its 3 buttons below, same as Auto-fill's own row further down). */
+.field-row-pair {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.field-row-pair > .field {
+  width: 100%;
+}
+
+/* Resume/Cover Letter no longer show a collapsed preview box — View/Copy/
+   Download are always-visible icon buttons in the section head instead
+   (see .field-actions below), so their .field-collapse-wrap only exists to
+   host the textarea expandField reparents into the modal. Kept in the DOM,
+   never shown. */
+.field-collapse-wrap--hidden {
+  display: none;
+}
+
+/* Always-visible View/Copy/Download row, right of the Resume/Cover Letter
+   title — INSIDE .section-head now (same row, pushed to the far right by
+   the title's own flex:1 1 auto), not a separate row below it. Same
+   .cover-icon-btn chips the old hover overlay used, just promoted out of
+   reveal-on-hover. */
+.field-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+/* Small rounded-square checkbox in front of Resume/Cover Letter's title
+   (and the standalone Auto-fill row below, .check-row) — a grey check
+   until that thing is actually done, then a green check, AND the
+   title/label text goes from muted to normal. One .done class toggled on
+   the row itself (#resumeSectionHead/#coverSectionHead/.check-row — see
+   refreshResumeCoverActions/syncAutofillDoneCheck) drives both, so JS only
+   ever has one class to flip per row. Left-aligned like the rest of this
+   checklist — no centering override needed (the shared .section-head/
+   .section-label base rules already put the checkbox first and the label
+   flush after it). */
+.check-item {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+.check-item__ring {
+  stroke: var(--text-faint);
+  transition: stroke 0.15s ease;
+}
+.check-item__mark {
+  stroke: var(--text-faint);
+  opacity: 1;
+  transition: stroke 0.15s ease;
+}
+#resumeSectionHead.done .check-item__ring,
+#coverSectionHead.done .check-item__ring,
+#resumeSectionHead.done .check-item__mark,
+#coverSectionHead.done .check-item__mark,
+.check-row.done .check-item__ring,
+.check-row.done .check-item__mark {
+  stroke: #22c55e;
+}
+/* No little box around Mark-as-Applied's checkmark — the pill border on
+   .check-row--applied below is border enough; a second border nested
+   inside it just doubled up. Selector is 3 classes deep so it always
+   beats the shared .check-item__ring rules above regardless of state or
+   source order. */
+.check-row .check-item--action .check-item__ring {
+  stroke: none;
+}
+#resumeField .section-head .section-label,
+#coverField .section-head .section-label,
+.check-row__label {
+  color: var(--text-faint);
+  transition: color 0.15s ease;
+}
+/* Resume/Cover Letter titles and the Resume Uploaded/Form auto filled
+   labels read as a plain checklist, not headings — drop the bold .section-
+   label/.check-row__label default carries everywhere else. */
+#resumeField .section-head .section-label,
+#coverField .section-head .section-label {
+  font-weight: 400;
+}
+#resumeSectionHead.done .section-label,
+#coverSectionHead.done .section-label,
+.check-row.done .check-row__label {
+  color: var(--text-primary);
+}
+
+/* Auto-fill's own completion row — same check-item as Resume/Cover Letter
+   above, left-aligned like the rest of this checklist. Spacing between
+   rows now comes from the shared .resume-checklist gap, not a margin
+   here. */
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+/* Used to also wrap a Resume Uploaded / Form auto filled two-row stack
+   beside Mark as Applied (space-between between the two) — now just this
+   one button, right-aligned. Moved out of .apply-scroll/.resume-checklist
+   to stay fixed at the bottom of the Job tab — margin-top replaces the
+   10px .resume-checklist gap it used to get its spacing from for free. */
+.check-row-group {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 10px;
+  flex: 0 0 auto;
+}
+/* The whole row is the button now, not just the icon — reset the native
+   button chrome (font, alignment, background) so it still reads as this
+   same checklist, not a browser-default button. */
+.check-row--applied {
+  flex: 0 0 auto;
+  font: inherit;
+  /* Left-aligned, not centered — the check icon stays put at a fixed spot
+     instead of re-centering (and shifting) when the label/divider/undo
+     icon after it change between the "Mark as Applied" and "Applied"
+     states. Any leftover reserved width (see lockMarkAppliedBtnWidth in
+     sidepanel.js) just sits at the end. */
+  justify-content: flex-start;
+  background: none;
+  cursor: pointer;
+  gap: 3px;
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 8px 5px 6px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.check-row--applied:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.check-row--applied.done {
+  border-color: #86e3a8;
+  background: linear-gradient(180deg, #eafcf1, #dcf7e6);
+}
+.check-row--applied.done #markAppliedLabel {
+  color: #16a34a;
+}
+/* Only visible once applied — a small "click to undo" divider + refresh
+   glyph on the right, same green as the rest of the done state. */
+.check-row-applied__divider {
+  display: none;
+  width: 1px;
+  height: 14px;
+  background: #a7e8c0;
+  margin: 0 2px;
+}
+.check-row-applied__undo {
+  display: none;
+  flex: 0 0 auto;
+  color: #16a34a;
+}
+.check-row--applied.done .check-row-applied__divider,
+.check-row--applied.done .check-row-applied__undo {
+  display: inline-flex;
+}
+/* Push the divider + undo icon flush against the button's own right
+   padding — any slack from the width lock (sized for the longer
+   "Mark as Applied" text) collects here, before them, instead of as a gap
+   after the icon and the button's actual edge. */
+.check-row--applied.done .check-row-applied__divider {
+  margin-left: auto;
+}
+.check-row__label {
+  font-size: 14px;
+  font-weight: 400;
+}
+#markAppliedLabel {
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+/* The reparented textarea's look once it's inside #fieldModalBody — fills
+   the modal's own body area instead of carrying a fixed height. */
+.field-modal__textarea {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  padding: 12px 14px;
+  border: none;
+  background: transparent;
+  white-space: pre-wrap;
+  resize: none;
+  cursor: text;
+  color: var(--text-primary);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+.field-modal__textarea:read-only {
+  cursor: default;
+}
+.field-modal__textarea:focus {
+  outline: none;
+  /* The generic textarea:focus rule (border-color/background-color) has
+     higher specificity than this class alone once :focus is in the
+     comparison — override both explicitly, not just outline, so focusing
+     doesn't paint back a border/tint on what's meant to be a clean,
+     borderless modal textarea. */
+  border-color: transparent;
+  background-color: transparent;
+}
+#coverText:disabled {
+  cursor: not-allowed;
+}
+
+/* Shared modal for Job Description / Cover Letter / Resume — the backdrop
+   dims the WHOLE extension window (header/segmented tabs included). Sized
+   with the same 20.5px gap from the panel's own edges either side as the
+   Settings tab's own white card (.tab-panel's own left/right padding),
+   rather than the old per-card measurement (sidepanel.js's expandField/
+   sizeFieldModal used to size this to the CURRENT tab-panel card's own
+   width/height, which ran edge-to-edge and varied by tab). */
+.field-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.field-modal {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+/* Job Description / Cover Letter / Resume specifically (not the Resume
+   Template preview or the Fit-warning modal, which also share the base
+   .field-modal class but set their own sizing) — same max-height CAP as
+   the Resume Template preview modal (was a fixed 88vh, taller than that
+   one every time since its content — a single textarea — has no natural
+   size of its own the way the preview's mock "page" does). min-height
+   keeps the textarea from collapsing toward nothing on that same account
+   (.field-modal__textarea is flex:1 with min-height:0, so without this the
+   whole chain would shrink to its content's intrinsic size instead of
+   filling the available room) — chosen to land close to the preview
+   modal's own typical rendered height (its mock's 480px + chrome). */
+#fieldModalBackdrop .field-modal {
+  width: calc(100% - 41px);
+  max-height: 88vh;
+  min-height: 600px;
+}
+/* Fixed footer — a sibling of .field-modal__body (the scrolling list),
+   not inside it, so the commit button stays put at the bottom of the
+   modal instead of scrolling away with a long field list. */
+.autofill-forms-modal__footer {
+  flex: 0 0 auto;
+  padding: 10px 14px 14px;
+}
+.field-modal__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid var(--glass-border);
+}
+/* Apply tab only — no divider under the title or above the Autofill
+   button (other .field-modal__head users — the fit-warning/dup-warning/
+   tabsync-applied-confirm modals — keep theirs). */
+#apply2TabPanel .field-modal__head {
+  border-bottom: none;
+}
+.field-modal__title {
+  flex: 1 1 auto;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+/* Form Questions modal's own head — jobsite logo + name in place of a
+   static title (see syncAutofillJobsiteChip in sidepanel.js). */
+.jobsite-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.jobsite-chip__logo-wrap {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+}
+.jobsite-chip__logo {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+.jobsite-chip__logo--fallback {
+  color: var(--text-muted);
+}
+.field-modal__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.jd-back-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.jd-back-btn:hover {
+  background: var(--overlay-2);
+  color: var(--text-primary);
+}
+/* Chromium collapses an <svg> flex child's width to 0 when it's sized only
+   via HTML width/height attributes (no CSS width) — its height comes
+   through fine but the width doesn't. Explicit CSS size + flex-shrink:0
+   fixes it; the icon was otherwise invisible despite the button rendering
+   at full size with the right colour. */
+.jd-back-btn svg {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+}
+
+select,
+textarea,
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--glass-border);
+  /* 8px — BCD's own input/select radius (client/src/App.css's .set-select
+     etc), not the 10px card radius. */
+  border-radius: 8px;
+  background-color: var(--glass-input);
+  backdrop-filter: var(--glass-filter);
+  -webkit-backdrop-filter: var(--glass-filter);
+  font-size: 14.5px;
+  color: var(--text-primary);
+  font-family: inherit;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease,
+    box-shadow 0.12s ease;
+  outline: none;
+}
+
+/* Company / Role: smaller than the general 14.5px input text — those two
+   fields read as too large relative to their own labels. Borderless, same
+   look as the Manual-mode ChatGPT URL field (#manualChatGptUrlInput above)
+   — .input-wrap has no border/background of its own, so these just blend
+   into the panel instead of showing the generic glass-input box. */
+#companyName,
+#roleTitle {
+  font-size: 13px;
+  /* Matches .job-meta-value's own 2px vertical padding below — without
+     this override these two kept the general input rule's 9px top/bottom,
+     so Company/Role stayed tall while Location/Salary/Posted/etc. shrank,
+     and the Company→Role→Location gaps still read as bigger than the rest
+     (confirmed real complaint after the .job-meta-value padding fix). */
+  padding-top: 2px;
+  padding-bottom: 2px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+#companyName:focus,
+#roleTitle:focus {
+  background: transparent;
+}
+
+/* Company, Role, and the job-meta rows below — own flex-column gap,
+   independent of .controls' own 6px (shared with unrelated rows elsewhere
+   in the panel — Profile select, Tabsync, etc. — that were never part of
+   this complaint). Tighter, and since it's one gap value applied to every
+   adjacent pair here, uniform by construction. */
+.job-details-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+/* Forces every row here to the exact same height, explicitly — matching
+   Company/Role's <input> padding against .job-meta-value's <div> padding
+   by hand kept leaving a px or two of drift (confirmed real complaint,
+   more than once: "Company-Role gap smaller than Role-Location"), since
+   an input and a plain div don't render their line-height identically even
+   with matching padding/font-size. One shared min-height sidesteps that
+   entirely instead of chasing it further. */
+.job-details-fields > .field-row {
+  min-height: 26px;
+}
+
+/* Detected job metadata (renderJobMeta in sidepanel.js, fed by
+   job-detect/extractors/structured/jobmeta.js) — Company then Role at the
+   top, Location/Experience/Type/Salary/Posted/Expiration grouped together
+   right below Role. Each row is a plain .field.field-row (same markup as
+   Company/Role: icon + 78px label column), so it already inherits that
+   row's layout/spacing for free — this styles the value text itself,
+   matched to Company/Role's own font-size/color so the two don't read as a
+   "real" field above a smaller, muted footnote below. Left-padded by the
+   same 12px #companyName/#roleTitle's own input padding uses — without it
+   the meta VALUES start flush at the row's left edge while the Company/
+   Role TEXT starts 12px inside their input's border, a consistent
+   misalignment between the two kinds of row that no amount of text-align
+   alone can fix (confirmed real complaint, more than once). */
+.job-meta-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  /* The row's actual height comes from this padding, not .job-details-
+     fields' own gap — that's why shrinking the gap alone barely changed
+     anything (confirmed: still looked wide after halving it). Small now,
+     just enough breathing room around the text; no longer trying to match
+     #companyName/#roleTitle's own 9px input padding — a compact list reads
+     better here than exact height-parity with the input rows above it. */
+  padding: 2px 0 2px 12px;
+  font-size: 13px;
+  color: var(--text-primary);
+  text-align: left;
+}
+/* Not-yet-resolved field — every row always shows now (see renderJobMeta
+   in sidepanel.js), so an empty one needs its own muted "—" rather than
+   reading like real data in the same solid text color. */
+.job-meta-value--empty {
+  color: var(--text-faint);
+}
+/* Location only: text truncates with an ellipsis instead of wrapping, the
+   work-model badge never shrinks — keeps this row the same single-line
+   height as every other one (a long location value used to wrap the badge
+   onto its own second line, making this one row visibly taller than its
+   neighbors and the gaps around it read as uneven even though the actual
+   gap value never changed). */
+#jobMetaLocationValue {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.job-meta-location-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.work-model-badge {
+  display: inline-block;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  vertical-align: middle;
+}
+/* Work model genuinely unknown (m.workModel === "unknown" — see
+   renderJobMeta) — all three shown plain/neutral, "could be any of these"
+   rather than the colored single-guess badge above picking one. */
+.work-model-badge--neutral {
+  color: var(--text-secondary);
+  background: var(--overlay-1, rgba(0, 0, 0, 0.05));
+}
+
+select option {
+  background-color: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+select:focus,
+textarea:focus,
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus {
+  border-color: #111827;
+  background-color: var(--glass-input-focus);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-faint);
+}
+
+/* Low-confidence detection flag — Detect filled this field from a
+   heuristic guess (hostname slug, title split) rather than structured
+   data or a site adapter. Amber so the user double-checks before relying
+   on it; cleared when re-detected from a trustworthy source. */
+input.ab-low-confidence,
+input[type="text"].ab-low-confidence {
+  border-color: rgba(245, 158, 11, 0.55);
+  background-color: rgba(245, 158, 11, 0.08);
+}
+input.ab-low-confidence:focus {
+  border-color: rgba(245, 158, 11, 0.7);
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
+  line-height: 1.55;
+}
+
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+}
+
+/* =====================================================================
+   Custom select (profile picker)
+   ===================================================================== */
+.custom-select {
+  position: relative;
+  width: 100%;
+}
+
+.select-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  background-color: var(--bg-input);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.select-trigger:hover:not([disabled]) {
+  border-color: var(--overlay-strong);
+}
+
+.custom-select.open .select-trigger,
+.select-trigger:focus-visible {
+  border-color: #111827;
+  background-color: var(--bg-input-focus);
+}
+
+.select-trigger[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.select-value {
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.select-value.placeholder {
+  color: var(--text-faint);
+  font-weight: 400;
+}
+
+.select-chevron {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: transform 0.18s ease;
+}
+
+.custom-select.open .select-chevron {
+  transform: rotate(180deg);
+  color: var(--accent-hover);
+}
+
+.select-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  /* Solid, not the 82%-opacity glass mix — the page content behind it was
+     showing through. */
+  background: var(--bg-elevated);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-md);
+  box-shadow: var(--glass-shadow);
+  padding: 4px;
+  z-index: 30;
+  animation: pop-in 140ms cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--r-sm);
+  font-family: inherit;
+  transition:
+    background 0.1s ease,
+    color 0.1s ease;
+}
+
+.select-option:hover,
+.select-option.active {
+  background: var(--overlay-2);
+  color: var(--text-primary);
+}
+
+.select-option.selected {
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+}
+
+/* Name + which prompt that profile uses, stacked — see populateProfiles. */
+.select-option__text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.select-option__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Bookmark star — outline by default, filled amber for the one starred
+   profile (see populateProfiles/toggleStarredProfile). A separate concept
+   from .selected's blue checkmark above: this marks a favorite, not the
+   profile currently in use. */
+.select-option__star {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--r-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.select-option__star:hover {
+  color: #eab308;
+  background: color-mix(in srgb, #eab308 14%, transparent);
+}
+.select-option__star svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+}
+.select-option__star.starred {
+  color: #eab308;
+}
+.select-option__star.starred svg {
+  fill: currentColor;
+}
+
+.select-empty {
+  padding: 12px 12px;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  text-align: center;
+}
+
+/* =====================================================================
+   Cover letter — same field/section-head/click-to-expand pattern as Job
+   Description (.field-collapsed/.field-expanded above); Copy/Download sit
+   at the right of the "Cover Letter" title, same slot .jd-back-btn uses.
+   ===================================================================== */
+/* Borderless, colorful, icon-only cover-letter actions (Copy / Download
+   PDF). Each carries its own --ic accent and sits on a soft same-colour
+   chip; hover deepens the wash, lifts, and glows. Labels live in
+   aria-label/title (tooltip) so they stay accessible without taking space.
+   Sized to sit comfortably in .section-head next to the title, not their
+   old 32px in a dedicated row of their own. */
+.cover-icon-btn {
+  --ic: var(--accent);
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  flex: 0 0 auto;
+  border: none;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ic) 12%, transparent);
+  color: var(--ic);
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.cover-icon-btn svg {
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+}
+
+.cover-icon-btn .btn-text {
+  display: none;
+}
+
+.cover-icon-btn:not(:disabled):hover {
+  transform: translateY(-2px);
+  background: color-mix(in srgb, var(--ic) 22%, transparent);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--ic) 35%, transparent);
+}
+
+.cover-icon-btn:not(:disabled):active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--ic) 35%, transparent);
+}
+
+.cover-icon-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ic) 45%, transparent);
+}
+
+/* Not ready yet — a neutral muted chip so the disabled state reads clearly
+   instead of a faded colour. */
+.cover-icon-btn:disabled {
+  background: var(--overlay-1);
+  color: var(--text-faint);
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+/* Plain modifier — Resume/Cover Letter's View/Copy/Download, replacing what
+   used to be a solid-black-pill look (removed): no background box at all,
+   just the bare icon (a light background tint only on hover, purely for
+   affordance — not a permanent chip like every other variant here has). */
+.cover-icon-btn--plain {
+  background: transparent;
+  color: var(--text-secondary);
+}
+.cover-icon-btn--plain:not(:disabled):hover {
+  transform: none;
+  background: var(--overlay-1);
+  color: var(--text-primary);
+  box-shadow: none;
+}
+.cover-icon-btn--plain:not(:disabled):active {
+  transform: none;
+  box-shadow: none;
+}
+.cover-icon-btn--plain:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-secondary) 35%, transparent);
+}
+.cover-icon-btn--plain:disabled {
+  background: transparent;
+  color: var(--text-faint);
+}
+
+button.copied {
+  background: var(--success-soft, rgba(34, 197, 94, 0.12));
+  border-color: rgba(34, 197, 94, 0.4);
+  color: var(--status-success-text);
+}
+
+/* =====================================================================
+   Switch (toggle) — kept for any future use
+   ===================================================================== */
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  user-select: none;
+}
+
+.switch input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+}
+
+.switch-track {
+  position: relative;
+  width: 32px;
+  height: 18px;
+  background: var(--overlay-2);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease;
+  flex-shrink: 0;
+}
+
+.switch-thumb {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 14px;
+  height: 14px;
+  background: var(--text-secondary);
+  border-radius: 50%;
+  transition:
+    transform 0.18s cubic-bezier(0.2, 0.8, 0.3, 1),
+    background 0.18s ease;
+}
+
+.switch input:checked + .switch-track {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.switch input:checked + .switch-track .switch-thumb {
+  transform: translateX(14px);
+  background: #fff;
+}
+
+.switch input:focus-visible + .switch-track {
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.switch:hover .switch-track {
+  border-color: var(--overlay-strong);
+}
+
+/* =====================================================================
+   Status box
+   ===================================================================== */
+.status-box {
+  padding: 10px 12px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-md);
+  backdrop-filter: var(--glass-filter);
+  -webkit-backdrop-filter: var(--glass-filter);
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.18s ease;
+}
+
+.status-box.idle::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-faint);
+  flex-shrink: 0;
+}
+
+.status-box.success {
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: var(--status-success-text);
+}
+
+.status-box.success::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+  flex-shrink: 0;
+}
+
+.status-box.error {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: var(--status-error-text);
+}
+
+.status-box.error::before {
+  content: "!";
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--danger);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.status-box.loading {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--status-loading-text);
+}
+
+.status-box.loading::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border: 2px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  border-top-color: var(--status-loading-text);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+/* Advisory warning — e.g. a detected job that isn't fully remote. Amber,
+   distinct from the red error state (which means the action failed). */
+.status-box.warning {
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+  border-color: color-mix(in srgb, var(--warning) 45%, transparent);
+  color: color-mix(in srgb, var(--warning) 55%, #ffffff);
+}
+
+.status-box.warning::before {
+  content: "!";
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--warning);
+  color: #1f1300;
+  font-size: 10px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+/* Never shown on screen — sidepanel.js's setAutofillStatus still writes to
+   it (the progress bar's setAutofillProgress reads its message text, and
+   it's still restored/saved per-tab), just nothing renders here any more.
+   Force-hidden in CSS rather than touched in JS so none of that logic has
+   to change. */
+.autofill-status {
+  display: none !important;
+}
+
+/* Manual mode's own connection line, right above Generate — unlike
+   .autofill-status above, this one IS meant to render; see
+   updateManualChatGptStatusBox in sidepanel.js. Sits in its own row above
+   .generate-row (which already carries margin-top:10px for the gap below
+   Auto-fill), so this only needs a bottom margin to keep that same 10px gap
+   above Generate. */
+/* Same slot as #autoApplyBtn (Job Details section-head, right above the JD
+   textarea) — Manual mode shows this instead of Auto Apply (see
+   syncResumeModeUI), so it reuses .detect-pill's own pill shape/sizing
+   directly rather than a bespoke status-box. Grey/neutral by default (not
+   connected); --connected below switches it to the same green
+   .detect-pill's base rule already uses for "Auto-detected". cursor:default
+   — a status readout, not a button, even though it borrows the pill look. */
+.manual-chatgpt-status {
+  cursor: default;
+  background: rgba(17, 24, 39, 0.06);
+  color: var(--text-faint);
+}
+.manual-chatgpt-status--connected {
+  background: var(--success-soft, rgba(34, 197, 94, 0.12));
+  color: var(--success);
+}
+.manual-chatgpt-status__icon {
+  flex-shrink: 0;
+}
+.manual-chatgpt-status__label {
+  font-weight: 600;
+}
+
+/* =====================================================================
+   Q&A thread
+   ===================================================================== */
+.qa.hidden {
+  display: none;
+}
+
+/* Wraps the thread + composer together so both can become one position:fixed
+   overlay on expand (see expandQA/collapseQA in sidepanel.js) — collapsed,
+   it's just a transparent flex-column pass-through so .qa-composer's own
+   sticky/margin-top:auto positioning behaves exactly as it did as a direct
+   child of .panel. */
+.qa-panel {
+  display: flex;
+  flex-direction: column;
+  /* Fixed-size footer, not a space-filler — .apply-scroll (in .panel, its
+     sibling above) is what grows/scrolls now. */
+  flex: 0 0 auto;
+}
+/* Collapsed, .qa-overlay is empty (its head + thread are both display:none
+   below) — zero height, no effect on .qa-panel's layout at all. Expanding
+   makes IT (not #qaPanel, and NOT .qa-composer) a position:fixed panel —
+   top/bottom/left/width all set by sidepanel.js's expandQA() (70% of the
+   space between the header and the composer, bottom flush against the
+   composer — which stays completely untouched, same size/position whether
+   this is open or not), width matching the card's (.tab-panel) own. */
+.qa-overlay--expanded {
+  position: fixed;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px 12px;
+  /* Same pastel gradient backdrop, same fixed (viewport-anchored)
+     attachment, as the extension's own page (body, panel.css above) — lines
+     up with it instead of showing a flat card floating over the gradient. */
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0) 15%, rgba(255, 255, 255, 1) 50%, rgba(255, 255, 255, 1) 100%),
+    linear-gradient(90deg, #ffe3c2 0%, #ffd9ec 50%, #dbe6ff 100%);
+  background-attachment: fixed;
+  /* Matches the card's own left/right border now that this is card-width,
+     not edge-to-edge — no bottom border since it butts straight into the
+     composer with no visible seam there. */
+  border: 1px solid var(--glass-border);
+  border-bottom: none;
+  /* Only the top corners read as a real corner — the bottom is an internal
+     seam against the composer, not an actual edge. No box-shadow either —
+     read as a divider line against the card behind it. */
+  border-radius: 12px 12px 0 0;
+  overflow: hidden;
+  /* Slide up on open, down on close — see .qa-overlay--open below and the
+     double-rAF / transitionend dance in expandQA()/collapseQA(). */
+  transform: translateY(16px);
+  opacity: 0;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+.qa-overlay--open {
+  transform: translateY(0);
+  opacity: 1;
+}
+/* Hidden collapsed — the composer's placeholder already says what this is;
+   shown only once expanded, for the back button. */
+.qa-panel__head {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+  margin-bottom: 8px;
+}
+.qa-overlay--expanded .qa-panel__head {
+  display: flex;
+}
+.qa-panel__title {
+  flex: 1 1 auto;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+/* The thread only ever renders inside the expanded overlay now, never
+   inline in the card above the composer — collapsed, it's fully hidden
+   regardless of #qaSection's own .hidden state (which still tracks whether
+   there's anything to ask about at all, same as before). */
+#qaSection {
+  display: none;
+}
+.qa-overlay--expanded #qaSection:not(.hidden) {
+  display: block;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+/* Composer (question input + Ask button) — sits inside the fixed #qaPanel
+   footer, below .apply-scroll. #qaPanel no longer grows to fill leftover
+   space (that was also the source of a big gap below the composer, from
+   position:sticky's bottom offset stacking on top of that leftover space),
+   so this is just a plain block now — no sticky, no auto margin needed. */
+.qa-composer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 0 0;
+  /* Solid, matching the card surface it now sits inside (was a gradient
+     trick to stay opaque against the page's own gradient backdrop, back
+     when the composer floated directly on that backdrop). */
+  background: var(--bg-surface);
+  border-radius: 0;
+}
+/* The Q&A thread list — used to share .panel's own card styling (border/
+   padding/background/shadow) via a shared class, but .panel dropped that
+   styling when .tab-panel became the outer card, so this now carries its
+   own copy of the same look explicitly. Sized to its own content (not
+   flex:1 like .panel) — it's a normal card sitting above the composer, not
+   the region meant to grow and fill the tab's height. */
+.qa {
+  background: var(--bg-surface);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 14px;
+}
+/* No answers yet — collapse the empty thread so the section takes no space and
+   the composer is all that shows. */
+.thread:empty {
+  display: none;
+}
+#qaSection:not(.hidden):has(.thread:empty) {
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+/* ...including .qa's bright top edge, which would otherwise draw a stray
+   1px gradient line across the collapsed (zero-height) section. */
+#qaSection:not(.hidden):has(.thread:empty)::before {
+  display: none;
+}
+
+/* Chat-style input shell: textarea with the Ask button docked bottom-right. */
+/* The SHELL carries the field's chrome (border, fill, radius) and lays the
+   three parts out in a row — sparkle, input, send. The textarea itself is
+   stripped bare, so the icon and button sit INSIDE the field rather than being
+   absolutely positioned over it. */
+.qa-input-shell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 38px;
+  padding: 0 6px 0 12px;
+  /* Same colourful gradient-ring border as .autofill-btn / the sign-in
+     page's "Sign up with Google" button — the padding-box/border-box
+     two-layer background trick, not a flat accent-tinted border. */
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  background-image: linear-gradient(var(--glass-input), var(--glass-input)), linear-gradient(90deg, #ffb3d1, #c9b3ff, #a9e8c9);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  transition: box-shadow 0.12s ease;
+}
+.qa-input-shell:focus-within {
+  box-shadow: 0 0 0 2px color-mix(in srgb, #111827 25%, transparent);
+}
+.qa-spark {
+  flex: 0 0 auto;
+  display: block;
+  color: var(--accent);
+}
+.qa-input-shell textarea {
+  /* Stripped bare — the shell above draws the field. */
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0 0 0 10px;
+  background: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 0;
+  /* Divider between the sparkle and the text, as a border on the input so it
+     tracks the input's height instead of needing its own element. */
+  border-left: 1px solid var(--glass-border);
+  border-radius: 0;
+  resize: none;
+  /* FIXED one line — it never grows with the content; a long question scrolls
+     inside it. The base `textarea { min-height: 120px }` is sized for the
+     job-description field; this is a chat-style ask box. */
+  min-height: 0;
+  line-height: 22px;
+  height: 22px;
+  max-height: 22px;
+  overflow-y: auto;
+}
+.qa-input-shell textarea:focus {
+  /* The shell owns the focus treatment now. */
+  border-color: var(--glass-border);
+  background: none;
+  box-shadow: none;
+}
+.qa-ask-btn {
+  /* A flex child of the shell now, so it's centred by align-items and needs no
+     absolute positioning. */
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  /* Bare accent glyph — no chip behind it. The radius only shapes the focus
+     ring; the box itself is transparent and just sets the hit target. */
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+.qa-ask-btn:hover:not(:disabled) {
+  color: var(--accent-hover);
+}
+.qa-ask-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+.qa-ask-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.qa-ask-btn svg {
+  display: block;
+}
+/* Busy state — swap the send icon for a spinner. */
+.qa-ask-btn.is-loading svg {
+  display: none;
+}
+.qa-ask-btn.is-loading::after {
+  content: "";
+  width: 14px;
+  height: 14px;
+  /* Accent-on-overlay: the button is a bare glyph again (no solid fill), so a
+     white spinner would wash out against the dark field. */
+  border: 2px solid var(--overlay-3);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: qa-ask-spin 0.7s linear infinite;
+}
+@keyframes qa-ask-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.thread {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.msg {
+  background: var(--overlay-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+}
+
+.msg .role {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--text-faint);
+}
+
+.msg .content {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Answer — the whole box IS the copy button now (see renderQA in
+   sidepanel.js), no separate icon button in the corner. Hover/active read
+   as "this is clickable"; .copied is a brief confirmation pulse on click,
+   on top of the panel toast. */
+.msg.bot {
+  background-color: var(--accent-soft);
+  cursor: pointer;
+  transition: filter 0.12s ease;
+}
+.msg.bot:hover {
+  filter: brightness(0.97);
+}
+.msg.bot.copied {
+  filter: brightness(0.94);
+}
+
+/* =====================================================================
+   ATS Score panel
+   ===================================================================== */
+.ats-panel {
+  margin-top: 12px;
+  padding: 14px;
+  background: var(--overlay-1);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+}
+
+.ats-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.ats-score-pill {
+  font-size: 18px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--accent-soft, color-mix(in srgb, var(--accent) 15%, transparent));
+  color: var(--accent-hover, #a5b4fc);
+  font-variant-numeric: tabular-nums;
+}
+
+.ats-score-pill.low { background: rgba(239, 68, 68, 0.16); color: #fca5a5; }
+.ats-score-pill.mid { background: rgba(234, 179, 8, 0.18); color: #fde68a; }
+.ats-score-pill.high { background: rgba(34, 197, 94, 0.16); color: #86efac; }
+
+.ats-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.ats-bar-fill {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #00a1ff, #01c0c8);
+  transition: width 0.5s ease;
+}
+
+.ats-summary {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin: 0 0 10px;
+}
+
+.ats-group {
+  margin-top: 8px;
+}
+
+.ats-group-label {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.ats-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.ats-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+.ats-chip.missing { border-color: rgba(239, 68, 68, 0.4); color: #fca5a5; }
+.ats-chip.orphan  { border-color: rgba(234, 179, 8, 0.4); color: #fde68a; }
+
+.ats-empty {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* =====================================================================
+   Recent JDs dropdown
+   ===================================================================== */
+.field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.recent-jds {
+  position: relative;
+}
+
+.recent-jds-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.recent-jds-btn:hover,
+.recent-jds-btn[aria-expanded="true"] {
+  background: var(--overlay-1);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.recent-jds-pop {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  width: 280px;
+  max-height: 280px;
+  overflow-y: auto;
+  z-index: 50;
+  background: var(--bg-elevated, #161e36);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  padding: 4px;
+}
+
+.recent-jd-item {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  text-align: left;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.recent-jd-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.recent-jd-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recent-jd-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.recent-jds-empty {
+  padding: 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* =====================================================================
+   Refine panel
+   ===================================================================== */
+.refine-panel {
+  margin-top: 12px;
+  padding: 14px;
+  background: var(--overlay-1);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.refine-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.refine-suggestion {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.3;
+  text-align: left;
+  background: var(--accent-soft, color-mix(in srgb, var(--accent) 10%, transparent));
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  color: var(--accent-hover, #a5b4fc);
+  cursor: pointer;
+  transition: background 0.12s ease;
+  max-width: 100%;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.refine-suggestion:hover {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.gen-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.gen-option {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lang-select {
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
+@media (max-width: 360px) {
+  .gen-options {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tone-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  background: var(--overlay-1);
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+/* Read-only tone indicator — the server picks the tone, the panel shows it. */
+.tone-display {
+  padding: 8px 10px;
+  font-size: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--overlay-1);
+  color: var(--text-muted);
+}
+
+.tone-display.set {
+  font-weight: 600;
+  color: var(--text-primary);
+  border-color: var(--accent, #00a1ff);
+  background: var(--accent-soft, color-mix(in srgb, var(--accent) 13%, transparent));
+}
+
+.tone-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 6px 4px;
+  font-size: 11.5px;
+  font-weight: 500;
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.tone-btn:hover {
+  color: var(--text-primary);
+}
+
+.tone-btn.active {
+  background: var(--accent-soft, color-mix(in srgb, var(--accent) 15%, transparent));
+  color: var(--accent-hover, #a5b4fc);
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+/* =====================================================================
+   Analytics summary card (above Recent applications)
+   ===================================================================== */
+.analytics-card {
+  background: var(--overlay-1);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.analytics-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.analytics-card-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.analytics-rate {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.analytics-rate.high { color: #86efac; }
+.analytics-rate.mid  { color: #fde68a; }
+.analytics-rate.low  { color: #fca5a5; }
+
+.analytics-funnel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.analytics-stage {
+  display: grid;
+  grid-template-columns: minmax(80px, 110px) 1fr 36px;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+}
+
+.analytics-stage-label {
+  color: var(--text-muted);
+}
+
+.analytics-stage-bar {
+  position: relative;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.analytics-stage-fill {
+  position: absolute;
+  inset: 0;
+  width: 0;
+  background: linear-gradient(90deg, #00a1ff, #01c0c8);
+  transition: width 0.5s ease;
+  border-radius: 4px;
+}
+
+.analytics-stage.applied .analytics-stage-fill   { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+.analytics-stage.responded .analytics-stage-fill { background: linear-gradient(90deg, #a855f7, #d8b4fe); }
+.analytics-stage.interview .analytics-stage-fill { background: linear-gradient(90deg, #c084fc, #f0abfc); }
+.analytics-stage.offer .analytics-stage-fill     { background: linear-gradient(90deg, #22c55e, #86efac); }
+
+.analytics-stage-count {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.analytics-hint {
+  margin-top: 10px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+/* =====================================================================
+   Batch mode (paste multiple JDs)
+   ===================================================================== */
+.batch-panel {
+  margin-top: 12px;
+}
+
+.batch-head {
+  padding: 0;
+}
+
+.batch-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text-primary);
+}
+
+.batch-toggle:hover { color: var(--accent-hover, #a5b4fc); }
+
+.batch-toggle .panel-title { margin: 0; }
+
+.batch-chevron {
+  transition: transform 0.18s ease;
+  color: var(--text-muted);
+}
+
+.batch-toggle[aria-expanded="true"] .batch-chevron {
+  transform: rotate(90deg);
+}
+
+.batch-hint {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.batch-hint code {
+  background: var(--overlay-1);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 10px;
+}
+
+.batch-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 8px;
+}
+
+.batch-body textarea {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  min-height: 160px;
+  resize: vertical;
+}
+
+.batch-body code {
+  background: var(--overlay-1);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11px;
+}
+
+.batch-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.batch-count {
+  flex: 1;
+  min-width: 0;
+}
+
+.batch-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.batch-row {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--overlay-1);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.batch-row-status {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.batch-row.queued    .batch-row-status { background: rgba(255, 255, 255, 0.06); color: var(--text-muted); }
+.batch-row.running   .batch-row-status { background: color-mix(in srgb, var(--accent) 20%, transparent); color: #c7d2fe; }
+.batch-row.done      .batch-row-status { background: rgba(34, 197, 94, 0.20); color: #86efac; }
+.batch-row.error     .batch-row-status { background: rgba(239, 68, 68, 0.20); color: #fca5a5; }
+.batch-row.cancelled .batch-row-status { background: rgba(148, 163, 184, 0.16); color: #cbd5e1; }
+
+.batch-row-status svg { width: 12px; height: 12px; }
+
+.batch-row.running .batch-row-status svg {
+  animation: spin 1s linear infinite;
+}
+
+.batch-row-main {
+  min-width: 0;
+}
+
+.batch-row-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.batch-row-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.batch-row-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.batch-row-actions button {
+  font-size: 11px;
+  padding: 4px 8px;
+}
+
+/* =====================================================================
+   Recent applications history
+   ===================================================================== */
+.history-panel {
+  margin-top: 18px;
+}
+
+.history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.icon-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+}
+
+.history-empty {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  padding: 10px 0;
+}
+
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-row {
+  background: var(--overlay-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  transition: border-color 0.12s ease;
+}
+
+.history-row:hover {
+  border-color: var(--border-strong);
+}
+
+.history-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.history-row-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-row-sub {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.history-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px 3px 10px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.history-status:hover,
+.history-status[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+.history-status svg {
+  opacity: 0.6;
+}
+
+/* Status colour palette (apply to both pill and menu item) */
+.history-status.generated,
+.status-menu-item.generated   { background: color-mix(in srgb, var(--accent) 16%, transparent); color: #c7d2fe; }
+.history-status.applied,
+.status-menu-item.applied     { background: rgba(59, 130, 246, 0.16); color: #93c5fd; }
+.history-status.interview,
+.status-menu-item.interview   { background: rgba(168, 85, 247, 0.16); color: #d8b4fe; }
+.history-status.offer,
+.status-menu-item.offer       { background: rgba(34, 197, 94, 0.18); color: #86efac; }
+.history-status.rejected,
+.status-menu-item.rejected    { background: rgba(239, 68, 68, 0.16); color: #fca5a5; }
+.history-status.no_response,
+.status-menu-item.no_response { background: rgba(148, 163, 184, 0.16); color: #cbd5e1; }
+.history-status.discarded,
+.status-menu-item.discarded   { background: rgba(148, 163, 184, 0.10); color: #94a3b8; }
+
+/* Status picker dropdown */
+.status-picker {
+  position: relative;
+}
+
+.status-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 30;
+  min-width: 140px;
+  background: var(--bg-elevated, #161e36);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.status-menu-item {
+  text-align: left;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.status-menu-item:hover {
+  filter: brightness(1.15);
+}
+
+.status-menu-item[aria-current="true"] {
+  border-color: rgba(255, 255, 255, 0.20);
+}
+
+/* Has-notes indicator dot */
+.note-dot {
+  color: var(--accent-hover, #a5b4fc);
+  font-size: 10px;
+  margin-left: 2px;
+}
+
+/* Notes textarea row */
+.history-row-notes {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.history-row-notes textarea {
+  min-height: 70px;
+  resize: vertical;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.history-row-notes-hint {
+  font-size: 10.5px;
+}
+
+.history-row-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.history-row-actions button {
+  font-size: 11.5px;
+  padding: 5px 10px;
+}
+
+/* =====================================================================
+   Helpers
+   ===================================================================== */
+.hidden {
+  display: none !important;
+}
+
+/* Floating scroll-to-bottom button. Fixed to the viewport's bottom-right;
+   JS toggles `.hidden` based on scroll position. */
+/* Floating scroll controls — jump to top / bottom. Bottom-anchored flex column
+   so the two buttons stack (scroll-to-top above scroll-to-bottom) and the stack
+   grows upward from the corner as buttons appear. JS nudges `bottom` up when the
+   sticky Q&A composer is visible. */
+.scroll-nav {
+  position: fixed;
+  right: 12px;
+  bottom: 14px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  pointer-events: none; /* only the buttons are interactive */
+}
+/* No backing box — the bare "mouse" indicator IS the control. The button is a
+   tight, transparent wrapper (just enough padding for a tap target). */
+.scroll-nav-btn {
+  pointer-events: auto;
+  display: grid;
+  place-items: center;
+  padding: 2px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  opacity: 0.9;
+  transition:
+    transform 0.16s ease,
+    opacity 0.16s ease;
+}
+.scroll-nav-btn:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+/* In-panel toast — same dark-pill + coloured-checkmark look as the main
+   BCD web app's own .toaster (client/src/App.css), scaled down for the
+   panel's own narrower width. `bottom` is set from JS (panelToast/
+   positionPanelToast in sidepanel.js) so it clears the Q&A composer when
+   that's on screen, same approach #scroll-nav already uses. */
+.panel-toast {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 62px;
+  z-index: 61;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Tighter than the original 8px — several stacked STICKY items (Auto
+     Apply's per-tab results) read as one continuous list this way instead
+     of separate floating pills with slivers of whatever's underneath
+     showing through the gaps between them. */
+  gap: 3px;
+  width: calc(100% - 28px);
+  pointer-events: none;
+  /* Sticky items can pile up well past a normal handful of transient
+     toasts over a long run; cap the stack's height and let it scroll
+     instead of pushing past the top of the panel. */
+  max-height: min(60vh, 480px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.panel-toast__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+  padding: 11px 16px;
+  border-radius: 12px;
+  background: #1c1c22;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  animation: panel-toast-in 0.2s ease;
+  flex-shrink: 0;
+  cursor: default;
+}
+/* Sticky items are the only interactive ones — clickable anywhere on the
+   card to dismiss (see panelToast), so the container itself stays
+   pointer-events:none (a handful of transient toasts must never block
+   clicks on whatever's behind them) while sticky ones re-enable it for
+   themselves. Also leaves room on the right for the X, pinned to the
+   card's own top-right corner instead of sitting inline with the text
+   (which, now that Auto Apply's notices can be two lines tall, would
+   otherwise float oddly mid-height instead of reading as a corner "close"
+   control). */
+.panel-toast__item--sticky {
+  pointer-events: auto;
+  cursor: pointer;
+  padding-right: 34px;
+}
+.panel-toast__text {
+  min-width: 0;
+  overflow-wrap: break-word;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+/* The title line keeps the toast's original single-line look (size/weight
+   unchanged) — every caller that doesn't pass `detail` (i.e. every toast
+   besides Auto Apply's own) renders exactly as before. */
+.panel-toast__title {
+  overflow-wrap: break-word;
+}
+/* Auto Apply's own second line — the specific reason/label underneath the
+   plain outcome ("Skipped" / "Generated & Auto-filled" / …). */
+.panel-toast__detail {
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.7);
+  overflow-wrap: break-word;
+}
+/* Pinned to the card's own top-right corner (see .panel-toast__item--sticky's
+   own padding-right, which makes room for it) — no hover state, since the
+   whole card is already one big click target (see panelToast's own
+   item-wide click listener) and a separate hover circle just for this one
+   corner of it read as its own, oddly-isolated button. */
+.panel-toast__close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+}
+.panel-toast__check {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: #fff;
+  display: grid;
+  place-items: center;
+}
+.panel-toast__check--success {
+  background: #2bb673;
+}
+.panel-toast__check--warning {
+  background: #f59e0b;
+}
+.panel-toast__check--error {
+  background: #ef4444;
+}
+.panel-toast__check--loading {
+  background: #3b82f6;
+}
+/* Mode-switch toast (see panelToast's "mode-auto"/"mode-free"/"mode-manual"
+   calls in sidepanel.js) — bare icon, no colored circle behind it like
+   every other toast kind gets. The icons (icons/pro.webp etc.) are already
+   the right color (pink/green/blue) as image pixels, no CSS color needed. */
+.panel-toast__check--mode-auto,
+.panel-toast__check--mode-free,
+.panel-toast__check--mode-manual {
+  background: transparent;
+}
+/* max-width/height + auto, not a fixed width/height — same reasoning as
+   .header-mode-toggle__icon in this file: the three source icons aren't
+   all the same aspect ratio once cropped tight to their own shape, so a
+   fixed square box stretched the non-square ones. */
+.panel-toast__mode-icon {
+  display: block;
+  width: auto;
+  height: auto;
+  /* Bigger than the other kinds' own 12px SVGs — those sit inside a 20px
+     colored circle that does a lot of the visual "weight" for them; this
+     one has no circle behind it (see panel-toast__check--mode-* above), so
+     it needs to be closer to that circle's own 20px to read as the same
+     size instead of looking smaller (confirmed real complaint). */
+  max-width: 18px;
+  max-height: 18px;
+}
+/* Loading's icon is a spinner (reuses the same @keyframes spin the header's
+   busy icons use), not a static glyph — it's reporting an in-progress
+   action, not a finished one. */
+.panel-toast__check--loading svg {
+  animation: spin 0.8s linear infinite;
+}
+@keyframes panel-toast-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+/* autoApplyNotice's own "this tab's entry just changed" pulse — a quick
+   accent-colour outline flash so a per-tab notice updating IN PLACE (e.g.
+   "Skipped" replaced by a later re-check, or a Generate outcome landing on
+   a tab that already had a notice) reads as fresh, not a silent text swap
+   buried in an unchanged stack. */
+.panel-toast__item--flash {
+  animation: panel-toast-flash 0.9s ease;
+}
+@keyframes panel-toast-flash {
+  0% {
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.28), 0 0 0 2px rgba(94, 173, 255, 0.9);
+  }
+  100% {
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.28), 0 0 0 2px rgba(94, 173, 255, 0);
+  }
+}
+.scroll-nav-btn:focus-visible {
+  outline: none;
+  border-radius: 50px;
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+/* The animated "mouse" indicator (component by mrhyddenn), themed to --accent.
+   A hollow pill with a dot that drifts and fades. */
+.scrolldown {
+  --color: var(--accent);
+  --sizeX: 16px;
+  --sizeY: 26px;
+  position: relative;
+  width: var(--sizeX);
+  height: var(--sizeY);
+  border: 2px solid var(--color);
+  border-radius: 50px;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+/* Scroll-to-top: flip vertically so the dot drifts UP instead of down. */
+.scroll-up .scrolldown {
+  transform: scaleY(-1);
+}
+.scrolldown::before {
+  content: "";
+  position: absolute;
+  bottom: 15px;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  margin-left: -2.5px;
+  background-color: var(--color);
+  border-radius: 100%;
+  animation: scrolldown-anim 2s infinite;
+  box-sizing: border-box;
+  box-shadow: 0 -4px 3px 1px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+@keyframes scrolldown-anim {
+  0% {
+    opacity: 0;
+    height: 5px;
+  }
+  40% {
+    opacity: 1;
+    height: 8px;
+  }
+  80% {
+    transform: translate(0, 10px);
+    height: 8px;
+    opacity: 0;
+  }
+  100% {
+    height: 3px;
+    opacity: 0;
+  }
+}
+/* Respect reduced-motion: hold the dot steady instead of animating. */
+@media (prefers-reduced-motion: reduce) {
+  .scrolldown::before {
+    animation: none;
+    opacity: 0.9;
+  }
+}
+
+/* =====================================================================
+   Login screen — animated radial halo + floating-label pill form
+   =====================================================================
+   Adapted from the dashboard's Login.css so the sign-in experience
+   feels continuous across the web app and the extension. The halo is
+   50 absolutely-positioned spokes pre-rotated by --i and scaled
+   outward; a delayed keyframe sends the bright accent dot orbiting
+   the card.
+   ===================================================================== */
+.login-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 150px 20px 24px;
+  overflow: hidden auto;
+  animation: fade-in 160ms ease-out;
+
+  /* Two layered gradients: the colour mix runs left-to-right, a separate
+     top-to-bottom white overlay fades it out toward the bottom — so it's
+     not one diagonal blend but genuinely mixed on one axis, white on the
+     other. First-listed paints on top. A deliberate departure from matching
+     BCD's own flat sign-in page here specifically, per direct instruction. */
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0) 15%, rgba(255, 255, 255, 1) 50%, rgba(255, 255, 255, 1) 100%),
+    linear-gradient(90deg, #ffe3c2 0%, #ffd9ec 50%, #dbe6ff 100%);
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.login-shell.hidden {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+body.login-locked { overflow: hidden; }
+
+/* Vertical stage: orb on top, form below. Everything centers in the
+   narrow column instead of fighting for radial space. */
+.login-stage {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 26px;
+  width: 100%;
+  max-width: 320px;
+}
+
+/* =====================================================================
+   Full logo — icon + "BCD" wordmark side by side, the same lockup as the
+   signed-in header's .brand, just bigger. Replaces the old stacked ring +
+   separate heading.
+   ===================================================================== */
+.login-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 4px;
+}
+.login-logo-mark {
+  width: 60px;
+  height: 60px;
+  border-radius: 15px;
+  /* icons/login-logo.png is pre-padded to a square + properly downsampled
+     (Pillow, LANCZOS) rather than the raw non-square source being
+     CSS-scaled — so contain is just a safety default now, not load-
+     bearing the way it was before that file existed. */
+  object-fit: contain;
+}
+
+/* =====================================================================
+   The form — flows below the orb in normal layout. No card surface;
+   elements rest on the gradient backdrop like the dashboard version.
+   ===================================================================== */
+/* No card surface — the form floats on the backdrop; the glass lives on the
+   inputs themselves (frosted pills + floating labels + focus glow). */
+.login-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.login-title {
+  margin: 0 0 4px;
+  text-align: center;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #111827;
+}
+/* .sr-only: for any other visually-hidden accessible-name-only text. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* The bordered box lives on the wrapper, not the input, so the leading icon
+   and the eye toggle sit INSIDE the same focus ring. :focus-within drives the
+   focus state for the whole control. */
+.login-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 48px;
+  border: 1.5px solid var(--glass-border);
+  border-radius: 999px;
+  background-color: var(--glass-input);
+  backdrop-filter: var(--glass-filter);
+  -webkit-backdrop-filter: var(--glass-filter);
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.login-input-wrap:focus-within {
+  border-color: #111827;
+  background-color: var(--glass-input-focus);
+}
+
+.login-leading {
+  position: absolute;
+  left: 15px;
+  color: var(--text-muted);
+  pointer-events: none;
+  flex: 0 0 auto;
+}
+
+.login-input-wrap:focus-within .login-leading {
+  /* Same dark navy as the sign-up button / this field's own focus border
+     (#111827), not the blue accent — the accent read as mismatched next to
+     the black primary action. */
+  color: #111827;
+}
+
+/* Overrides the global input[type=...] rule on padding/border/background.
+   Equal specificity, so this must stay later in the file than the global one.
+
+   line-height pinned to the box height: when type flips password -> text the
+   glyph metrics change (dots vs characters have different baselines) and the
+   text visibly jumps without it. `font: inherit` defeats platforms that swap
+   in a different font for password fields. */
+.login-field input {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 18px 0 46px;
+  font: inherit;
+  font-size: 0.8rem;
+  line-height: 48px;
+  color: var(--text-primary);
+  outline: none;
+  box-shadow: none;
+  text-indent: 0;
+}
+
+/* Null the global input:focus fill/glow — the wrapper owns those now. */
+.login-field input:focus {
+  background: transparent;
+  box-shadow: none;
+  border: 0;
+}
+
+.login-field input::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
+
+/* Only the password box reserves room for the eye toggle. Scoped to the
+   wrapper rather than input[type=text] so revealing the password (which flips
+   the type) doesn't shift the layout, and the email box keeps its full width. */
+.login-input-wrap.has-trailing input {
+  padding-right: 44px;
+}
+
+.login-trailing {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  background: transparent;
+  border: 0;
+  padding: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+.login-trailing:hover { color: var(--text-primary); }
+/* The global `button:active:not(:disabled) { transform: translateY(1px) }`
+   rule clashed with .login-trailing's `translateY(-50%)` centring, so the
+   icon visibly dropped on every click. Pin the centring transform on
+   :active to preserve vertical alignment. */
+.login-trailing:active:not(:disabled) { transform: translateY(-50%); }
+
+/* Eye toggle — show only one icon at a time. sidepanel.js flips a
+   .shown class on click; default state shows the open eye, .shown
+   state shows the slashed eye. */
+.login-trailing .icon-eye-off { display: none; }
+.login-trailing.shown .icon-eye { display: none; }
+.login-trailing.shown .icon-eye-off { display: inline-block; }
+
+/* Sign in — the primary, working action on this "Welcome back" page (dark
+   navy, same as the web app's own sign-in button). */
+.login-primary-btn {
+  width: 100%;
+  height: 48px;
+  padding: 0 20px;
+  background: #111827;
+  color: #ffffff;
+  border: 0;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  margin-top: 34px;
+}
+.login-primary-btn:hover:not(:disabled) { filter: brightness(1.25); }
+.login-primary-btn:disabled { opacity: 0.7; cursor: progress; }
+
+/* Sign in with Google — a soft pastel gradient ring (padding-box/border-box
+   trick, same pattern the floating-pill design picker uses for style6's
+   border) rather than a flat colour, since a plain grey border read as
+   disabled next to the dark button above it. Inert — Google auth isn't
+   built yet (see the note above it in sidepanel.html). */
+.login-google-btn {
+  width: 100%;
+  height: 48px;
+  padding: 0 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #ffffff;
+  color: #1a1a1a;
+  border: 1.5px solid transparent;
+  border-radius: 999px;
+  background-image: linear-gradient(#fff, #fff), linear-gradient(90deg, #ffb3d1, #c9b3ff, #a9e8c9);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  margin-bottom: 68px;
+}
+.login-google-btn:hover { filter: brightness(0.97); }
+.login-google-icon { flex: 0 0 auto; }
+
+.login-switch-text {
+  margin: 4px 0 0;
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* Sign up — not built yet (see the note above it in sidepanel.html),
+   de-emphasized as the secondary (white/bordered) button; the dark primary
+   styling now belongs to Sign in (.login-primary-btn above). */
+.login-secondary-btn {
+  width: 100%;
+  height: 48px;
+  padding: 0 20px;
+  background: #ffffff;
+  color: #111827;
+  border: 1.5px solid var(--glass-border);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+}
+.login-secondary-btn:hover { filter: brightness(0.97); }
+
+.login-copyright {
+  margin: 2px 0 0;
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  opacity: 0.75;
+}
+
+.login-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #c0392b;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+.login-error::before {
+  content: "⚠";
+  flex: 0 0 auto;
+}
+.login-error.hidden { display: none; }
+
+/* =====================================================================
+   Password input with show/hide toggle
+   ===================================================================== */
+.password-input {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.password-input input {
+  padding-right: 40px;
+}
+
+/* Suppress browser-native password reveal icons so they don't double up. */
+.password-input input::-ms-reveal,
+.password-input input::-ms-clear {
+  display: none;
+  width: 0;
+  height: 0;
+}
+.password-input input::-webkit-credentials-auto-fill-button,
+.password-input input::-webkit-strong-password-auto-fill-button,
+.password-input input::-webkit-textfield-decoration-container {
+  visibility: hidden;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: var(--r-sm);
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+  z-index: 2;
+}
+
+.password-toggle:hover {
+  background: var(--overlay-2);
+  color: var(--text-primary);
+}
+
+.password-toggle:active:not(:disabled) {
+  /* Keep the centering transform — don't let the global button:active translateY override it. */
+  transform: translateY(-50%);
+}
+
+.password-toggle:focus {
+  outline: none;
+}
+
+.password-toggle:focus-visible {
+  outline: 2px solid var(--accent-ring);
+  outline-offset: 1px;
+}
+
+.password-toggle svg {
+  width: 16px;
+  height: 16px;
+}
+
+.password-toggle .icon-eye-off {
+  display: none;
+}
+
+.password-toggle.shown .icon-eye {
+  display: none;
+}
+
+.password-toggle.shown .icon-eye-off {
+  display: block;
+}
+
+/* ============================================================
+ * Follow-up Q textarea read-only state.
+ * ============================================================
+ * Mirrors the "Asking…" pill on the button — while
+ * /answer-questions is in flight the textarea is set to
+ * readOnly and the paste / Enter auto-Ask handlers refuse to
+ * re-fire (sidepanel.js). The dim + not-allowed cursor make
+ * that obvious without an extra spinner.
+ */
+#qaInput[readonly],
+#qaInput:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+/* The composer bar is always visible now (not there yet == disabled, not
+   hidden) — dim the whole shell, not just the textarea, so it reads as one
+   inactive control while there's nothing to ask about yet. */
+.qa-input-shell:has(textarea:disabled) {
+  opacity: 0.55;
+}
+
+/* Scrollbars — same thin, hover-reveal style as the main BCD web app's
+   OverlayScroll "thin" variant (client/src/App.css's .ovscroll__thumb/
+   .ovscroll__track): invisible until the scrolling element itself is
+   hovered, then fades in over 0.2s. Applied globally, not per-container, so
+   every scrollable spot in the extension matches — there's no "thick"
+   variant here the way the web app has for its main/right panels. */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background-color: transparent;
+  transition: background-color 0.2s ease;
+}
+*:hover::-webkit-scrollbar-track {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+*:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:active {
+  background-color: rgba(0, 0, 0, 0.42);
+}
+
+/* ============================================================
+   Auto Fill tab — review list + free-form chat (sidepanel.js's
+   loadAutofillReview/sendAutofillChatMessage etc.). ============ */
+/* .tab-panel's own base rule scrolls the WHOLE panel as one block — here
+   the jobsite header, the Autofill/Stop footer, and the Ask composer below
+   all need to stay put while only the field list in between scrolls, so
+   that base overflow is turned off in favor of .autofill-review's own
+   (immediately below) doing the scrolling instead. */
+#apply2TabPanel {
+  overflow-y: hidden;
+}
+/* .field-modal__head/.autofill-forms-modal__footer carry their own 14px
+   left/right/top padding — built for the old modal, which had no other
+   padding source of its own. Living inside .tab-panel now, that stacks on
+   TOP of the panel's own 22px/20.5px padding: the title read with visibly
+   more top gap than the Job tab's Profile select gets (confirmed real
+   complaint), and both the title and the Autofill button read narrower
+   than the Ask-anything composer below (which has no side padding of its
+   own — see .qa-composer). Dropping the head's top/side padding and the
+   footer's side padding here lets .tab-panel's own padding be the only
+   source, so every row (title, field list, Autofill button, Ask composer)
+   lines up at the exact same left/right edges and the title sits exactly
+   where the Job tab's Profile select does. */
+#apply2TabPanel .field-modal__head {
+  padding: 0 0 10px;
+}
+#apply2TabPanel .autofill-forms-modal__footer {
+  padding: 10px 0 0;
+}
+.autofill-review {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+.autofill-review__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.autofill-review__resume-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.autofill-review__resume-name {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+.autofill-review__commit {
+  width: 100%;
+  height: 38px;
+}
+
+.autofill-qrow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: #f6f8fa;
+  border-radius: 10px;
+}
+/* Resume/Cover Letter cards stand apart from the plain contact/question
+   rows around them — same gradient-border language as Generate/Auto-fill
+   above (.generate-row/.autofill-row's own pink→purple→green border),
+   not just another flat grey card. */
+.autofill-qrow--resume {
+  border: 1.5px solid transparent;
+  /* Fill is the same gradient Auto-fill's own button fill uses
+     (.autofill-btn__fill) instead of a flat grey — explicit request to
+     tie this card's background to that same color. */
+  background-image: linear-gradient(90deg, #fff4f8, #f7f4ff, #f2fcf7), linear-gradient(90deg, #ffb3d1, #c9b3ff, #a9e8c9);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+.autofill-qrow--loading {
+  opacity: 0.72;
+}
+/* Set once the hands-free post-Generate run (runAutofill) confirms this row
+   actually got written to the page — see applyAutofillResultToReview in
+   sidepanel.js. A tinted left edge so a scanned list visibly separates
+   "done" from "still just a preview" without needing a legend. */
+.autofill-qrow--filled {
+  background: color-mix(in srgb, var(--green, #16a34a) 7%, #f6f8fa);
+  box-shadow: inset 2px 0 0 var(--green, #16a34a);
+}
+.autofill-qrow__filled-badge {
+  color: var(--green, #16a34a);
+  font-weight: 700;
+  font-size: 11px;
+  white-space: nowrap;
+}
+/* Required-question marker — same red asterisk-after-the-label BidHub's
+   own review list shows (confirmed real complaint: Banana's didn't show
+   one at all). */
+.autofill-qrow__required {
+  color: #dc2626;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1;
+}
+/* Fixed-choice question's own answer options, listed below the question
+   (row.kind === "choice" in autofillReviewRowHtml) — same "question, then
+   its real answers underneath" shape BidHub's own review list uses, in
+   place of trying to free-text-AI-answer something whose only valid
+   answers are a closed set of buttons. */
+.autofill-choice-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.autofill-choice-pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--bg-elevated, #fff);
+  border: 1px solid var(--border, #e2e5ea);
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.autofill-qrow__label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.autofill-qrow__answer {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.autofill-qrow__value {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.autofill-qrow__hint {
+  color: var(--text-muted);
+  font-style: italic;
+}
+.autofill-qrow__hint--error {
+  color: var(--red, #dc2626);
+  font-style: normal;
+}
+.autofill-qrow__input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 7px 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+}
+.autofill-qrow__input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.autofill-qrow__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+}
+.autofill-qrow__actions .icon-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  color: var(--text-muted);
+}
+.autofill-qrow__actions .icon-btn:hover:not(:disabled) {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+/* Repeatable Education/Work-history section card (autofill/engine/
+   section-hierarchy.js + sidepanel.js's loadAutofillReview) — a root
+   .autofill-qrow whose body holds one .autofill-section__group per
+   detected row, each listing its own mapped leaf fields. */
+.autofill-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.autofill-section__count {
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-left: 6px;
+}
+.autofill-section__toggle {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  color: var(--text-muted);
+  flex: 0 0 auto;
+}
+.autofill-section__toggle:hover {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.autofill-section__body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.autofill-section--collapsed .autofill-section__body {
+  display: none;
+}
+.autofill-section__group {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.autofill-section__group-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+.autofill-section__leaf {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12.5px;
+}
+.autofill-section__leaf-label {
+  color: var(--text-muted);
+}
+.autofill-section__leaf-value {
+  color: var(--text-secondary);
+  text-align: right;
+  word-break: break-word;
+}
+
+/* flex-shrink is 1 by default — inside .apply-scroll's column, which always
+   overflows eventually, every child would get squeezed toward its own
+   min-content floor instead of the container just scrolling (which its own
+   overflow-y: auto is there for). That's what silently shrank .autofill-btn
+   from its fixed 38px down to ~18px: its floor (one line of icon+text) is
+   much smaller than its intended height, while e.g. .generate-row's floor
+   happens to already be close to 38px so it didn't visibly move. Placed
+   last in the file (not next to .apply-scroll's own rule) so it wins the
+   cascade against every child's own `flex` shorthand at equal specificity —
+   each of those sets flex-shrink to 1 too, just not on purpose. */
+.apply-scroll > * {
+  flex-shrink: 0;
+}

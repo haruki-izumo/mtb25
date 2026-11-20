@@ -1,0 +1,1696 @@
+{
+  "manifest_version": 3,
+  "name": "Big Banana",
+  "version": "5.3.1",
+  "description": "Big Banana — generate tailored resumes, cover letters, and screening answers from a BCD profile and any job description.",
+  "permissions": [
+    "sidePanel",
+    "storage",
+    "tabs",
+    "downloads",
+    "activeTab",
+    "scripting",
+    "system.display",
+    "notifications"
+  ],
+  "host_permissions": [
+    "https://mtb25.onrender.com/*",
+    "https://*.onrender.com/*",
+    "https://bcd.llc/*",
+    "http://localhost:3000/*",
+    "http://127.0.0.1:3000/*",
+    "http://localhost:5000/*",
+    "http://127.0.0.1:5000/*",
+    "https://backend-liard-iota-73.vercel.app/*",
+    "https://*.vercel.app/*",
+    "https://chat.openai.com/*",
+    "https://chatgpt.com/*",
+    "*://*/*"
+  ],
+  "icons": {
+    "16": "icons/logo-16.png",
+    "32": "icons/logo-32.png",
+    "48": "icons/logo-48.png",
+    "128": "icons/logo.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "overlay-prefs.js",
+        "job-detect/_bootstrap.js",
+        "job-detect/resolver.js",
+        "job-detect/normalize/text.js",
+        "job-detect/normalize/html.js",
+        "job-detect/normalize/geo.js",
+        "job-detect/normalize/language.js",
+        "job-detect/normalize/roles.js",
+        "job-detect/dom/query.js",
+        "job-detect/dom/regions.js",
+        "job-detect/extractors/structured/jsonld.js",
+        "job-fit.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "content-detect.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true,
+      "match_about_blank": true,
+      "exclude_matches": [
+        "https://job-boards.greenhouse.io/*",
+        "https://job-boards.eu.greenhouse.io/*",
+        "https://boards.greenhouse.io/*/jobs/*",
+        "https://boards.greenhouse.io/embed/*",
+        "https://jobs.lever.co/*/*",
+        "https://*.myworkdayjobs.com/*",
+        "https://jobs.ashbyhq.com/*/*",
+        "https://apply.workable.com/*",
+        "https://jobs.workable.com/view/*",
+        "https://jobs.workable.com/search*",
+        "https://*.icims.com/jobs/*",
+        "https://*.icims.com/forms*",
+        "https://*.icims.com/icims2/*",
+        "https://login.icims.com/*",
+        "https://*.indeed.com/*",
+        "https://indeed.com/*",
+        "https://*.smartapply.indeed.com/*",
+        "https://smartapply.indeed.com/*",
+        "https://*.indeed.com/beta/indeedapply*",
+        "https://www.linkedin.com/jobs/search/*",
+        "https://www.linkedin.com/jobs/collections/*",
+        "https://www.linkedin.com/jobs/view/*",
+        "https://www.dice.com/job-detail/*",
+        "https://www.dice.com/job-applications/*",
+        "https://jobs.gem.com/*",
+        "https://*.jobright.ai/jobs/info/*",
+        "https://*.bamboohr.com/careers/*",
+        "https://*.smartrecruiters.com/*",
+        "https://*.smartr.me/oneclick-ui/*",
+        "https://*.oraclecloud.com/*",
+        "https://*.oraclecloud.com/hcmUI/CandidateExperience/*",
+        "https://*.paycomonline.net/v4/ats/*",
+        "https://*.paycomonline.com/v4/ats/*",
+        "https://recruiting.paylocity.com/*",
+        "https://recruiting.paylocity.com/Recruiting/Jobs/*",
+        "https://*.rippling.com/*",
+        "https://www.ziprecruiter.com/jobs-search*",
+        "https://www.ziprecruiter.com/jobs/*",
+        "https://www.ziprecruiter.com/jobseeker/*",
+        "https://builtin.com/*",
+        "https://*.applytojob.com/apply/*",
+        "https://*.careerplug.com/jobs/*/apps/new*",
+        "https://*.careerplug.com/jobs/*",
+        "https://*.teamtailor.com/jobs/*",
+        "https://jobs.gusto.com/postings/*",
+        "https://*.avature.net/*",
+        "https://*.pinpointhq.com/*",
+        "https://*.pinpointhq.com/*postings/*",
+        "https://*.comeet.com/jobs/*",
+        "https://*.comeet.co/*",
+        "https://*.recruitee.com/o/*",
+        "https://careers.epam.com/*/vacancy/*",
+        "https://*.jobs.personio.com/job/*",
+        "https://*.jobs.personio.de/job/*",
+        "https://*.breezy.hr/p/*",
+        "https://*.jobdiva.com/portal/*",
+        "https://careers.kula.ai/*/*",
+        "https://*.ripplehire.com/candidate/*",
+        "https://*.dayforcehcm.com/*/jobs/*",
+        "https://app.dover.io/*",
+        "https://app.dover.com/*",
+        "https://*.eightfold.ai/*",
+        "https://*.eightfold.ai/careers*",
+        "https://*.jobvite.com/*",
+        "https://*.jobvite.com/*/job/*",
+        "https://motionrecruitment.com/*",
+        "https://*.ultipro.com/*/JobBoard/*/OpportunityDetail*",
+        "https://*.ultipro.com/*/JobBoard/*/OpportunityApply*",
+        "https://*.ultipro.com/*/Account/*",
+        "https://*.ultipro.com/*/AuthCode/*",
+        "https://*.ultipro.com/u/*",
+        "https://*.ultipro.com/ui/*",
+        "https://*.freshteam.com/jobs/*",
+        "https://*.zohorecruit.com/jobs/careers/*",
+        "https://*.careers-page.com/*/job/*",
+        "https://hackajob.com/job/*",
+        "https://hackajob.com/en-us/job/*",
+        "https://hackajob.com/talent/apply*",
+        "https://hackajob.com/en-us/talent/apply*",
+        "https://user.hackajob.com/*"
+      ]
+    },
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "overlay-prefs.js",
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/detectors/dropdowns.js",
+        "autofill/detectors/checkbox-groups.js",
+        "autofill/detectors/phone-country.js",
+        "autofill/detectors/questions.js",
+        "autofill/detectors/files.js",
+        "autofill/detectors/consent.js",
+        "autofill/detectors/rating.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/pipeline/basic.js",
+        "autofill/pipeline/advanced.js",
+        "autofill/ui/banner.js",
+        "autofill.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true,
+      "match_about_blank": true,
+      "exclude_matches": [
+        "https://job-boards.greenhouse.io/*",
+        "https://job-boards.eu.greenhouse.io/*",
+        "https://boards.greenhouse.io/*/jobs/*",
+        "https://boards.greenhouse.io/embed/*",
+        "https://jobs.lever.co/*/*",
+        "https://*.myworkdayjobs.com/*",
+        "https://jobs.ashbyhq.com/*/*",
+        "https://apply.workable.com/*",
+        "https://jobs.workable.com/view/*",
+        "https://jobs.workable.com/search*",
+        "https://*.icims.com/jobs/*",
+        "https://*.icims.com/forms*",
+        "https://*.icims.com/icims2/*",
+        "https://login.icims.com/*",
+        "https://*.indeed.com/*",
+        "https://indeed.com/*",
+        "https://*.smartapply.indeed.com/*",
+        "https://smartapply.indeed.com/*",
+        "https://*.indeed.com/beta/indeedapply*",
+        "https://www.linkedin.com/jobs/search/*",
+        "https://www.linkedin.com/jobs/collections/*",
+        "https://www.linkedin.com/jobs/view/*",
+        "https://www.dice.com/job-detail/*",
+        "https://www.dice.com/job-applications/*",
+        "https://jobs.gem.com/*",
+        "https://*.jobright.ai/jobs/info/*",
+        "https://*.bamboohr.com/careers/*",
+        "https://*.smartrecruiters.com/*",
+        "https://*.smartr.me/oneclick-ui/*",
+        "https://*.oraclecloud.com/*",
+        "https://*.oraclecloud.com/hcmUI/CandidateExperience/*",
+        "https://*.paycomonline.net/v4/ats/*",
+        "https://*.paycomonline.com/v4/ats/*",
+        "https://recruiting.paylocity.com/*",
+        "https://recruiting.paylocity.com/Recruiting/Jobs/*",
+        "https://*.rippling.com/*",
+        "https://www.ziprecruiter.com/jobs-search*",
+        "https://www.ziprecruiter.com/jobs/*",
+        "https://www.ziprecruiter.com/jobseeker/*",
+        "https://builtin.com/*",
+        "https://*.applytojob.com/apply/*",
+        "https://*.careerplug.com/jobs/*/apps/new*",
+        "https://*.careerplug.com/jobs/*",
+        "https://*.teamtailor.com/jobs/*",
+        "https://jobs.gusto.com/postings/*",
+        "https://*.avature.net/*",
+        "https://*.pinpointhq.com/*",
+        "https://*.pinpointhq.com/*postings/*",
+        "https://*.comeet.com/jobs/*",
+        "https://*.comeet.co/*",
+        "https://*.recruitee.com/o/*",
+        "https://careers.epam.com/*/vacancy/*",
+        "https://*.jobs.personio.com/job/*",
+        "https://*.jobs.personio.de/job/*",
+        "https://*.breezy.hr/p/*",
+        "https://*.jobdiva.com/portal/*",
+        "https://careers.kula.ai/*/*",
+        "https://*.ripplehire.com/candidate/*",
+        "https://*.dayforcehcm.com/*/jobs/*",
+        "https://app.dover.io/*",
+        "https://app.dover.com/*",
+        "https://*.eightfold.ai/*",
+        "https://*.eightfold.ai/careers*",
+        "https://*.jobvite.com/*",
+        "https://*.jobvite.com/*/job/*",
+        "https://motionrecruitment.com/*",
+        "https://*.ultipro.com/*/JobBoard/*/OpportunityDetail*",
+        "https://*.ultipro.com/*/JobBoard/*/OpportunityApply*",
+        "https://*.ultipro.com/*/Account/*",
+        "https://*.ultipro.com/*/AuthCode/*",
+        "https://*.ultipro.com/u/*",
+        "https://*.ultipro.com/ui/*",
+        "https://*.freshteam.com/jobs/*",
+        "https://*.zohorecruit.com/jobs/careers/*",
+        "https://*.careers-page.com/*/job/*",
+        "https://hackajob.com/job/*",
+        "https://hackajob.com/en-us/job/*",
+        "https://hackajob.com/talent/apply*",
+        "https://hackajob.com/en-us/talent/apply*",
+        "https://user.hackajob.com/*"
+      ]
+    },
+    {
+      "matches": [
+        "https://job-boards.greenhouse.io/*",
+        "https://job-boards.eu.greenhouse.io/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/greenhouse.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://job-boards.greenhouse.io/*",
+        "https://job-boards.eu.greenhouse.io/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/engine/section-hierarchy.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/greenhouse-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://boards.greenhouse.io/*/jobs/*",
+        "https://boards.greenhouse.io/embed/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/greenhouse-old.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://jobs.lever.co/*/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/lever.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://jobs.lever.co/*/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/lever-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.myworkdayjobs.com/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/workday.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.myworkdayjobs.com/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/engine/section-hierarchy.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/workday-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://jobs.ashbyhq.com/*/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/ashby.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://jobs.ashbyhq.com/*/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/engine/section-hierarchy.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/ashby-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://apply.workable.com/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/workable.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://apply.workable.com/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/engine/section-hierarchy.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/workable-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://jobs.workable.com/view/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/workable-jobs-view.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://jobs.workable.com/search*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/workable-jobs-search.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://jobs.workable.com/view/*",
+        "https://jobs.workable.com/search*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/engine/section-hierarchy.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/workable-jobs-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.icims.com/jobs/*",
+        "https://*.icims.com/forms*",
+        "https://*.icims.com/icims2/*",
+        "https://login.icims.com/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/engine/section-hierarchy.js",
+        "autofill/dispatcher.js",
+        "job-detect/sites/icims.js",
+        "autofill/sites/icims-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.indeed.com/*",
+        "https://indeed.com/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/indeed.js"
+      ]
+    },
+    {
+      "matches": [
+        "https://*.smartapply.indeed.com/*",
+        "https://smartapply.indeed.com/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/indeed-smartapply.js"
+      ]
+    },
+    {
+      "matches": [
+        "https://*.indeed.com/beta/indeedapply*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/engine/section-hierarchy.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/indeed-autofill.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://www.linkedin.com/jobs/search/*",
+        "https://www.linkedin.com/jobs/collections/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/linkedin-search.js"
+      ]
+    },
+    {
+      "matches": [
+        "https://www.linkedin.com/jobs/view/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/linkedin-view.js"
+      ]
+    },
+    {
+      "matches": [
+        "https://www.dice.com/job-detail/*",
+        "https://www.dice.com/job-applications/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/dice.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://www.dice.com/job-detail/*",
+        "https://www.dice.com/job-applications/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/dice-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://jobs.gem.com/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/gem.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://jobs.gem.com/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/gem-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.jobright.ai/jobs/info/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/jobright.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.bamboohr.com/careers/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/bamboohr.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.bamboohr.com/careers/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/bamboohr-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.smartrecruiters.com/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/smartrecruiters.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.smartrecruiters.com/*",
+        "https://*.smartr.me/oneclick-ui/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/engine/section-hierarchy.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/smartrecruiters-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.oraclecloud.com/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/oraclecloud.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.oraclecloud.com/hcmUI/CandidateExperience/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/engine/section-hierarchy.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/oraclecloud-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.paycomonline.net/v4/ats/*",
+        "https://*.paycomonline.com/v4/ats/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/paycom.js"
+      ],
+      "all_frames": true
+    },
+    {
+      "matches": [
+        "https://*.paycomonline.net/v4/ats/*",
+        "https://*.paycomonline.com/v4/ats/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/engine/section-hierarchy.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/paycom-autofill.js"
+      ],
+      "all_frames": true
+    },
+    {
+      "matches": [
+        "https://recruiting.paylocity.com/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/paylocity.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://recruiting.paylocity.com/Recruiting/Jobs/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/engine/section-hierarchy.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/paylocity-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.rippling.com/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/rippling.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.rippling.com/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/rippling-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://www.ziprecruiter.com/jobs-search*",
+        "https://www.ziprecruiter.com/jobs/*",
+        "https://www.ziprecruiter.com/jobseeker/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/ziprecruiter.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://www.ziprecruiter.com/jobs-search*",
+        "https://www.ziprecruiter.com/jobs/*",
+        "https://www.ziprecruiter.com/jobseeker/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/ziprecruiter-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://builtin.com/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/builtin.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://builtin.com/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/engine/section-hierarchy.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/builtin-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.applytojob.com/apply/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/applytojob.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.applytojob.com/apply/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/applytojob-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.careerplug.com/jobs/*/apps/new*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/careerplug.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.careerplug.com/jobs/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/careerplug-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.teamtailor.com/jobs/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/teamtailor.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.teamtailor.com/jobs/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/teamtailor-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://jobs.gusto.com/postings/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/dispatcher.js",
+        "job-detect/sites/gusto.js",
+        "autofill/sites/gusto-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.avature.net/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/engine/section-hierarchy.js",
+        "autofill/dispatcher.js",
+        "job-detect/sites/avature.js",
+        "autofill/sites/avature-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.pinpointhq.com/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/pinpointhq.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.pinpointhq.com/*postings/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/pinpointhq-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.comeet.com/jobs/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/comeet.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.comeet.com/jobs/*",
+        "https://*.comeet.co/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/comeet-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.recruitee.com/o/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/recruitee.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.recruitee.com/o/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/recruitee-autofill.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://careers.epam.com/*/vacancy/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/epam.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://careers.epam.com/*/vacancy/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/epam-autofill.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.jobs.personio.com/job/*",
+        "https://*.jobs.personio.de/job/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/personio.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.jobs.personio.com/job/*",
+        "https://*.jobs.personio.de/job/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/personio-autofill.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.breezy.hr/p/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/breezy.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.breezy.hr/p/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/engine/section-hierarchy.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/breezy-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.jobdiva.com/portal/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/jobdiva.js"
+      ]
+    },
+    {
+      "matches": [
+        "https://*.jobdiva.com/portal/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/jobdiva-autofill.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://careers.kula.ai/*/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/kula.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://careers.kula.ai/*/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/engine/section-hierarchy.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/kula-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.ripplehire.com/candidate/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/ripplehire.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.ripplehire.com/candidate/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/ripplehire-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.dayforcehcm.com/*/jobs/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/dayforcehcm.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.dayforcehcm.com/*/jobs/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/engine/section-hierarchy.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/dayforcehcm-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://app.dover.io/*",
+        "https://app.dover.com/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/dover.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://app.dover.io/*",
+        "https://app.dover.com/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/dover-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.eightfold.ai/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/eightfold.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.eightfold.ai/careers*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/eightfold-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.jobvite.com/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/jobvite.js"
+      ]
+    },
+    {
+      "matches": [
+        "https://*.jobvite.com/*/job/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/jobvite-autofill.js"
+      ]
+    },
+    {
+      "matches": [
+        "https://motionrecruitment.com/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/motionrecruitment.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://motionrecruitment.com/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/motionrecruitment-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.ultipro.com/*/JobBoard/*/OpportunityDetail*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/ultipro.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.ultipro.com/*/JobBoard/*/OpportunityDetail*",
+        "https://*.ultipro.com/*/JobBoard/*/OpportunityApply*",
+        "https://*.ultipro.com/*/Account/*",
+        "https://*.ultipro.com/*/AuthCode/*",
+        "https://*.ultipro.com/u/*",
+        "https://*.ultipro.com/ui/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/engine/section-hierarchy.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/ultipro-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.freshteam.com/jobs/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/freshteam.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.freshteam.com/jobs/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/engine/section-hierarchy.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/freshteam-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.zohorecruit.com/jobs/careers/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/zohorecruit.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.zohorecruit.com/jobs/careers/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/engine/section-hierarchy.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/zohorecruit-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.careers-page.com/*/job/*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/careerspage.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.careers-page.com/*/job/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/careerspage-autofill.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://hackajob.com/job/*",
+        "https://hackajob.com/en-us/job/*",
+        "https://hackajob.com/talent/apply*",
+        "https://hackajob.com/en-us/talent/apply*"
+      ],
+      "js": [
+        "job-detect/engine/parser.js",
+        "job-detect/extractors/structured/jobmeta.js",
+        "job-detect/sites/hackajob.js"
+      ]
+    },
+    {
+      "matches": [
+        "https://hackajob.com/job/*",
+        "https://hackajob.com/en-us/job/*",
+        "https://user.hackajob.com/*"
+      ],
+      "js": [
+        "autofill/_bootstrap.js",
+        "autofill/core/dom.js",
+        "autofill/core/react-input.js",
+        "autofill/core/values.js",
+        "autofill/detectors/contact.js",
+        "autofill/pipeline/registry.js",
+        "autofill/handlers/presets/screening.js",
+        "autofill/engine/dom-interactions.js",
+        "autofill/dispatcher.js",
+        "autofill/sites/hackajob-autofill.js"
+      ]
+    },
+    {
+      "matches": [
+        "https://chat.openai.com/*",
+        "https://chatgpt.com/*"
+      ],
+      "js": [
+        "chatgpt-bridge.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://chat.openai.com/*",
+        "https://chatgpt.com/*"
+      ],
+      "js": [
+        "chatgpt-visibility-shim.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_start"
+    }
+  ],
+  "action": {
+    "default_title": "Open Big Banana",
+    "default_icon": {
+      "16": "icons/logo-16.png",
+      "32": "icons/logo-32.png",
+      "48": "icons/logo-48.png",
+      "128": "icons/logo.png"
+    }
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "sidepanel.html",
+        "panel.css",
+        "sidepanel.js",
+        "theme-colors.js",
+        "overlay-prefs.js",
+        "fonts/*",
+        "icons/*",
+        "vendor/*"
+      ],
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ]
+    }
+  ],
+  "commands": {
+    "run-generate": {
+      "suggested_key": {
+        "default": "Ctrl+Q"
+      },
+      "description": "Generate the tailored resume"
+    },
+    "run-autofill": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Q"
+      },
+      "description": "Auto-fill the current job application"
+    }
+  }
+}

@@ -1,0 +1,1564 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>Big Banana</title>
+  <!-- Lato is self-hosted (fonts/) rather than pulled from Google Fonts — see
+       panel.css's @font-face rules — so the panel always has it even with no
+       network / under a strict extension CSP, same reasoning as the BCD web
+       app's own self-hosted copy (client/src/index.css). -->
+  <link rel="stylesheet" href="panel.css" />
+  <script src="theme-colors.js"></script>
+  <script src="overlay-prefs.js"></script>
+</head>
+
+<body class="login-locked">
+  <header class="app-header">
+    <div class="app-header-top">
+    <!-- Clicking the logo opens the web dashboard (bcd.llc) in a new tab —
+         see sidepanel.js's brand click handler. -->
+    <div class="brand" id="brandOpenDashboard" role="button" tabindex="0" title="Open dashboard">
+      <span class="brand-mark">
+        <img id="brandLogoHeader" src="icons/logo.png" alt="BCD" />
+      </span>
+      <!-- Filled in from chrome.runtime.getManifest().version (see
+           sidepanel.js's init/EXTENSION_VERSION) rather than hardcoded here,
+           so it can never drift out of sync with manifest.json. -->
+      <span id="brandVersion" class="brand-version"></span>
+    </div>
+
+    <!-- Settings and Tab Sync used to live here as icon buttons jumping
+         into their own hidden tab-strip entries — both are now ordinary
+         visible tabs in #mainTabs below instead (see its own comment), so
+         there's nothing left for a header icon to jump TO. -->
+    <!-- Resume mode — centered in the header row now (used to sit right-
+         aligned alongside the sign-out icon button, which is gone — see
+         #loggedInBar below). Same markup/classes/JS (syncResumeModeUI,
+         initResumeModeToggle in sidepanel.js), just moved here so it's
+         reachable from every tab instead of requiring a trip to Settings.
+         "Pro" = OpenAI, paid (today's flow — data-mode stays "auto"
+         internally, only the label changed, so nothing downstream keyed
+         off that value needed touching), "Free" = a free AI tier (stub
+         only for now — Generate stays disabled in
+         this mode until that's actually built), "Manual" = a live ChatGPT
+         tab (see the Job tab's own #manualChatGptUrlRow, Manual-mode
+         only, for where that chat's URL is set now). -->
+    <div class="header-meta">
+      <!-- Icon buttons, not text tabs — icons/pro.webp, icons/free.webp,
+           icons/manual.webp (recolored from the project's own
+           icons/Pro.png etc. source set: pink/green/blue respectively —
+           see panel.css's .header-mode-toggle__icon). Grey (via grayscale
+           filter) at rest, the active one shows its real color — same
+           palette as the Generate/Auto-fill step badge (see
+           body[data-resume-mode] in panel.css) instead of a plain
+           active/inactive background swap. -->
+      <div class="header-mode-toggle header-mode-toggle--icons" id="resumeModeToggle" role="radiogroup"
+        aria-label="Resume mode" title="Generate with OpenAI (Pro), a free AI tier (Free), or your own ChatGPT tab (Manual)">
+        <button type="button" class="header-mode-toggle__btn active" data-mode="auto" role="radio"
+          aria-checked="true" aria-label="Pro — OpenAI" title="Pro — OpenAI">
+          <img class="header-mode-toggle__icon" src="icons/pro.webp" alt="" aria-hidden="true" />
+        </button>
+        <button type="button" class="header-mode-toggle__btn" data-mode="free" role="radio"
+          aria-checked="false" aria-label="Free — a free AI tier" title="Free — a free AI tier">
+          <img class="header-mode-toggle__icon" src="icons/free.webp" alt="" aria-hidden="true" />
+        </button>
+        <button type="button" class="header-mode-toggle__btn" data-mode="manual" role="radio"
+          aria-checked="false" aria-label="Manual — your own ChatGPT tab" title="Manual — your own ChatGPT tab">
+          <img class="header-mode-toggle__icon" src="icons/manual.webp" alt="" aria-hidden="true" />
+        </button>
+      </div>
+    </div>
+
+    <div id="loggedInBar" class="header-actions hidden">
+      <!-- Avatar + name, right-aligned — click opens #userMenu below instead
+           of jumping straight to the Profile tab. The old standalone
+           sign-out icon button is gone; its action moved into that menu's
+           own Sign out row (see userMenuSignOutBtn in sidepanel.js). -->
+      <button id="userMenuBtn" type="button" class="user-chip" aria-haspopup="true" aria-expanded="false"
+        title="Account menu">
+        <span id="userInitial" class="user-avatar">?</span>
+        <span id="userLabel" class="user-name"></span>
+        <!-- Name text next to the avatar is hidden now (.user-name) — this
+             is the only thing left marking the avatar as a dropdown
+             trigger. Flips 180° open (panel.css, off this button's own
+             aria-expanded) same as .select-chevron elsewhere. -->
+        <svg class="user-chip__chevron" xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+          viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+          stroke-linejoin="round" aria-hidden="true">
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      <div id="userMenu" class="user-menu hidden" role="menu">
+        <div class="user-menu__head">
+          <span id="userMenuAvatar" class="user-menu__avatar">?</span>
+          <span class="user-menu__who">
+            <span id="userMenuName" class="user-menu__name"></span>
+            <span id="userMenuEmail" class="user-menu__email"></span>
+          </span>
+        </div>
+        <div class="user-menu__divider"></div>
+        <button type="button" class="user-menu__item" id="userMenuProfileBtn" role="menuitem">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+          <span>Profile</span>
+        </button>
+        <button type="button" class="user-menu__item" id="userMenuSettingsBtn" role="menuitem">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+          <span>Settings</span>
+        </button>
+        <div class="user-menu__divider"></div>
+        <button type="button" class="user-menu__item user-menu__item--danger" id="userMenuSignOutBtn" role="menuitem">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" x2="9" y1="12" y2="12" />
+          </svg>
+          <span>Sign out</span>
+        </button>
+      </div>
+    </div>
+    </div>
+
+    <!-- Top-level section switcher — above the header's own divider (the
+         border-bottom on .app-header), not below it. Apply wraps everything
+         that already existed in the panel (update banner, Detect/Generate,
+         Job details, etc). -->
+    <div class="seg-tabs" id="mainTabs" role="tablist">
+      <!-- Label-only rename from "Apply" — data-tab stays "apply" so
+           nothing downstream (switchToTab, MAIN_TAB_FOR, #applyTabPanel,
+           etc.) needs to change. -->
+      <button type="button" class="seg-tabs-btn active" data-tab="apply" role="tab" aria-selected="true">Job</button>
+      <!-- New, separate from the "Job" tab above (which is internally still
+           data-tab="apply" — see its own comment) — #apply2TabPanel is
+           intentionally left blank for now. -->
+      <button type="button" class="seg-tabs-btn" data-tab="apply2" role="tab" aria-selected="false">Apply</button>
+      <button type="button" class="seg-tabs-btn" data-tab="profile" role="tab" aria-selected="false">Profile</button>
+      <!-- Settings and Tab Sync used to be header-only icon buttons (gear /
+           tab-sync glyph) jumping to these same two panels — both are
+           ordinary tabs now, same switchToTab(tab)/#mainTabs delegated
+           click handler every other tab already uses, nothing special-cased
+           for these two beyond that. -->
+      <button type="button" class="seg-tabs-btn seg-tabs-btn--icon" data-tab="tabsync" role="tab"
+        aria-selected="false" title="Tabsync" aria-label="Tabsync">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect width="18" height="14" x="3" y="5" rx="2" />
+          <path d="M3 9h18" />
+          <path d="M8 7h.01" />
+          <path d="M10 7h.01" />
+        </svg>
+        <!-- Moved here from the old header tabsyncBtn icon — same
+             refreshTabsyncUnappliedBadge in sidepanel.js, independent of
+             which panel is currently showing. A plain dot now (see
+             setTabsyncBadge), not a count — icon-only tab, no room to read
+             a number next to it anyway. -->
+        <span id="tabsyncUnappliedBadge" class="seg-tabs-badge seg-tabs-badge--dot hidden" aria-hidden="true"></span>
+      </button>
+      <!-- Icon only (same gear glyph the old header settingsBtn icon used),
+           last in the strip — a settings entry reads fine as just the icon,
+           unlike Job/Profile/Tabsync which need their label. -->
+      <button type="button" class="seg-tabs-btn seg-tabs-btn--icon" data-tab="account" role="tab"
+        aria-selected="false" title="Settings" aria-label="Settings">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        </svg>
+      </button>
+    </div>
+
+  </header>
+
+  <!--
+    Login screen — tuned for the narrow side panel. The logo sits in a
+    plain glowing disc (.login-orb / .login-orb-logo — no rotating spoke
+    ring). The form flows below on a starfield + accent-gradient backdrop.
+
+    JS hooks left intact (#loginEmail / #loginPassword / #loginBtn /
+    #loginModalError / #loginPasswordToggle) so sidepanel.js needs no
+    changes.
+  -->
+  <div id="loginModal" class="login-shell" role="dialog" aria-modal="true" aria-labelledby="loginModalTitle">
+    <div class="login-stage">
+      <!-- Icon only (logo2) — no "BCD" wordmark alongside it here. -->
+      <div class="login-logo" aria-hidden="true">
+        <img id="brandLogoLogin" class="login-logo-mark" src="icons/login-logo.png" alt="" />
+      </div>
+
+      <div class="login-card">
+        <h2 id="loginModalTitle" class="login-title">Big Banana</h2>
+
+        <!-- BCD auth is email-only (no username alt) — type="email" is fine here. -->
+        <div class="login-field">
+          <div class="login-input-wrap">
+            <svg class="login-leading" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              aria-hidden="true">
+              <rect width="20" height="16" x="2" y="4" rx="2" />
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+            </svg>
+            <input id="loginEmail" type="email" autocomplete="username" placeholder="Enter your email"
+              aria-label="Email" required />
+          </div>
+        </div>
+
+        <div class="login-field">
+          <div class="login-input-wrap has-trailing">
+            <svg class="login-leading" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              aria-hidden="true">
+              <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Enter your password"
+              aria-label="Password" required />
+          <button id="loginPasswordToggle" type="button" class="login-trailing" aria-label="Show password" tabindex="-1">
+            <svg class="icon-eye" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+            <svg class="icon-eye-off" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+              <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+              <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+              <line x1="2" x2="22" y1="2" y2="22" />
+            </svg>
+          </button>
+          </div>
+        </div>
+
+        <p id="loginModalError" class="login-error hidden" role="alert"></p>
+
+        <!-- Sign in is the only working action here — it's a "Welcome back"
+             page, so it's the dark primary button up top now (was pushed to
+             the bottom behind the not-yet-built Sign up flow before).
+             Google sign-in isn't built either, so it stays inert
+             (no click handler, type="button" so it can't accidentally
+             submit anything) — same as the Sign up button demoted below. -->
+        <button id="loginBtn" type="button" class="login-primary-btn">
+          <span class="btn-text">Sign in</span>
+        </button>
+
+        <button id="googleLoginBtn" type="button" class="login-google-btn">
+          <svg class="login-google-icon" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+            <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
+            <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+            <path fill="#FBBC05" d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71s.102-1.17.282-1.71V4.958H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.042l3.007-2.332z"/>
+            <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
+          </svg>
+          <span>Sign in using Google</span>
+        </button>
+
+        <p class="login-switch-text">Don't have an account?</p>
+
+        <button id="signupBtn" type="button" class="login-secondary-btn">
+          <span class="btn-text">Sign up</span>
+        </button>
+
+        <!-- Year is filled in by sidepanel.js's DOMContentLoaded handler
+             (new Date().getFullYear()) so this never goes stale. -->
+        <p class="login-copyright">© <span id="loginCopyrightYear"></span> BCD. All rights reserved.</p>
+      </div>
+    </div>
+  </div>
+
+  <main class="main-content" id="mainContent">
+    <div id="accountTabPanel" class="tab-panel hidden" role="tabpanel">
+      <!-- Settings' own sub-tabs — Prompt (every Apply-tab setting,
+           read-only — see below), File Names (Downloads folder + the
+           downloaded file's own name), and Shortcuts (Keyboard Shortcuts).
+           Same .seg-tabs look as the top-level Apply/Profile/Settings/
+           Tabsync switcher, just one level down — see switchSettingsSubTab
+           in sidepanel.js. Was Prompt/Resume/Other — Resume Template's own
+           subtab merged into Prompt once its picker became read-only, then
+           Other's Downloads+File Names split out into their own File Names
+           subtab, leaving Other with only Keyboard Shortcuts in it — renamed
+           to Shortcuts to match. -->
+      <div class="seg-tabs seg-tabs--sub" id="settingsSubTabs" role="tablist">
+        <button type="button" class="seg-tabs-btn active" data-subtab="prompt" role="tab" aria-selected="true">Prompt</button>
+        <button type="button" class="seg-tabs-btn" data-subtab="filenames" role="tab" aria-selected="false">File Names</button>
+        <button type="button" class="seg-tabs-btn" data-subtab="shortcuts" role="tab" aria-selected="false">Shortcuts</button>
+      </div>
+
+      <!-- Every Apply-tab setting (Resume Prompt, Auto-fill Prompt, Resume
+           Template, Date Format, Education Dates, Bullet Range) is admin-only
+           to CHANGE now (see profileController.js's isManager guards on
+           each) — the main app's own Profile page > Resume tab > Apply
+           sub-tab is the only place any of these can be edited. This panel
+           is a read-only mirror: plain text, no inputs/pickers, always
+           showing whichever profile is selected above (or each field's own
+           org/platform default with none selected) — see
+           renderApplySettingsReadOnly in sidepanel.js. -->
+      <div id="settingsPromptPanel" class="settings-subpanel">
+        <div class="cd-card">
+          <div class="cd-card__title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="8" y1="6" x2="21" y2="6" />
+              <line x1="8" y1="12" x2="21" y2="12" />
+              <line x1="8" y1="18" x2="21" y2="18" />
+              <line x1="3" y1="6" x2="3.01" y2="6" />
+              <line x1="3" y1="12" x2="3.01" y2="12" />
+              <line x1="3" y1="18" x2="3.01" y2="18" />
+            </svg>
+            Prompt
+          </div>
+          <div class="cd-field">
+            <span class="cd-field__label">Resume Prompt</span>
+            <span class="cd-field__value" id="applyPromptValue">—</span>
+          </div>
+          <div class="cd-field">
+            <span class="cd-field__label">Auto-fill Prompt</span>
+            <span class="cd-field__value" id="applyAutofillPromptValue">—</span>
+          </div>
+        </div>
+
+        <div class="cd-card">
+          <div class="cd-card__title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+            Date Format
+          </div>
+          <div class="cd-field">
+            <span class="cd-field__label">Date Format</span>
+            <span class="cd-field__value" id="applyDateFormatValue">—</span>
+          </div>
+          <div class="cd-field">
+            <span class="cd-field__label">Education Dates</span>
+            <span class="cd-field__value" id="applyEducationValue">—</span>
+          </div>
+        </div>
+
+        <div class="cd-card">
+          <div class="cd-card__title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+              <rect x="14" y="14" width="7" height="7" rx="1" />
+            </svg>
+            Resume Template
+          </div>
+          <div class="cd-field">
+            <span class="cd-field__value" id="applyTemplateValue">—</span>
+          </div>
+        </div>
+
+        <div class="cd-card">
+          <div class="cd-card__title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="8" y1="6" x2="21" y2="6" />
+              <line x1="8" y1="12" x2="21" y2="12" />
+              <line x1="8" y1="18" x2="21" y2="18" />
+              <line x1="3" y1="6" x2="3.01" y2="6" />
+              <line x1="3" y1="12" x2="3.01" y2="12" />
+              <line x1="3" y1="18" x2="3.01" y2="18" />
+            </svg>
+            Bullet Range
+          </div>
+          <div class="cd-field">
+            <span class="cd-field__value" id="bulletRangeValue">Min 10 - Max 12</span>
+          </div>
+          <div>
+            <code id="bulletCountToken" class="token-copy" tabindex="0" role="button"
+              title="Click to copy">{{bullet_count}}</code>
+          </div>
+          <!-- Filled in by refreshBulletCountTokenStatus (sidepanel.js) — tells
+               this bidder whether {{bullet_count}} is actually in the prompt
+               they'll get at generate time, so Bullet Range above isn't shown
+               as if it always does something. -->
+          <div id="bulletCountTokenStatus" class="status-box hidden"></div>
+        </div>
+      </div>
+
+      <div id="settingsFilenamesPanel" class="settings-subpanel hidden">
+        <!-- Where generated CV / cover-letter PDFs are saved — moved here from
+             the Apply tab (Generate now sits next to Download CV there
+             instead). A folder named after the company is created inside
+             whatever base folder is chosen here; default is Downloads. -->
+        <div class="cd-card">
+          <div class="cd-card__title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
+            </svg>
+            Downloads
+          </div>
+          <div class="download-folder-row">
+            <button id="browseDownloadFolderBtn" type="button" class="folder-btn"
+              title="Choose where CV / cover-letter PDFs are saved. A folder named after the company is created inside it. Default is your Downloads folder.">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
+              </svg>
+              <span class="btn-text">Change folder</span>
+            </button>
+            <span id="downloadFolderHint" class="folder-hint">Saving to Downloads/&lt;Company&gt;/</span>
+          </div>
+        </div>
+
+        <!-- The downloaded file's own NAME (not the folder above) — a token
+             template per file type, read by buildFilenameFromTemplate in
+             sidepanel.js. Same template drives both the individual
+             Resume/Cover Letter/JD "Download" buttons and the Generate
+             row's own "download all 3" button. -->
+        <div class="cd-card">
+          <div class="cd-card__title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+            </svg>
+            File Names
+          </div>
+          <p class="cd-card__hint">
+            Tokens: <code>{first_name}</code>, <code>{last_name}</code>, <code>{profile}</code>,
+            <code>{company}</code>, <code>{role}</code> — the file extension (.pdf/.docx) is added
+            automatically, don't include it here.
+          </p>
+          <div class="filename-field">
+            <label for="filenameResumeInput">Resume</label>
+            <input id="filenameResumeInput" type="text" maxlength="120" placeholder="{first_name} {last_name}"
+              autocomplete="off" spellcheck="false" />
+          </div>
+          <div class="filename-field">
+            <label for="filenameCoverInput">Cover Letter</label>
+            <input id="filenameCoverInput" type="text" maxlength="120" placeholder="{company}-{role} (Cover Letter)"
+              autocomplete="off" spellcheck="false" />
+          </div>
+          <div class="filename-field">
+            <label for="filenameJdInput">Job Description</label>
+            <input id="filenameJdInput" type="text" maxlength="120" placeholder="{company}-{role} (Job Description)"
+              autocomplete="off" spellcheck="false" />
+          </div>
+        </div>
+      </div>
+
+      <div id="settingsShortcutsPanel" class="settings-subpanel hidden">
+        <!-- chrome.commands shortcuts for Generate / Auto-fill. The combo
+             itself can only be rebound on Chrome's own shortcuts page — no
+             extension can capture/register a key combo from its own UI — so
+             "Change shortcuts" just deep-links there. -->
+        <div class="cd-card">
+          <div class="cd-card__title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="6" width="20" height="12" rx="2" />
+              <line x1="6" y1="10" x2="6.01" y2="10" />
+              <line x1="10" y1="10" x2="10.01" y2="10" />
+              <line x1="14" y1="10" x2="14.01" y2="10" />
+              <line x1="18" y1="10" x2="18.01" y2="10" />
+              <line x1="7" y1="15" x2="17" y2="15" />
+            </svg>
+            Keyboard Shortcuts
+          </div>
+          <div class="shortcut-row">
+            <span class="shortcut-row__label">Generate</span>
+            <span class="shortcut-row__keys" id="shortcutGenerate">—</span>
+          </div>
+          <div class="shortcut-row">
+            <span class="shortcut-row__label">Auto-fill</span>
+            <span class="shortcut-row__keys" id="shortcutAutofill">—</span>
+          </div>
+          <button id="editShortcutsBtn" type="button" class="folder-btn" title="Change shortcuts on Chrome's own extensions shortcuts page">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+            </svg>
+            <span class="btn-text">Change shortcuts</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Apply tab (data-tab="apply2") — "Form Questions" review list, moved
+         here from what used to be a modal (openAutofillFormsModal, opened
+         via the Job tab's #autofillViewFormsBtn — removed, this tab
+         replaces it). Built from AUTOFILL_REVIEW (autofill.js), a
+         read-only scan (same detectors the real Auto-fill/Advanced
+         Auto-fill buttons use — see sidepanel.js's loadAutofillReview, now
+         triggered by switchToTab instead of a modal-open call). Nothing
+         here writes to the page until autofillReviewCommitBtn or a row's
+         own Attach button is clicked. -->
+    <div id="apply2TabPanel" class="tab-panel hidden" role="tabpanel">
+      <div class="field-modal__head">
+        <!-- The current tab's jobsite, not a static "Form Questions" label
+             — logo + name, resolved from the active tab's URL by
+             syncAutofillJobsiteChip in sidepanel.js (jobsites/*, falls
+             back to the generic briefcase glyph for anything not in that
+             folder). -->
+        <div class="jobsite-chip" id="autofillJobsiteChip">
+          <span class="jobsite-chip__logo-wrap">
+            <img id="autofillReviewLogo" class="jobsite-chip__logo hidden" src="" alt="" />
+            <svg id="autofillReviewLogoFallback" class="jobsite-chip__logo jobsite-chip__logo--fallback"
+              xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+              <line x1="2" y1="13" x2="22" y2="13" />
+            </svg>
+          </span>
+          <span class="field-modal__title" id="autofillReviewTitle">Form Questions</span>
+        </div>
+        <button id="autofillReviewRefreshBtn" type="button" class="icon-btn icon-btn--sm" title="Re-scan this page">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 12a9 9 0 1 1-3-6.7L21 8" />
+            <path d="M21 3v5h-5" />
+          </svg>
+        </button>
+      </div>
+      <div class="autofill-review">
+        <p class="tab-panel-placeholder" id="autofillReviewEmpty">
+          Open a job application page and pick a profile on the Job tab to see its form fields here.
+        </p>
+        <!-- Resume, when detected, is rendered as an ordinary row INSIDE
+             this list (kind:'resume' in AUTOFILL_REVIEW_ROWS, see
+             autofillReviewRowHtml in sidepanel.js) at its real page
+             position, not as a separate fixed-position card. Attach reuses
+             the exact same Basic Auto-fill run the Job tab's own button
+             triggers (see runAutofill in sidepanel.js), wired through the
+             list's existing delegated click handler. -->
+        <div id="autofillReviewList" class="autofill-review__list"></div>
+      </div>
+      <div class="autofill-forms-modal__footer">
+        <div class="autofill-row autofill-row--card">
+          <!-- Same component as the Job tab's own #autofillBtn
+               (autofill-btn / autofill-btn__fill), now also the same
+               icon+title "card" styling (.autofill-btn--card) and hotkey
+               chip — used to be a plain centered label, visibly different
+               from the Job tab's own button for what's conceptually the
+               same action (confirmed real complaint). See
+               commitAutofillReview in sidepanel.js for the matching
+               progress-fill drive. -->
+          <span id="autofillReviewCommitFill" class="autofill-btn__fill" aria-hidden="true"></span>
+          <button id="autofillReviewCommitBtn" type="button" class="autofill-btn autofill-btn--card autofill-review__commit hidden">
+            <span class="autofill-step-badge" aria-hidden="true">2</span>
+            <span class="autofill-btn__text">
+              <span class="autofill-btn__title">Autofill 0 Fields</span>
+            </span>
+          </button>
+          <span id="autofillReviewCommitHotkey" class="btn-hotkey"></span>
+          <div class="download-btn-wrap hidden" id="autofillReviewStopWrap">
+            <button id="autofillReviewStopBtn" type="button" class="gd-download gd-stop" title="Stop"
+              aria-label="Stop">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"
+                aria-hidden="true">
+                <rect x="5" y="5" width="14" height="14" rx="2" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- "Ask anything about this" — moved here from the Job tab
+           (#applyTabPanel): same content/behavior, nothing changed except
+           which tab panel owns it. Collapsed: just the bottom-docked ask
+           bar, no heading (the composer's placeholder already says what
+           this is) and the thread stays out of the main scroll entirely.
+           Focusing the input expands #qaOverlay (head + thread) upward as
+           a full-width position:fixed overlay ABOVE the composer — see
+           expandQA/collapseQA in sidepanel.js (its own `.closest(".tab-
+           panel")` lookup re-resolves to THIS panel automatically, nothing
+           to update there). The composer itself (.qa-composer below) is a
+           separate, never-touched sibling: its own size/position stay
+           fixed no matter what — only the overlay appears/disappears
+           above it. -->
+      <div id="qaPanel" class="qa-panel">
+        <div id="qaOverlay" class="qa-overlay">
+          <div class="qa-panel__head">
+            <span class="qa-panel__title">Ask anything</span>
+            <button type="button" id="qaBackBtn" class="jd-back-btn hidden" title="Back" aria-label="Back to the normal view">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="19" y1="12" x2="5" y2="12" />
+                <polyline points="12 19 5 12 12 5" />
+              </svg>
+            </button>
+          </div>
+
+          <section id="qaSection" class="qa hidden">
+            <ol id="qaThread" class="thread"></ol>
+          </section>
+        </div>
+
+        <div class="qa-composer">
+          <!-- Chat-style input: the Ask button is an icon-only button docked in
+               the textarea's bottom-right corner. -->
+          <div class="qa-input-shell">
+            <svg class="qa-spark" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+              fill="currentColor" aria-hidden="true">
+              <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" />
+              <path d="M19.5 2.5 20 4l1.5.5L20 5l-.5 1.5L19 5l-1.5-.5L19 4Z" />
+            </svg>
+            <textarea id="qaInput" placeholder="Ask anything about this application..."
+              spellcheck="false" disabled></textarea>
+            <button id="askBtn" type="button" class="qa-ask-btn" title="Ask" aria-label="Ask" disabled>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m22 2-7 20-4-9-9-4Z" />
+                <path d="M22 2 11 13" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="profileTabPanel" class="tab-panel hidden" role="tabpanel">
+      <!-- Same custom-select dropdown as the Apply page's own Profile picker
+           (#profileSelect below) — same markup/classes, so it looks and
+           behaves identically (see populateProfiles/chooseProfileTabView in
+           sidepanel.js). It STARTS at whichever profile Apply currently has
+           selected every time this tab is switched to (a one-way mirror:
+           Apply → here), but picking a different one here only changes what
+           this tab shows below — it never writes back to Apply's own
+           selection. -->
+      <div class="field field-row">
+        <div id="profileTabSelect" class="custom-select" data-value="">
+          <button type="button" class="select-trigger" aria-haspopup="listbox" aria-expanded="false">
+            <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              aria-hidden="true">
+              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            <span class="select-value placeholder">Profile</span>
+            <svg class="select-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+          <div class="select-panel hidden" role="listbox" tabindex="-1"></div>
+        </div>
+      </div>
+      <!-- The dropdown above stays fixed; only this scrolls (same pattern as
+           Apply's own .apply-scroll) — the selected profile's own Resume
+           (Profile/Experience/Education) can run long, and re-scrolling past
+           the picker every time would be annoying. See
+           chooseProfileTabView/profileDetailHtml in sidepanel.js. -->
+      <div class="profile-tab-scroll">
+        <div id="profileTabDetail"></div>
+        <p class="tab-panel-placeholder hidden" id="profileListEmpty">No profiles available.</p>
+      </div>
+    </div>
+
+
+    <div id="applyTabPanel" class="tab-panel" role="tabpanel">
+    <!-- Update-available banner: shown when the server reports a newer extension
+         version than the one installed. The Update button opens the download /
+         install page (a self-hosted extension can't reinstall itself). -->
+    <div id="updateBanner" class="update-banner hidden" role="status">
+      <svg class="update-banner-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="7 10 12 15 17 10" />
+        <line x1="12" y1="15" x2="12" y2="3" />
+      </svg>
+      <div class="update-banner-body">
+        <strong id="updateBannerText">Update available</strong>
+        <span id="updateBannerNotes" class="update-banner-notes hidden"></span>
+      </div>
+      <button id="updateBtn" type="button" class="update-btn">Update</button>
+      <button id="updateDismissBtn" type="button" class="update-dismiss" aria-label="Dismiss">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <section class="panel">
+      <div class="controls">
+        <!-- Profile sits at the very top of Apply now, above Detect/Job
+             Details — which profile's resume data feeds generation is the
+             first thing to set. -->
+        <div class="field field-row">
+          <div id="profileSelect" class="custom-select" data-value="">
+            <button type="button" class="select-trigger" aria-haspopup="listbox" aria-expanded="false">
+              <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                aria-hidden="true">
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              <span class="select-value placeholder">Profile</span>
+              <svg class="select-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+            <div class="select-panel hidden" role="listbox" tabindex="-1"></div>
+          </div>
+        </div>
+
+        <!-- Quick-copy shortcuts for the selected profile's contact fields —
+             one click copies that field straight to the clipboard, no need
+             to open the Profile tab's own card (which has copy buttons too
+             — see cdFieldRow in sidepanel.js). Both read the same
+             PROFILE_LINKS (see refreshProfileLinksUI), just rendered as a
+             compact icon row here instead of full field rows. Each button
+             disables itself (dimmed) when the selected profile has no value
+             for that field. Apply-tab only, below Profile — grouped
+             contact (email/phone/address/ZIP), links (LinkedIn/GitHub), and
+             company, with a divider between each group. -->
+        <div class="profile-shortcuts" id="profileShortcuts">
+          <button id="shortcutEmailBtn" type="button" class="profile-shortcut-btn" title="Copy email"
+            aria-label="Copy email" disabled>
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="4" width="20" height="16" rx="2" />
+              <path d="m22 6-10 7L2 6" />
+            </svg>
+          </button>
+          <button id="shortcutPhoneBtn" type="button" class="profile-shortcut-btn" title="Copy phone number"
+            aria-label="Copy phone number" disabled>
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path
+                d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.81.36 1.6.7 2.34a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.74.34 1.53.57 2.34.7A2 2 0 0 1 22 16.92z" />
+            </svg>
+          </button>
+          <button id="shortcutAddressBtn" type="button" class="profile-shortcut-btn" title="Copy address"
+            aria-label="Copy address" disabled>
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              <polyline points="9 22 9 12 15 12 15 22" />
+            </svg>
+          </button>
+          <button id="shortcutZipBtn" type="button" class="profile-shortcut-btn" title="Copy ZIP / postal code"
+            aria-label="Copy ZIP / postal code" disabled>
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="4" y1="9" x2="20" y2="9" />
+              <line x1="4" y1="15" x2="20" y2="15" />
+              <line x1="10" y1="3" x2="8" y2="21" />
+              <line x1="16" y1="3" x2="14" y2="21" />
+            </svg>
+          </button>
+          <span class="profile-shortcuts__divider" aria-hidden="true"></span>
+          <button id="shortcutLinkedinBtn" type="button" class="profile-shortcut-btn" title="Copy LinkedIn URL"
+            aria-label="Copy LinkedIn URL" disabled>
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"
+              aria-hidden="true">
+              <path
+                d="M6.94 8.5H3.56V20h3.38V8.5Zm.22-3.53c0-1.02-.77-1.84-1.91-1.84-1.14 0-1.91.82-1.91 1.84 0 1 .75 1.84 1.87 1.84h.02c1.16 0 1.93-.84 1.93-1.84ZM20.44 13.34c0-3.57-1.9-5.23-4.43-5.23-2.04 0-2.95 1.13-3.46 1.92V8.5H9.18c.04 1.01 0 11.5 0 11.5h3.37v-6.42c0-.34.02-.68.12-.92.27-.68.89-1.39 1.92-1.39 1.35 0 1.89 1.03 1.89 2.53V20h3.38v-6.66Z" />
+            </svg>
+          </button>
+          <button id="shortcutGithubBtn" type="button" class="profile-shortcut-btn" title="Copy GitHub URL"
+            aria-label="Copy GitHub URL" disabled>
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"
+              aria-hidden="true">
+              <path
+                d="M12 .5A12 12 0 0 0 8.2 23.9c.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.4-4-1.4-.6-1.4-1.3-1.8-1.3-1.8-1.1-.8.1-.8.1-.8 1.2.1 1.8 1.2 1.8 1.2 1.1 1.9 2.9 1.3 3.6 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.4 1.2-3.3-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.4 11.4 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.7.2 2.9.1 3.2.8.9 1.2 2 1.2 3.3 0 4.5-2.7 5.5-5.3 5.8.4.3.8 1 .8 2v3c0 .3.2.7.8.6A12 12 0 0 0 12 .5Z" />
+            </svg>
+          </button>
+          <span class="profile-shortcuts__divider" aria-hidden="true"></span>
+          <button id="shortcutCompanyBtn" type="button" class="profile-shortcut-btn" title="Copy last company name"
+            aria-label="Copy last company name" disabled>
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="7" width="20" height="14" rx="2" />
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- In Auto mode ("Auto Detect"), this still auto-triggers on its
+             own (a new tab opening a job posting detects on its own — see
+             autoDetectActiveTab in sidepanel.js). In Manual mode that
+             passive path is turned off entirely (see the RESUME_MODE guard
+             at the top of autoDetectActiveTab/handleAutoDetect) — Manual
+             mode's whole point is grabbing the JD from the page by hand and
+             carrying it over to a live ChatGPT tab, so the label switches to
+             plain "Detect" there (see syncResumeModeUI's own
+             setButtonText(els.detectJobBtn, ...) call). Same #detectJobBtn
+             id/click handler and .btn-text node either way, so
+             sidepanel.js's "Detecting…" busy state and its click binding
+             both keep working unchanged. -->
+        <div class="section-head" id="jobDetailsHead">
+          <span class="section-label">Job Details</span>
+          <button id="detectJobBtn" type="button" class="detect-pill"
+            aria-label="Detect company, role, and job description from the current tab">
+            <svg class="detect-pill__check" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+              aria-hidden="true">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            <span class="btn-text">Auto Detect</span>
+            <svg class="detect-pill__refresh" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+              aria-hidden="true">
+              <path d="M21 12a9 9 0 1 1-3-6.7L21 8" />
+              <path d="M21 3v5h-5" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Company, Role, and the detected job-meta rows together — own
+             flex-column gap, tighter and uniform regardless of what
+             .controls' own gap is set to elsewhere in the panel. -->
+        <div class="job-details-fields">
+        <!-- Inline label + icon-led control per row. A plain <div> (not <label>)
+             so the Update button isn't a nested interactive element inside a
+             label, which would steal its click. -->
+        <div class="field field-row">
+          <label class="field-label" for="companyName">
+            <svg class="field-label__icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              aria-hidden="true">
+              <path d="M3 21h18" />
+              <path d="M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16" />
+              <path d="M15 21V9h4a2 2 0 0 1 2 2v10" />
+              <path d="M9 7h2M9 11h2M9 15h2" />
+            </svg>
+            Company
+          </label>
+          <div class="input-wrap">
+            <input id="companyName" type="text" placeholder="Company name" autocomplete="organization" />
+            <!-- Rename without regenerating. Shown only once a generation exists
+                 AND the company / role differ from what that saved application
+                 holds, so clicking it always has something to push. Docked
+                 inside the input so showing it never reflows the row. -->
+            <button id="updateAppBtn" type="button" class="rename-icon-btn hidden"
+              title="Update the saved application with this company / role — no regeneration"
+              aria-label="Update saved application with this company and role">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                aria-hidden="true">
+                <path d="M21 12a9 9 0 1 1-3.5-7.1" />
+                <polyline points="21 3 21 9 15 9" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="field field-row">
+          <label class="field-label" for="roleTitle">
+            <svg class="field-label__icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              aria-hidden="true">
+              <rect width="20" height="14" x="2" y="7" rx="2" ry="2" />
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+            </svg>
+            Role
+          </label>
+          <div class="input-wrap">
+            <input id="roleTitle" type="text" placeholder="Role" autocomplete="off" />
+          </div>
+        </div>
+
+        <!-- Job metadata (location/work-model, experience level, employment
+             type, salary, posted, expiration) — filled by renderJobMeta in
+             sidepanel.js from the detected job's .meta (job-detect/
+             extractors/structured/jobmeta.js). All grouped together below
+             Role (Company+Role stay adjacent at the top) — each row is the
+             same .field.field-row shape as Company/Role (icon + 78px label
+             column + value) so the whole block reads as one consistent
+             list. Hidden independently — a field that didn't resolve just
+             isn't in the list, never a placeholder dash. -->
+        <div class="field field-row job-meta-row hidden" id="jobMetaLocationRow">
+          <div class="field-label">
+            <svg class="field-label__icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+              <circle cx="12" cy="10" r="3" />
+            </svg>
+            Location
+          </div>
+          <div class="job-meta-value" id="jobMetaLocationValue"></div>
+        </div>
+        <div class="field field-row job-meta-row hidden" id="jobMetaSalaryRow">
+          <div class="field-label">
+            <svg class="field-label__icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="12" x2="12" y1="2" y2="22" />
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+            Salary
+          </div>
+          <div class="job-meta-value" id="jobMetaSalaryValue"></div>
+        </div>
+        <div class="field field-row job-meta-row hidden" id="jobMetaPostedRow">
+          <div class="field-label">
+            <svg class="field-label__icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+              <line x1="16" x2="16" y1="2" y2="6" />
+              <line x1="8" x2="8" y1="2" y2="6" />
+              <line x1="3" x2="21" y1="10" y2="10" />
+            </svg>
+            Posted
+          </div>
+          <div class="job-meta-value" id="jobMetaPostedValue"></div>
+        </div>
+        </div>
+      </div>
+
+      <!-- Everything below Role scrolls on its own (see .apply-scroll) —
+           Profile/Job Details/Company/Role above stay fixed, and the Ask
+           panel below stays fixed too (see #qaPanel). -->
+      <div class="apply-scroll">
+        <div class="field" id="jdField">
+          <div class="section-head">
+            <span class="section-label">Job Description</span>
+            <!-- Unattended "process every open tab" run — see runAutoApply in
+                 sidepanel.js. Same pill shape/sizing as #detectJobBtn above
+                 (.detect-pill), reusing its layout so the two read as one
+                 family, but its own accent colour + icon since this is an
+                 action toggle (Start ↔ Stop), not a passive status readout.
+                 The label swaps to a live "N / total" count while running. -->
+            <button id="autoApplyBtn" type="button" class="detect-pill auto-apply-pill"
+              aria-label="Auto Apply: run Generate (and Auto-fill) across every open tab, one at a time">
+              <svg class="auto-apply-pill__icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                aria-hidden="true">
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+              <span class="btn-text">Auto Apply</span>
+            </button>
+            <!-- Manual mode only (see syncResumeModeUI in sidepanel.js) —
+                 Auto Apply walks every open tab firing Generate unattended,
+                 which makes no sense against a single live ChatGPT tab, so
+                 Manual mode swaps it out for this connection status instead,
+                 same slot, same .detect-pill family/sizing as Auto Apply
+                 itself. The real ChatGPT logomark (not a generic chat icon)
+                 so it's unambiguous which service this is about. -->
+            <div id="manualChatGptStatus" class="detect-pill manual-chatgpt-status hidden" role="status">
+              <svg class="manual-chatgpt-status__icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path
+                  d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872Zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.7948.7948 0 0 0-.4069-.6864Zm2.0107-3.0231-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.4592a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654 2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z" />
+              </svg>
+              <span id="manualChatGptStatusLabel" class="manual-chatgpt-status__label">Not connected</span>
+            </div>
+          </div>
+          <!-- Collapsed: a compact, read-only, click-to-expand summary — not
+               directly typeable (see the "readonly" attribute and
+               .field-collapsed below). Clicking it reparents this SAME
+               element into #fieldModalBackdrop's #fieldModalBody, editable —
+               see expandJobDescription/closeFieldModal. Hovering shows
+               .field-hover's "View" text (see .field-collapse-wrap). -->
+          <div class="field-collapse-wrap" id="jdCollapseWrap">
+            <textarea id="jobText" class="field-collapsed" placeholder="Job description" spellcheck="false" readonly></textarea>
+            <div class="field-hover" aria-hidden="true">
+              <span class="field-hover__view">View</span>
+              <div class="field-hover__actions">
+                <button id="copyJdBtn" type="button" class="cover-icon-btn" disabled
+                  aria-label="Copy job description" title="Copy">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                  <span class="btn-text">Copy</span>
+                </button>
+                <button id="downloadJdBtn" type="button" class="cover-icon-btn" disabled
+                  aria-label="Download job description as PDF" title="Download PDF">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="12" x2="12" y1="18" y2="12" />
+                    <polyline points="9 15 12 18 15 15" />
+                  </svg>
+                  <span class="btn-text">Download PDF</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Manual mode only (toggled in syncResumeModeUI) — each Generate
+             opens THIS exact ChatGPT chat (openFreshBananaChatGptTab reads
+             it) instead of a blank chatgpt.com, e.g. a Project/custom GPT
+             thread set up with instructions already in it. Generate stays
+             disabled until this holds a real chatgpt.com/chat.openai.com
+             URL — see generateGateOk/isValidManualChatGptUrl. Lives here
+             (not Settings any more) so it's right above the button it
+             gates, same reasoning the header's own Auto/Manual toggle
+             moved out of Settings for. Invalid state is the red input
+             border alone (.input-invalid) — no separate hint line. -->
+        <!-- Open button removed — the icon itself and hitting Enter in the
+             input both open the URL now (or chatgpt.com when empty), see
+             openManualChatGptUrl in sidepanel.js. -->
+        <div class="chatgpt-url-field hidden" id="manualChatGptUrlRow">
+          <div class="chatgpt-url-field__row">
+            <svg class="chatgpt-url-field__icon chatgpt-url-field__icon--action" id="manualChatGptUrlOpenIcon"
+              xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"
+              role="button" tabindex="0" aria-label="Open ChatGPT" title="Open ChatGPT">
+              <path
+                d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872Zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.7948.7948 0 0 0-.4069-.6864Zm2.0107-3.0231-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.4592a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654 2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z" />
+            </svg>
+            <input id="manualChatGptUrlInput" type="text" class="chatgpt-url-field__input"
+              placeholder="https://chatgpt.com/c/…" autocomplete="off" spellcheck="false" aria-label="ChatGPT URL" />
+          </div>
+        </div>
+
+        <!-- Pro and Free mode only (toggled in syncResumeModeUI) — shows the
+             masked preview of the key resolveApiKey would actually use on
+             the next Generate for WHICHEVER of the two is active (Pro:
+             User.apiKeyId, Free: User.freeApiKeyId — same admin-assigned
+             org vault/platform key the server resolves; nothing is typed
+             or stored here — see getMyApiKeyPreview), not just a pass/fail
+             dot. Test button
+             removed — clicking the icon OR the preview text now runs the
+             same check (same checkMyApiKey in sidepanel.js), result shown
+             as a green check / red X icon in the Test button's old spot
+             (#apiKeyTestResult) instead of a toast. No separate "API Key"
+             label line — the key icon stands in for it, same one-line
+             shape as the Manual-mode ChatGPT URL field right above it (its
+             own ChatGPT logomark icon stands in the same way). -->
+        <div class="chatgpt-url-field" id="apiKeyCheckRow">
+          <div class="chatgpt-url-field__row">
+            <svg class="chatgpt-url-field__icon chatgpt-url-field__icon--action" id="apiKeyCheckIcon"
+              xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              role="button" tabindex="0" aria-label="Test API key" title="Test API key">
+              <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+            </svg>
+            <span id="apiKeyPreviewText" class="chatgpt-url-field__value" role="button" tabindex="0"
+              aria-label="Test API key" title="Test API key">—</span>
+            <span id="apiKeyTestResult" class="key-test-result hidden" aria-hidden="true"></span>
+            <!-- Only shown when the resolved key is a Group (a pool of keys
+                 — BCD web app's API Key modal Single/Group toggle). Cycles
+                 which key in the pool this panel's next Generate/Ask will
+                 actually use — see renderApiKeyGroupUI/currentKeySelection
+                 in sidepanel.js. -->
+            <span id="apiKeyGroupNav" class="apikey-groupnav hidden">
+              <button type="button" id="apiKeyPrevBtn" class="apikey-groupnav__btn" aria-label="Previous key"
+                title="Previous key">‹</button>
+              <span id="apiKeyGroupIndex" class="apikey-groupnav__index">1/1</span>
+              <button type="button" id="apiKeyNextBtn" class="apikey-groupnav__btn" aria-label="Next key"
+                title="Next key">›</button>
+            </span>
+          </div>
+        </div>
+
+        <!-- Generate + Download CV, combined into one split button — same
+             look as the BCD web app's meeting-detail "Join ▾" control
+             (.mtg-sjoin/.mtg-sjoin__main/.mtg-sjoin__caret): one seamless
+             blue pill, a hairline divider between the two segments, no
+             gap. The right segment shows the download icon instead of a
+             chevron and downloads directly (not a dropdown). Disabled
+             until a CV exists. -->
+        <div class="generate-row">
+          <!-- Progress IS the row's own fill now (see setGenProgress in
+               sidepanel.js) — a clip-path reveal of this same gradient the
+               pill's border already uses, growing left-to-right instead of
+               a separate track+bar below. A child of .generate-row itself
+               (not .gd-main) so it sweeps across the WHOLE pill — Generate
+               AND Download — instead of stopping at the divider; both
+               segments stay transparent so it shows through either one.
+               First in DOM order + z-index:0 keeps it behind every other
+               (auto/0-level) sibling here. -->
+          <span id="genProgressFill" class="gd-main__fill" aria-hidden="true"></span>
+          <button id="generateBtn" type="button" class="gd-main">
+            <span class="autofill-step-badge gd-main__badge" aria-hidden="true">1</span>
+            <!-- Manual mode only — the button's text swaps to a live tail of
+                 ChatGPT's own answer while it's writing (see the
+                 BANANA_STREAM_CHUNK listener in sidepanel.js). Auto mode's
+                 own busy label is untouched. -->
+            <span class="btn-text">Generate Resume</span>
+            <span id="generateHotkey" class="btn-hotkey"></span>
+          </button>
+          <div class="download-btn-wrap">
+            <button id="downloadCvBtn" type="button" class="gd-download"
+              aria-label="Download the generated CV as a PDF">
+              <svg class="download-btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                aria-hidden="true">
+                <path stroke-linejoin="round" stroke-linecap="round" stroke-width="2" stroke="currentColor"
+                  d="M6 21H18M12 3V17M12 17L17 12M12 17L7 12" />
+              </svg>
+            </button>
+            <!-- Swaps in for Download while a generation is running (there's
+                 nothing to download yet anyway) — same box, so no layout
+                 shift. See startGenerationProgress/stopGenerationProgress. -->
+            <button id="stopGenerateBtn" type="button" class="gd-download gd-stop hidden" title="Stop generating"
+              aria-label="Stop generating">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                fill="currentColor" aria-hidden="true">
+                <rect x="5" y="5" width="14" height="14" rx="2" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Auto-fill — moved above Resume/Cover Letter: it's the action most
+             users reach for right after Generate, before ever opening those
+             fields. Redesigned as a richer "card" row — icon + title/
+             subtitle, instead of the plain centered label the split-row
+             pattern above (Generate/Download, and this same .autofill-row
+             class elsewhere) otherwise uses — see .autofill-row--card /
+             .autofill-btn--card in panel.css for what's actually different
+             about this one. Used to have an attached "view forms" segment
+             opening the Form Questions review list in a modal — removed;
+             that list now lives on its own Apply tab (#apply2TabPanel). -->
+        <div class="autofill-row autofill-row--card">
+          <!-- Same on-button fill as Generate (see setAutofillProgress in
+               sidepanel.js) — driven off Auto-fill's own real checkpoints, a
+               separate/independent fill from Generate's. A direct child of
+               .autofill-row itself (not of #autofillBtn — same reasoning as
+               Generate's own #genProgressFill/.generate-row), so the sweep
+               reaches the row's actual right edge, covering the attached
+               "view forms" segment too, instead of stopping at #autofillBtn's
+               own share of it. -->
+          <span id="autofillProgressFill" class="autofill-btn__fill" aria-hidden="true"></span>
+          <button id="autofillBtn" type="button" class="autofill-btn autofill-btn--card"
+            aria-label="Auto-fill — fill contact + presets, answer free-text screening questions, and attach the generated CV and cover letter.">
+            <!-- Plain numbered badge, not an image file — stays put
+                 regardless of status text, see applyHotkeyButtonLabels/
+                 setButtonText's own comment on why that needed a fix once
+                 this stopped being a plain single-label button. "2" —
+                 Generate is step 1 (see .gd-main__badge above), this is
+                 step 2; the attached view-forms button past the dividers is
+                 a DIFFERENT action (inspect, not a numbered step), so it
+                 keeps its own plain icon, not a number. -->
+            <span class="autofill-step-badge" aria-hidden="true">2</span>
+            <span class="autofill-btn__text">
+              <span class="autofill-btn__title">Auto-fill</span>
+            </span>
+          </button>
+          <span id="autofillHotkey" class="btn-hotkey"></span>
+        </div>
+        <!-- Advanced Auto-fill is hidden: advanced-permission users get auto-fill
+             automatically after Generate, and can use "Auto-fill" manually. Kept
+             in the DOM (not removed) so the capability + code path stay intact. -->
+        <button id="autofillAdvancedBtn" type="button" class="primary hidden" title="Advanced Auto-fill — generate a tailored CV on the fly and LLM-answer free-text screening questions.">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 11l3 3L22 4" />
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+          </svg>
+          <span class="btn-text">Advanced Auto-fill</span>
+        </button>
+
+        <div id="autofillStatus" class="status-box autofill-status hidden"></div>
+
+        <!-- Cover letter + Resume — no more collapsed/hover-to-reveal field:
+             View/Copy/Download sit as always-visible icon buttons right
+             below the title (see .field-actions), and the underlying
+             textarea (#resumeText/#coverText) stays in the DOM purely as
+             expandField's reparent source for the View modal — permanently
+             hidden via .field-collapse-wrap--hidden, never shown inline.
+             Editing the cover letter IS opening the modal: typing directly
+             in it saves as you go, same as Job Description. Resume is
+             read-only (a formatted rendering of the generated CV) — see
+             formatResumeText/expandResume in sidepanel.js. Resume format is
+             always PDF now (Settings > Resume's own Resume Format/Font
+             Style pickers were removed — a resume always follows its
+             template's own font). -->
+        <div class="resume-checklist">
+        <div class="field-row-pair">
+          <div class="field" id="resumeField">
+            <div class="section-head" id="resumeSectionHead">
+              <span class="check-item" id="resumeCheckIcon" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
+                  <rect class="check-item__ring" x="3" y="3" width="18" height="18" rx="5" ry="5" fill="none" stroke-width="2" />
+                  <path class="check-item__mark" d="M7 12.5l3.2 3.2L17 8.3" fill="none"
+                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
+              <span class="section-label" id="resumeSectionLabel">Resume</span>
+              <div class="field-actions">
+                <button id="viewResumeBtn" type="button" class="cover-icon-btn cover-icon-btn--plain" disabled
+                  aria-label="View resume" title="View">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                </button>
+                <button id="copyResumeBtn" type="button" class="cover-icon-btn cover-icon-btn--plain" disabled
+                  aria-label="Copy resume" title="Copy">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                </button>
+                <button id="downloadResumeBtn" type="button" class="cover-icon-btn cover-icon-btn--plain" disabled
+                  aria-label="Download resume as PDF" title="Download PDF">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M6 21H18M12 3V17M12 17L17 12M12 17L7 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div class="field-collapse-wrap field-collapse-wrap--hidden" id="resumeCollapseWrap">
+              <textarea id="resumeText" class="field-collapsed" placeholder="Resume" spellcheck="false" readonly disabled></textarea>
+            </div>
+          </div>
+
+          <div class="field" id="coverField">
+            <div class="section-head" id="coverSectionHead">
+              <span class="check-item" id="coverCheckIcon" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
+                  <rect class="check-item__ring" x="3" y="3" width="18" height="18" rx="5" ry="5" fill="none" stroke-width="2" />
+                  <path class="check-item__mark" d="M7 12.5l3.2 3.2L17 8.3" fill="none"
+                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
+              <span class="section-label">Cover Letter</span>
+              <div class="field-actions">
+                <button id="viewCoverBtn" type="button" class="cover-icon-btn cover-icon-btn--plain" disabled
+                  aria-label="View cover letter" title="View">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                </button>
+                <button id="copyCoverBtn" type="button" class="cover-icon-btn cover-icon-btn--plain" disabled
+                  aria-label="Copy cover letter" title="Copy">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                </button>
+                <button id="downloadCoverPdfBtn" type="button" class="cover-icon-btn cover-icon-btn--plain" disabled
+                  aria-label="Download cover letter as PDF" title="Download PDF">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M6 21H18M12 3V17M12 17L17 12M12 17L7 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div class="field-collapse-wrap field-collapse-wrap--hidden" id="coverCollapseWrap">
+              <textarea id="coverText" class="field-collapsed" placeholder="Cover letter" spellcheck="false" readonly disabled></textarea>
+            </div>
+          </div>
+        </div>
+
+        </div>
+
+        <div class="field" hidden>
+          <div class="tone-display" id="genToneDisplay">Tone — chosen automatically from the job description</div>
+        </div>
+
+      </div>
+
+      <!-- Mark as Applied — moved out of .apply-scroll (was inside
+           .resume-checklist, scrolling away with the Resume/Cover Letter
+           fields above it) so it stays fixed at the bottom of the Job tab,
+           same treatment Company/Role at the top already get. -->
+      <div class="check-row-group">
+        <!-- Manual, not auto-detected — resume-generated ≠ actually applied
+             (you might generate several drafts before you're happy, or never
+             submit at all). Click once you've actually filled out and hit
+             Submit on the company's own site; the BCD Applications table's
+             own Submitted column reads this. The whole row is the button
+             now (not just the icon) — see markAsApplied/syncMarkAppliedRow
+             in sidepanel.js. -->
+        <button type="button" class="check-row check-row--applied" id="markAppliedBtn"
+          aria-label="Mark as Applied" title="Click after you've actually submitted this application on the company's site">
+          <span class="check-item check-item--action" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
+              <rect class="check-item__ring" x="3" y="3" width="18" height="18" rx="5" ry="5" fill="none" stroke-width="2" />
+              <path class="check-item__mark" d="M7 12.5l3.2 3.2L17 8.3" fill="none"
+                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </span>
+          <span class="check-row__label" id="markAppliedLabel">Mark as Applied</span>
+          <!-- Only shown once applied (see .check-row--applied.done in
+               panel.css) — a visual "click to undo" affordance, the whole
+               button is still the click target either way. -->
+          <span class="check-row-applied__divider" aria-hidden="true"></span>
+          <svg class="check-row-applied__undo" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 1 1-3-6.7L21 8" />
+            <path d="M21 3v5h-5" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Statuses surface as page toasts now; this node only carries text for
+           code that reads it back, and must never render inside the panel. -->
+      <div id="genStatus" class="status-box hidden">Ready when you are.</div>
+
+    </section>
+
+    <!-- Shared modal for Job Description / Cover Letter / Resume — clicking
+         a field's collapsed textarea reparents that SAME textarea node in
+         here (no value duplication/sync needed) and dims the whole
+         extension window behind it. See expandField/closeFieldModal in
+         sidepanel.js. -->
+    <div id="fieldModalBackdrop" class="field-modal-backdrop hidden">
+      <div class="field-modal">
+        <div class="field-modal__head">
+          <span class="field-modal__title" id="fieldModalTitle"></span>
+          <button id="fieldModalBackBtn" type="button" class="jd-back-btn" title="Back" aria-label="Back">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
+            </svg>
+          </button>
+        </div>
+        <div class="field-modal__body" id="fieldModalBody"></div>
+      </div>
+    </div>
+
+    </div>
+
+    <!-- Job-fit warning — opened automatically when Detect (manual or
+         passive auto-detect) flags the current posting as a likely skip or
+         worth checking (window.ProactiveJobFit.assessJobFit; see
+         openFitWarningModal in sidepanel.js). Replaces both the old
+         window.confirm() at Generate time and the in-page floating badge
+         (content-detect.js) — this is now the ONLY place that warning shows.
+         Deliberately has no back/X button and no backdrop-click-to-close:
+         Continue is the only way out, so a bad-fit warning can't be
+         dismissed by accident. Independent top-level modal (a true
+         top-level sibling, not nested inside any .tab-panel) — it has to
+         render regardless of which tab is active when Detect finishes. -->
+    <div id="fitWarningBackdrop" class="field-modal-backdrop hidden">
+      <div class="field-modal fit-warning-modal">
+        <div class="field-modal__head">
+          <span id="fitWarningBadge" class="fit-modal-badge"></span>
+        </div>
+        <div class="field-modal__body fit-warning-modal__body">
+          <ul id="fitWarningReasons" class="fit-warning-reasons"></ul>
+          <p id="fitWarningNote" class="fit-warning-note"></p>
+          <button id="fitWarningContinueBtn" type="button" class="fit-warning-continue-btn">
+            Continue
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Duplicate-application warning — opened from the Generate button's
+         click handler (see checkRecentDuplicate in sidepanel.js) BEFORE
+         generation actually starts, when the same job (URL) for the same
+         company/role/profile was already applied to within the last few
+         days. Unlike the job-fit warning above, this one genuinely GATES
+         Generate: nothing is sent to the server until Continue is clicked
+         (closeDupWarningModal resolves the pending promise Generate is
+         awaiting). Same "no back/X button, no backdrop-click-to-close"
+         rule as the fit-warning modal, for the same reason. -->
+    <div id="dupWarningBackdrop" class="field-modal-backdrop hidden">
+      <div class="field-modal fit-warning-modal">
+        <div class="field-modal__head">
+          <span class="fit-modal-badge fit-modal-badge--check">⚠ Already applied</span>
+        </div>
+        <div class="field-modal__body fit-warning-modal__body">
+          <p id="dupWarningNote" class="fit-warning-note"></p>
+          <button id="dupWarningContinueBtn" type="button" class="fit-warning-continue-btn">
+            Continue
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabsync's LinkedIn Jobs "Open Tabs" — after opening the current
+         page's jobs, asks whether to mark them applied right away (see
+         openLinkedinJobTabs/confirmTabsyncApplied in sidepanel.js). Same
+         .field-modal shell as the modals above; independent top-level
+         modal so it shows regardless of which tab is active. -->
+    <div id="tabsyncAppliedConfirmBackdrop" class="field-modal-backdrop hidden">
+      <div class="field-modal tabsync-applied-confirm-modal">
+        <div class="field-modal__head">
+          <span class="field-modal__title">Mark as applied?</span>
+        </div>
+        <div class="field-modal__body">
+          <p id="tabsyncAppliedConfirmMsg" class="tabsync-applied-confirm__msg"></p>
+          <div class="tabsync-applied-confirm__actions">
+            <button id="tabsyncAppliedConfirmNoBtn" type="button" class="tabsync-confirm-btn tabsync-confirm-btn--no">No</button>
+            <button id="tabsyncAppliedConfirmYesBtn" type="button" class="tabsync-confirm-btn tabsync-confirm-btn--yes">Yes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabsync: copy every open tab's URL to the clipboard, or paste a list
+         back in to reopen them — a lightweight way to carry a batch of job
+         postings between machines/profiles without a shared account. Ported
+         from the standalone Tab Studio extension, trimmed to just these two
+         actions (no theme toggle, no keyboard shortcut, no clean-up/clear). -->
+    <div id="tabsyncTabPanel" class="tab-panel hidden" role="tabpanel">
+      <div class="controls">
+        <!-- LinkedIn Jobs (the not-yet-applied board rows from the main app —
+             same count the outer Tabsync tab's own red badge shows) vs Links
+             (paste your own list, the original Tabsync behavior). Same
+             sub-tabs look as Settings' own Prompt/Resume/Other switcher —
+             see switchTabsyncSubTab in sidepanel.js. -->
+        <div class="seg-tabs seg-tabs--sub" id="tabsyncSubTabs" role="tablist">
+          <button type="button" class="seg-tabs-btn active" data-subtab="linkedin" role="tab" aria-selected="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="1" y="1" width="22" height="22" rx="4.5" fill="#0A66C2" />
+              <path fill="#fff" d="M6.94 8.5H3.56V20h3.38V8.5Zm.22-3.53c0-1.02-.77-1.84-1.91-1.84-1.14 0-1.91.82-1.91 1.84 0 1 .75 1.84 1.87 1.84h.02c1.16 0 1.93-.84 1.93-1.84ZM20.44 13.34c0-3.57-1.9-5.23-4.43-5.23-2.04 0-2.95 1.13-3.46 1.92V8.5H9.18c.04 1.01 0 11.5 0 11.5h3.37v-6.42c0-.34.02-.68.12-.92.27-.68.89-1.39 1.92-1.39 1.35 0 1.89 1.03 1.89 2.53V20h3.38v-6.66Z" />
+            </svg>
+            LinkedIn Jobs
+          </button>
+          <button type="button" class="seg-tabs-btn" data-subtab="manual" role="tab" aria-selected="false">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="11" fill="#fff" />
+              <path fill="#EA4335" d="M12 12L4.2 5.3A11 11 0 0 1 22.6 9H12z" />
+              <path fill="#34A853" d="M12 12l-7.3 7A11 11 0 0 1 4.2 5.3L12 12z" />
+              <path fill="#FBBC05" d="M12 12h10.6a11 11 0 0 1-17.9 7L12 12z" />
+              <circle cx="12" cy="12" r="4.2" fill="#4285F4" stroke="#fff" stroke-width="1.6" />
+            </svg>
+            Links
+          </button>
+        </div>
+
+        <!-- LinkedIn Jobs: a read-only, paginated list (10 per page — see
+             TABSYNC_PAGE_SIZE), each row opens that one job. No title/count
+             header here (removed — the count now lives on the Open Tabs
+             button itself, see updateOpenTabsBtnLabel in sidepanel.js). Open
+             Tabs (bottom) opens the CURRENT page's 10 at once, not the whole
+             list — see openLinkedinJobTabs in sidepanel.js. -->
+        <div id="tabsyncLinkedinPanel" class="tabsync-subpanel">
+          <!-- Location/Role — narrows which of the fetched unapplied jobs are
+               shown, same two fields the main app's own LinkedIn Jobs page
+               filters by. Purely client-side over the already-fetched list
+               (see applyTabsyncLinkedinFilter/TABSYNC_LINKEDIN_JOBS_ALL) —
+               the extension always fetches every unapplied job regardless of
+               either field's value. -->
+          <div class="tabsync-filter-row">
+            <select id="tabsyncLinkedinCountryFilter" aria-label="Filter by location">
+              <option value="">All locations</option>
+            </select>
+            <input id="tabsyncLinkedinRoleFilter" type="text" placeholder="Filter by role" aria-label="Filter by role" />
+          </div>
+          <div id="tabsyncLinkedinList" class="tabsync-linkedin-list"></div>
+          <div id="tabsyncLinkedinPager" class="tabsync-pager hidden">
+            <button id="tabsyncPagerPrev" type="button" class="icon-btn icon-btn--sm" title="Previous page">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+            <span id="tabsyncPagerLabel" class="tabsync-pager__label">Page 1 of 1</span>
+            <button id="tabsyncPagerNext" type="button" class="icon-btn icon-btn--sm" title="Next page">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Links: paste-your-own-list, unchanged from before. Link count (was
+             its own row above Open Tabs, shared with LinkedIn Jobs' count)
+             now sits top-right of this title row instead — see
+             updateTabsyncStats. -->
+        <div id="tabsyncManualPanel" class="tabsync-subpanel hidden">
+          <label class="field">
+            <div class="tabsync-subpanel__head">
+              <span class="section-label tabsync-subpanel__title">Paste URLs here</span>
+              <span id="tabsyncLinksStats" class="tabsync-stats">0 links</span>
+            </div>
+            <textarea id="tabsyncInput" placeholder="Paste one URL per line (or comma-separated). We'll ignore blanks and try to normalize missing schemes." spellcheck="false"></textarea>
+          </label>
+          <!-- Claims a share of the same flexible space as the Links field
+               above (see #tabsyncTabPanel .field's 4:1 flex-grow split in
+               panel.css) so the textarea settles at ~80% of the height it
+               used to fill, instead of the whole remaining space. -->
+          <div class="tabsync-spacer" aria-hidden="true"></div>
+
+          <!-- Links-only now — copies every OPEN browser tab's URL (not this
+               textarea's own pasted content) to the clipboard, same white/
+               gradient-border look as Generate (.generate-row) instead of
+               the solid-black look Open Tabs below keeps. Naturally hidden
+               with the rest of this panel on the LinkedIn Jobs sub-tab —
+               see switchTabsyncSubTab, no extra wiring needed. -->
+          <button id="copyOpenTabsBtn" type="button" class="tabsync-copy-btn" title="Copy every open tab's URL to the clipboard">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+            <span class="btn-text">Copy Links</span>
+          </button>
+        </div>
+
+        <!-- Feedback (Opened N tabs / errors) is a panelToast now, not a
+             status line here or a change to the button's own label/icon on
+             click. Opens whichever sub-tab's list is currently showing —
+             the LinkedIn Jobs board's current 10-per-page slice, or the
+             Links textarea's parsed list — see openTabsyncTabs. Full width
+             now that Copy Links has moved into the Links panel itself
+             (above, Links-only) instead of splitting this row with it. -->
+        <div class="tabsync-actions-row">
+          <button id="openTabsBtn" type="button" class="tabsync-open-btn" title="Open every listed link in a new tab">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+            <span class="btn-text">Open Tabs</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Floating scroll controls (jump to top / bottom). Each is shown only when
+       there's room to scroll that way; the animated "mouse" is decorative. -->
+  <div id="scrollNav" class="scroll-nav">
+    <button id="scrollTopBtn" type="button" class="scroll-nav-btn scroll-up hidden" aria-label="Scroll to top" title="Scroll to top">
+      <span class="scrolldown" aria-hidden="true"></span>
+    </button>
+    <button id="scrollBottomBtn" type="button" class="scroll-nav-btn scroll-down hidden" aria-label="Scroll to bottom" title="Scroll to bottom">
+      <span class="scrolldown" aria-hidden="true"></span>
+    </button>
+  </div>
+
+  <!-- In-panel toast (panelToast in sidepanel.js) — same dark-pill +
+       coloured-checkmark look as the main BCD web app's own toast
+       (Toaster.jsx / .toaster in client/src/App.css). Used for confirmations
+       that used to show as an in-page notification on the actual webpage
+       (e.g. "saved to Downloads/…" after clicking Download) — this keeps
+       that feedback inside the extension instead. Positioned above the Q&A
+       composer when it's on screen, same logic #scrollNav already uses. -->
+  <div id="panelToast" class="panel-toast"></div>
+
+  <!-- job-detect library modules load before job-fit.js (which consumes
+       window.ProactiveJobDetect). Keep this order in sync with the
+       content_scripts list in manifest.json and the panel files-injection
+       list in sidepanel.js. -->
+  <script src="job-detect/_bootstrap.js"></script>
+  <script src="job-detect/resolver.js"></script>
+  <script src="job-detect/normalize/text.js"></script>
+  <script src="job-detect/normalize/html.js"></script>
+  <script src="job-detect/normalize/geo.js"></script>
+  <script src="job-detect/normalize/language.js"></script>
+  <script src="job-detect/normalize/roles.js"></script>
+  <script src="job-detect/dom/query.js"></script>
+  <script src="job-detect/dom/regions.js"></script>
+  <script src="job-detect/extractors/structured/jsonld.js"></script>
+  <script src="job-detect/extractors/adapters/index.js"></script>
+  <script src="job-detect/extractors/structured/jobmeta.js"></script>
+  <script src="job-fit.js"></script>
+  <!-- Vendored (not CDN-loaded — Manifest V3 forbids remote code), same
+       socket.io-client v4.8.3 build the main web app itself uses (see
+       client/src/lib/socket.js). Exposes a global `io()`, consumed by
+       sidepanel.js's own connectRealtime() for the TabSync LinkedIn Jobs
+       live-refresh. -->
+  <script src="vendor/socket.io.min.js"></script>
+  <script src="sidepanel.js"></script>
+</body>
+
+</html>
