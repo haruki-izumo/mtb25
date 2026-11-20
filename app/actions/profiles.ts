@@ -298,6 +298,165 @@ export async function deleteProfile(
   }
 }
 
+const experienceSchema = z.object({
+  company: z.string().trim().min(1).max(120),
+  role: z.string().trim().min(1).max(120),
+  location: z.string().trim().max(120).optional().or(z.literal("")),
+  /** YYYY-MM */
+  startMonth: z.string().regex(/^\d{4}-\d{2}$/, "Start month must be YYYY-MM"),
+  /** YYYY-MM or empty for Present */
+  endMonth: z
+    .string()
+    .regex(/^\d{4}-\d{2}$/, "End month must be YYYY-MM")
+    .optional()
+    .or(z.literal("")),
+});
+
+function monthToUtcDate(ym: string) {
+  const match = /^(\d{4})-(\d{2})$/.exec(ym);
+  if (!match) throw new Error("Invalid month");
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  if (month < 1 || month > 12) throw new Error("Invalid month");
+  return new Date(Date.UTC(year, month - 1, 1));
+}
+
+/** Add a work experience row on a profile. */
+export async function addProfileExperience(input: {
+  profileId: string;
+  company: string;
+  role: string;
+  location?: string;
+  startMonth: string;
+  endMonth?: string;
+}): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+  try {
+    const session = await requireSession();
+    const parsed = experienceSchema
+      .extend({ profileId: z.string().min(1) })
+      .parse(input);
+    await assertCanAccessProfile(
+      session.user.id,
+      session.user.role,
+      parsed.profileId,
+    );
+
+    const startDate = monthToUtcDate(parsed.startMonth);
+    const endDate = parsed.endMonth
+      ? monthToUtcDate(parsed.endMonth)
+      : null;
+    if (endDate && endDate < startDate) {
+      return { ok: false, error: "End month must be on or after start month" };
+    }
+
+    const row = await prisma.experience.create({
+      data: {
+        profileId: parsed.profileId,
+        company: parsed.company,
+        role: parsed.role,
+        location: emptyToNull(parsed.location),
+        startDate,
+        endDate,
+      },
+      select: { id: true },
+    });
+    revalidatePath("/profiles");
+    return { ok: true, id: row.id };
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return { ok: false, error: err.issues[0]?.message || "Invalid experience" };
+    }
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Failed to add experience",
+    };
+  }
+}
+
+/** Update an existing experience row. */
+export async function updateProfileExperience(input: {
+  id: string;
+  company: string;
+  role: string;
+  location?: string;
+  startMonth: string;
+  endMonth?: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const session = await requireSession();
+    const parsed = experienceSchema
+      .extend({ id: z.string().min(1) })
+      .parse(input);
+    const existing = await prisma.experience.findUnique({
+      where: { id: parsed.id },
+      select: { profileId: true },
+    });
+    if (!existing) return { ok: false, error: "Experience not found" };
+    await assertCanAccessProfile(
+      session.user.id,
+      session.user.role,
+      existing.profileId,
+    );
+
+    const startDate = monthToUtcDate(parsed.startMonth);
+    const endDate = parsed.endMonth
+      ? monthToUtcDate(parsed.endMonth)
+      : null;
+    if (endDate && endDate < startDate) {
+      return { ok: false, error: "End month must be on or after start month" };
+    }
+
+    await prisma.experience.update({
+      where: { id: parsed.id },
+      data: {
+        company: parsed.company,
+        role: parsed.role,
+        location: emptyToNull(parsed.location),
+        startDate,
+        endDate,
+      },
+    });
+    revalidatePath("/profiles");
+    return { ok: true };
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return { ok: false, error: err.issues[0]?.message || "Invalid experience" };
+    }
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Failed to update experience",
+    };
+  }
+}
+
+/** Delete an experience row. */
+export async function deleteProfileExperience(
+  id: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const session = await requireSession();
+    z.string().min(1).parse(id);
+    const existing = await prisma.experience.findUnique({
+      where: { id },
+      select: { profileId: true },
+    });
+    if (!existing) return { ok: false, error: "Experience not found" };
+    await assertCanAccessProfile(
+      session.user.id,
+      session.user.role,
+      existing.profileId,
+    );
+    await prisma.experience.delete({ where: { id } });
+    revalidatePath("/profiles");
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Failed to delete experience",
+    };
+  }
+}
+
 /** Admin assigns the single interviewer for a profile. */
 export async function setProfileInterviewer(input: {
   profileId: string;

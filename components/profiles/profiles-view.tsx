@@ -3,14 +3,17 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Copy, LayoutGrid, List, Plus, Star, Trash2 } from "lucide-react";
+import { Copy, LayoutGrid, List, Pencil, Plus, Star, Trash2 } from "lucide-react";
 import {
   addProfileApiKey,
+  addProfileExperience,
   createProfile,
   deleteProfile,
   deleteProfileApiKey,
+  deleteProfileExperience,
   setProfileInterviewer,
   toggleProfileStar,
+  updateProfileExperience,
 } from "@/app/actions/profiles";
 import { countryFlag, DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { cn } from "@/lib/utils";
@@ -395,33 +398,13 @@ export function ProfilesView({
                   <CopyField label="Timezone" value={detail.timezone} />
                   <CopyField label="LinkedIn" value={detail.linkedinUrl} />
                   <CopyField label="GitHub" value={detail.githubUrl} />
-                  <div>
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                      Experience
-                    </p>
-                    <ul className="space-y-2">
-                      {detail.experiences.map((e) => (
-                        <li
-                          key={e.id}
-                          className="rounded-xl border border-slate-100 px-3 py-2"
-                        >
-                          <p className="text-sm font-semibold text-slate-900">
-                            {e.role}
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            {e.company}
-                            {e.location ? ` · ${e.location}` : ""}
-                          </p>
-                          <p className="text-xs text-slate-400">
-                            {new Date(e.startDate).getFullYear()} –{" "}
-                            {e.endDate
-                              ? new Date(e.endDate).getFullYear()
-                              : "Present"}
-                          </p>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  <ExperienceEditor
+                    profileId={detail.id}
+                    experiences={detail.experiences}
+                    pending={pending}
+                    startTransition={startTransition}
+                    onDone={() => router.refresh()}
+                  />
                 </>
               ) : null}
 
@@ -840,6 +823,322 @@ function CreateProfileDialog({
           </button>
         </div>
       </form>
+    </div>
+  );
+}
+
+function toMonthValue(iso: string) {
+  const d = new Date(iso);
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  return `${y}-${m}`;
+}
+
+function formatExperienceRange(startIso: string, endIso: string | null) {
+  const start = toMonthValue(startIso);
+  const end = endIso ? toMonthValue(endIso) : "Present";
+  return `${start} – ${end}`;
+}
+
+function ExperienceEditor({
+  profileId,
+  experiences,
+  pending,
+  startTransition,
+  onDone,
+}: {
+  profileId: string;
+  experiences: {
+    id: string;
+    company: string;
+    role: string;
+    location: string | null;
+    startDate: string;
+    endDate: string | null;
+  }[];
+  pending: boolean;
+  startTransition: (fn: () => void) => void;
+  onDone: () => void;
+}) {
+  const [editing, setEditing] = useState<{
+    id?: string;
+    company: string;
+    role: string;
+    location: string;
+    startMonth: string;
+    endMonth: string;
+    current: boolean;
+  } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  function openCreate() {
+    setError(null);
+    setEditing({
+      company: "",
+      role: "",
+      location: "",
+      startMonth: "",
+      endMonth: "",
+      current: true,
+    });
+  }
+
+  function openEdit(e: {
+    id: string;
+    company: string;
+    role: string;
+    location: string | null;
+    startDate: string;
+    endDate: string | null;
+  }) {
+    setError(null);
+    setEditing({
+      id: e.id,
+      company: e.company,
+      role: e.role,
+      location: e.location || "",
+      startMonth: toMonthValue(e.startDate),
+      endMonth: e.endDate ? toMonthValue(e.endDate) : "",
+      current: !e.endDate,
+    });
+  }
+
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          Experience
+        </p>
+        <button
+          type="button"
+          onClick={openCreate}
+          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50"
+        >
+          <Plus className="size-3.5" />
+          Add
+        </button>
+      </div>
+
+      {experiences.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-slate-200 px-3 py-4 text-center text-sm text-slate-500">
+          No experience yet
+        </p>
+      ) : (
+        <ul className="space-y-2">
+          {experiences.map((e) => (
+            <li
+              key={e.id}
+              className="rounded-xl border border-slate-100 px-3 py-2"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-900">{e.role}</p>
+                  <p className="text-xs text-slate-500">
+                    {e.company}
+                    {e.location ? ` · ${e.location}` : ""}
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    {formatExperienceRange(e.startDate, e.endDate)}
+                  </p>
+                </div>
+                <div className="flex shrink-0 gap-1">
+                  <button
+                    type="button"
+                    title="Edit"
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                    onClick={() => openEdit(e)}
+                  >
+                    <Pencil className="size-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    title="Delete"
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                    onClick={() => {
+                      if (!confirm(`Delete ${e.role} at ${e.company}?`)) return;
+                      setError(null);
+                      startTransition(async () => {
+                        const result = await deleteProfileExperience(e.id);
+                        if (!result.ok) {
+                          setError(result.error);
+                          return;
+                        }
+                        onDone();
+                      });
+                    }}
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {error ? (
+        <p className="mt-2 text-xs text-red-600">{error}</p>
+      ) : null}
+
+      {editing ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+          <form
+            className="w-full max-w-md space-y-3 rounded-2xl bg-white p-5 shadow-xl"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const payload = {
+                company: editing.company,
+                role: editing.role,
+                location: editing.location,
+                startMonth: editing.startMonth,
+                endMonth: editing.current ? "" : editing.endMonth,
+              };
+              setError(null);
+              startTransition(async () => {
+                const result = editing.id
+                  ? await updateProfileExperience({ id: editing.id, ...payload })
+                  : await addProfileExperience({ profileId, ...payload });
+                if (!result.ok) {
+                  setError(result.error);
+                  return;
+                }
+                setEditing(null);
+                onDone();
+              });
+            }}
+          >
+            <h3 className="text-lg font-semibold text-slate-900">
+              {editing.id ? "Edit experience" : "Add experience"}
+            </h3>
+            {error ? (
+              <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+                {error}
+              </p>
+            ) : null}
+
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-slate-700">Role</span>
+              <input
+                value={editing.role}
+                onChange={(e) =>
+                  setEditing((prev) =>
+                    prev ? { ...prev, role: e.target.value } : prev,
+                  )
+                }
+                required
+                className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
+              />
+            </label>
+
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-slate-700">
+                Company
+              </span>
+              <input
+                value={editing.company}
+                onChange={(e) =>
+                  setEditing((prev) =>
+                    prev ? { ...prev, company: e.target.value } : prev,
+                  )
+                }
+                required
+                className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
+              />
+            </label>
+
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-slate-700">
+                Location
+              </span>
+              <input
+                value={editing.location}
+                onChange={(e) =>
+                  setEditing((prev) =>
+                    prev ? { ...prev, location: e.target.value } : prev,
+                  )
+                }
+                placeholder="Remote / New York, NY"
+                className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
+              />
+            </label>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block text-sm">
+                <span className="mb-1 block font-medium text-slate-700">
+                  Start
+                </span>
+                <input
+                  type="month"
+                  value={editing.startMonth}
+                  onChange={(e) =>
+                    setEditing((prev) =>
+                      prev ? { ...prev, startMonth: e.target.value } : prev,
+                    )
+                  }
+                  required
+                  className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
+                />
+              </label>
+              <label className="block text-sm">
+                <span className="mb-1 block font-medium text-slate-700">
+                  End
+                </span>
+                <input
+                  type="month"
+                  value={editing.endMonth}
+                  disabled={editing.current}
+                  onChange={(e) =>
+                    setEditing((prev) =>
+                      prev ? { ...prev, endMonth: e.target.value } : prev,
+                    )
+                  }
+                  required={!editing.current}
+                  className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm disabled:bg-slate-50 disabled:text-slate-400"
+                />
+              </label>
+            </div>
+
+            <label className="flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={editing.current}
+                onChange={(e) =>
+                  setEditing((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          current: e.target.checked,
+                          endMonth: e.target.checked ? "" : prev.endMonth,
+                        }
+                      : prev,
+                  )
+                }
+              />
+              Currently working here
+            </label>
+
+            <div className="flex justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditing(null);
+                  setError(null);
+                }}
+                className="h-10 rounded-xl px-4 text-sm font-medium text-slate-600 hover:bg-slate-100"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={pending}
+                className="h-10 rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+              >
+                {pending ? "Saving…" : editing.id ? "Save" : "Add"}
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
     </div>
   );
 }
