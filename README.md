@@ -111,6 +111,28 @@ Seed includes 6 profiles (US/UK/CA), weekly availability, ~25 interview processe
 | `npm run db:studio` | Open Prisma Studio |
 | `npm run db:reset` | Reset DB, remigrate, and seed |
 
+## Deploy (Render)
+
+Set these environment variables on the Render service (local `.env` is not uploaded):
+
+| Variable | Required | Notes |
+|----------|----------|--------|
+| `DATABASE_URL` | yes | Render Postgres connection string |
+| `AUTH_SECRET` | yes | Long random string (same generator as Setup §5) |
+| `AUTH_URL` | yes | Public app URL, e.g. `https://your-service.onrender.com` |
+| `EXTENSION_JWT_SECRET` | recommended | Separate secret for the Chrome extension API JWTs |
+
+Without `AUTH_SECRET`, Auth.js fails at runtime with `MissingSecret`.
+
+**Build / start commands**
+
+| Setting | Value |
+|---------|--------|
+| Build Command | `npm install && npx prisma migrate deploy && npm run build` |
+| Start Command | `npm run start` |
+
+`npm run build` runs `prisma generate` before `next build` so TypeScript sees the current schema. `prisma migrate deploy` applies migrations to the Render database.
+
 ## Notes
 
 - All timestamps are stored in **UTC**
