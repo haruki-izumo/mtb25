@@ -69,6 +69,14 @@ const addRoundSchema = z.object({
     "OTHER",
   ]),
   interviewerName: z.string().min(1).max(200),
+  clientInterviewerName: z
+    .string()
+    .min(1, "Client interviewer name is required")
+    .max(200),
+  clientInterviewerAbout: z
+    .string()
+    .min(10, "Add a short about for the client interviewer")
+    .max(10000),
   meetingLink: z.string().url().optional().or(z.literal("")),
   overrideAvailability: z.boolean().optional(),
 });
@@ -254,6 +262,8 @@ export async function addRoundToProcess(
           startAt,
           endAt,
           interviewerName: data.interviewerName,
+          clientInterviewerName: data.clientInterviewerName.trim(),
+          clientInterviewerAbout: data.clientInterviewerAbout.trim(),
           meetingLink: data.meetingLink || null,
           bookedById: session.user.id,
           outcome: "PENDING",

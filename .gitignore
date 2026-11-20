@@ -20,6 +20,10 @@
 # production
 /build
 
+# uploaded resumes (keep folder)
+/public/uploads/resumes/*
+!/public/uploads/resumes/.gitkeep
+
 # misc
 .DS_Store
 *.pem

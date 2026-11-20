@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { formatInTimeZone } from "date-fns-tz";
-import { Star, Trash2 } from "lucide-react";
+import { ExternalLink, FileText, Star, Trash2 } from "lucide-react";
 import {
   addRoundToProcess,
   deleteProcess,
@@ -24,6 +24,8 @@ type Round = {
   startAt: string;
   endAt: string;
   interviewerName: string;
+  clientInterviewerName: string;
+  clientInterviewerAbout: string | null;
   meetingLink: string | null;
   outcome: RoundOutcome;
   rating: number | null;
@@ -34,6 +36,9 @@ export type ProcessCardData = {
   id: string;
   companyName: string;
   jobTitle: string;
+  jobUrl: string | null;
+  jobDescription: string | null;
+  resumeFileUrl: string | null;
   status: ProcessStatus;
   note: string | null;
   profileId: string;
@@ -90,6 +95,38 @@ export function ProcessCard({
               ? ` · Next: ${formatInTimeZone(new Date(process.nextRoundAt), DEFAULT_TIMEZONE, "MMM d, h:mm a")}`
               : ""}
           </p>
+          <div className="mt-2 flex flex-wrap gap-2 text-xs">
+            {process.jobUrl ? (
+              <a
+                href={process.jobUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 font-medium text-slate-700 hover:bg-slate-200"
+              >
+                <ExternalLink className="size-3" /> Job link
+              </a>
+            ) : null}
+            {process.resumeFileUrl ? (
+              <a
+                href={process.resumeFileUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 font-medium text-slate-700 hover:bg-slate-200"
+              >
+                <FileText className="size-3" /> Resume
+              </a>
+            ) : null}
+          </div>
+          {process.jobDescription ? (
+            <details className="mt-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+              <summary className="cursor-pointer text-xs font-semibold text-slate-600">
+                Job description
+              </summary>
+              <p className="mt-2 whitespace-pre-wrap text-xs text-slate-600">
+                {process.jobDescription}
+              </p>
+            </details>
+          ) : null}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -183,8 +220,16 @@ export function ProcessCard({
                 )}
               </p>
               <p className="mt-1 truncate text-xs text-slate-600">
-                {round.interviewerName}
+                Ours: {round.interviewerName}
               </p>
+              {round.clientInterviewerName ? (
+                <p
+                  className="mt-0.5 truncate text-xs text-slate-500"
+                  title={round.clientInterviewerAbout ?? undefined}
+                >
+                  Client: {round.clientInterviewerName}
+                </p>
+              ) : null}
               <div className="mt-2 flex gap-0.5">
                 {[1, 2, 3, 4, 5].map((n) => (
                   <Star
@@ -258,12 +303,14 @@ function AddRoundDialog({
   const [duration, setDuration] = useState<BookingDuration>(60);
   const [localStart, setLocalStart] = useState("");
   const [interviewerName, setInterviewerName] = useState("");
+  const [clientInterviewerName, setClientInterviewerName] = useState("");
+  const [clientInterviewerAbout, setClientInterviewerAbout] = useState("");
   const [meetingLink, setMeetingLink] = useState("");
   const [overrideAvailability, setOverrideAvailability] = useState(false);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
+      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
         <h4 className="text-lg font-semibold text-slate-900">Add round</h4>
         <div className="mt-4 space-y-3">
           <label className="block text-sm">
@@ -310,12 +357,37 @@ function AddRoundDialog({
           </label>
           <label className="block text-sm">
             <span className="mb-1 block font-medium text-slate-700">
-              Interviewer
+              Our interviewer
             </span>
             <input
               value={interviewerName}
               onChange={(e) => setInterviewerName(e.target.value)}
               className="h-10 w-full rounded-xl border border-slate-200 px-3"
+              required
+            />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-slate-700">
+              Client interviewer name
+            </span>
+            <input
+              value={clientInterviewerName}
+              onChange={(e) => setClientInterviewerName(e.target.value)}
+              className="h-10 w-full rounded-xl border border-slate-200 px-3"
+              placeholder="Name at the hiring company"
+              required
+            />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-slate-700">
+              About client interviewer
+            </span>
+            <textarea
+              value={clientInterviewerAbout}
+              onChange={(e) => setClientInterviewerAbout(e.target.value)}
+              rows={3}
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              placeholder="Role, background, what to expect…"
               required
             />
           </label>
@@ -361,7 +433,15 @@ function AddRoundDialog({
             onClick={() => {
               setError(null);
               if (!localStart || !interviewerName.trim()) {
-                setError("Start time and interviewer are required");
+                setError("Start time and our interviewer are required");
+                return;
+              }
+              if (!clientInterviewerName.trim()) {
+                setError("Client interviewer name is required");
+                return;
+              }
+              if (clientInterviewerAbout.trim().length < 10) {
+                setError("Add a short about for the client interviewer");
                 return;
               }
               startTransition(async () => {
@@ -371,6 +451,8 @@ function AddRoundDialog({
                   durationMinutes: duration,
                   type,
                   interviewerName: interviewerName.trim(),
+                  clientInterviewerName: clientInterviewerName.trim(),
+                  clientInterviewerAbout: clientInterviewerAbout.trim(),
                   meetingLink: meetingLink.trim(),
                   overrideAvailability,
                 });

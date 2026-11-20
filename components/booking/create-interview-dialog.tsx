@@ -8,6 +8,7 @@ import {
   getOpenSlotsForProfileDay,
   getProfileProcessesForBooking,
 } from "@/app/actions/booking";
+import { uploadResumeFile } from "@/app/actions/uploads";
 import {
   BOOKING_DURATIONS,
   type BookingDuration,
@@ -47,6 +48,8 @@ export function CreateInterviewDialog({
   const [slots, setSlots] = useState<string[]>([]);
   const [timeZone, setTimeZone] = useState("UTC");
   const [interviewerName, setInterviewerName] = useState<string | null>(null);
+  const [clientInterviewerName, setClientInterviewerName] = useState("");
+  const [clientInterviewerAbout, setClientInterviewerAbout] = useState("");
   const [startAt, setStartAt] = useState("");
   const [type, setType] = useState<RoundType>("TECH");
   const [meetingLink, setMeetingLink] = useState("");
@@ -56,6 +59,13 @@ export function CreateInterviewDialog({
   const [createNew, setCreateNew] = useState(true);
   const [companyName, setCompanyName] = useState("");
   const [jobTitle, setJobTitle] = useState("");
+  const [jobUrl, setJobUrl] = useState("");
+  const [jobDescription, setJobDescription] = useState("");
+  const [jobDescriptionFileName, setJobDescriptionFileName] = useState<
+    string | null
+  >(null);
+  const [resumeFileUrl, setResumeFileUrl] = useState("");
+  const [resumeFileName, setResumeFileName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
@@ -64,8 +74,15 @@ export function CreateInterviewDialog({
     setError(null);
     setOverrideAvailability(false);
     setMeetingLink("");
+    setClientInterviewerName("");
+    setClientInterviewerAbout("");
     setCompanyName("");
     setJobTitle("");
+    setJobUrl("");
+    setJobDescription("");
+    setJobDescriptionFileName(null);
+    setResumeFileUrl("");
+    setResumeFileName(null);
     setCreateNew(true);
     if (!profileId && profiles[0]) setProfileId(profiles[0].id);
   }, [open, profiles, profileId]);
@@ -251,11 +268,38 @@ export function CreateInterviewDialog({
           ) : null}
 
           <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-sm">
-            <span className="font-medium text-slate-700">Interviewer: </span>
+            <span className="font-medium text-slate-700">Our interviewer: </span>
             <span className="text-slate-600">
               {interviewerName ?? "None assigned — set one on the profile"}
             </span>
           </div>
+
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-slate-700">
+              Client interviewer name
+            </span>
+            <input
+              value={clientInterviewerName}
+              onChange={(e) => setClientInterviewerName(e.target.value)}
+              className="h-10 w-full rounded-xl border border-slate-200 px-3"
+              placeholder="Name at the hiring company"
+              required
+            />
+          </label>
+
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-slate-700">
+              About client interviewer
+            </span>
+            <textarea
+              value={clientInterviewerAbout}
+              onChange={(e) => setClientInterviewerAbout(e.target.value)}
+              rows={3}
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              placeholder="Role, background, what to expect…"
+              required
+            />
+          </label>
 
           <label className="block text-sm">
             <span className="mb-1 block font-medium text-slate-700">
@@ -310,6 +354,85 @@ export function CreateInterviewDialog({
                   placeholder="Job title"
                   className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm"
                 />
+                <input
+                  value={jobUrl}
+                  onChange={(e) => setJobUrl(e.target.value)}
+                  placeholder="Job link (https://…)"
+                  required
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm"
+                />
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-medium text-slate-600">
+                    Job description (.txt)
+                  </label>
+                  <input
+                    type="file"
+                    accept=".txt,text/plain"
+                    className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-200 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-slate-800"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setError(null);
+                      startTransition(async () => {
+                        const text = (await file.text()).trim();
+                        if (text.length < 20) {
+                          setError(
+                            "Job description file must have at least 20 characters",
+                          );
+                          setJobDescription("");
+                          setJobDescriptionFileName(null);
+                          return;
+                        }
+                        setJobDescription(text);
+                        setJobDescriptionFileName(file.name);
+                      });
+                    }}
+                  />
+                  {jobDescriptionFileName ? (
+                    <p className="text-xs text-emerald-700">
+                      Selected: {jobDescriptionFileName}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-slate-400">
+                      Required — upload a .txt job description
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-medium text-slate-600">
+                    Resume (PDF / Word)
+                  </label>
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                    className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-200 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-slate-800"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setError(null);
+                      startTransition(async () => {
+                        const fd = new FormData();
+                        fd.set("file", file);
+                        const result = await uploadResumeFile(fd);
+                        if (!result.ok) {
+                          setError(result.error);
+                          setResumeFileUrl("");
+                          setResumeFileName(null);
+                          return;
+                        }
+                        setResumeFileUrl(result.url);
+                        setResumeFileName(file.name);
+                      });
+                    }}
+                  />
+                  {resumeFileName ? (
+                    <p className="text-xs text-emerald-700">
+                      Uploaded: {resumeFileName}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-slate-400">Required for new interviews</p>
+                  )}
+                </div>
               </div>
             ) : (
               <select
@@ -360,13 +483,35 @@ export function CreateInterviewDialog({
                 setError("Assign an interviewer to this profile first");
                 return;
               }
+              if (!clientInterviewerName.trim()) {
+                setError("Client interviewer name is required");
+                return;
+              }
+              if (clientInterviewerAbout.trim().length < 10) {
+                setError("Add a short about for the client interviewer");
+                return;
+              }
               if (!startAt) {
                 setError("Pick a start time");
                 return;
               }
-              if (createNew && (!companyName.trim() || !jobTitle.trim())) {
-                setError("Company and job title are required");
-                return;
+              if (createNew) {
+                if (!companyName.trim() || !jobTitle.trim()) {
+                  setError("Company and job title are required");
+                  return;
+                }
+                if (!jobUrl.trim()) {
+                  setError("Job link is required");
+                  return;
+                }
+                if (!jobDescriptionFileName || jobDescription.trim().length < 20) {
+                  setError("Select a .txt job description file");
+                  return;
+                }
+                if (!resumeFileUrl) {
+                  setError("Upload a resume before creating the interview");
+                  return;
+                }
               }
               startTransition(async () => {
                 const result = await bookRound({
@@ -376,13 +521,17 @@ export function CreateInterviewDialog({
                     ? {
                         companyName: companyName.trim(),
                         jobTitle: jobTitle.trim(),
-                        jobUrl: "",
+                        jobUrl: jobUrl.trim(),
+                        jobDescription: jobDescription.trim(),
+                        resumeFileUrl,
                       }
                     : undefined,
                   startAt,
                   durationMinutes: duration,
                   type,
                   interviewerName,
+                  clientInterviewerName: clientInterviewerName.trim(),
+                  clientInterviewerAbout: clientInterviewerAbout.trim(),
                   meetingLink: meetingLink.trim(),
                   overrideAvailability,
                 });

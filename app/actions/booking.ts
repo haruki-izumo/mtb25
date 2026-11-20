@@ -22,7 +22,16 @@ const bookSchema = z.object({
     .object({
       companyName: z.string().min(1).max(200),
       jobTitle: z.string().min(1).max(200),
-      jobUrl: z.string().url().optional().or(z.literal("")),
+      jobUrl: z.string().url("Job link must be a valid URL"),
+      jobDescription: z.string().min(20, "Job description is required").max(50000),
+      resumeFileUrl: z
+        .string()
+        .min(1, "Resume is required")
+        .refine(
+          (v) =>
+            v.startsWith("/uploads/resumes/") || /^https?:\/\//i.test(v),
+          "Upload a resume or provide a resume URL",
+        ),
     })
     .optional(),
   startAt: z.string().datetime(),
@@ -39,6 +48,11 @@ const bookSchema = z.object({
     "OTHER",
   ]),
   interviewerName: z.string().max(200).optional(),
+  clientInterviewerName: z.string().min(1, "Client interviewer name is required").max(200),
+  clientInterviewerAbout: z
+    .string()
+    .min(10, "Add a short about for the client interviewer")
+    .max(10000),
   meetingLink: z.string().url().optional().or(z.literal("")),
   overrideAvailability: z.boolean().optional(),
 });
@@ -196,7 +210,9 @@ export async function bookRound(input: BookRoundInput): Promise<BookRoundResult>
             profileId: data.profileId,
             companyName: data.newProcess.companyName,
             jobTitle: data.newProcess.jobTitle,
-            jobUrl: data.newProcess.jobUrl || null,
+            jobUrl: data.newProcess.jobUrl,
+            jobDescription: data.newProcess.jobDescription,
+            resumeFileUrl: data.newProcess.resumeFileUrl,
             ownerMemberId: owner.id,
             status: "FIRST_STEP",
           },
@@ -223,6 +239,8 @@ export async function bookRound(input: BookRoundInput): Promise<BookRoundResult>
           startAt,
           endAt,
           interviewerName,
+          clientInterviewerName: data.clientInterviewerName.trim(),
+          clientInterviewerAbout: data.clientInterviewerAbout.trim(),
           meetingLink: data.meetingLink || null,
           bookedById: owner.id,
           outcome: "PENDING",

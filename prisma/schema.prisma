@@ -188,16 +188,18 @@ model UserAvailabilityOverride {
 }
 
 model InterviewProcess {
-  id            String        @id @default(cuid())
-  profileId     String
-  companyName   String
-  jobTitle      String
-  jobUrl        String?
-  ownerMemberId String
-  status        ProcessStatus
-  note          String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id             String        @id @default(cuid())
+  profileId      String
+  companyName    String
+  jobTitle       String
+  jobUrl         String?
+  jobDescription String?
+  resumeFileUrl  String?
+  ownerMemberId  String
+  status         ProcessStatus
+  note           String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
   owner   User    @relation("ProcessOwner", fields: [ownerMemberId], references: [id])
@@ -209,19 +211,23 @@ model InterviewProcess {
 }
 
 model Round {
-  id              String       @id @default(cuid())
-  processId       String
-  roundNumber     Int
-  type            RoundType
-  startAt         DateTime
-  endAt           DateTime
-  interviewerName String
-  meetingLink     String?
-  bookedById      String
-  outcome         RoundOutcome @default(PENDING)
-  rating          Int?
-  feedback        String?
-  createdAt       DateTime     @default(now())
+  id                     String       @id @default(cuid())
+  processId              String
+  roundNumber            Int
+  type                   RoundType
+  startAt                DateTime
+  endAt                  DateTime
+  /** Our assigned interviewer (profile interviewer display name) */
+  interviewerName        String
+  /** Interviewer at the client / hiring company */
+  clientInterviewerName  String       @default("")
+  clientInterviewerAbout String?
+  meetingLink            String?
+  bookedById             String
+  outcome                RoundOutcome @default(PENDING)
+  rating                 Int?
+  feedback               String?
+  createdAt              DateTime     @default(now())
 
   process  InterviewProcess @relation(fields: [processId], references: [id], onDelete: Cascade)
   bookedBy User             @relation("RoundBookedBy", fields: [bookedById], references: [id])
