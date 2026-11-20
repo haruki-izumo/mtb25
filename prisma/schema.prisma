@@ -1,0 +1,215 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+enum OverrideType {
+  BLOCK
+  OPEN
+}
+
+enum ProcessStatus {
+  OFFER
+  FIRST_STEP
+  NEXT_ROUND
+  NEXT_STEP
+  ASSESSMENT
+  DONE
+  RESCHEDULE
+  SKIPPED
+  FAILED
+  CANCELED
+  NOT_HANDLED
+  NOT_RESCHEDULED
+}
+
+enum RoundType {
+  HR_RECRUITER
+  TECH
+  ASSESSMENT
+  SYSTEM_DESIGN
+  BEHAVIORAL
+  FINAL
+  OTHER
+}
+
+enum RoundOutcome {
+  PENDING
+  PASSED
+  FAILED
+  RESCHEDULED
+  CANCELED
+  NO_SHOW
+}
+
+enum ApplicationStatus {
+  SAVED
+  APPLIED
+  SCREENING
+  INTERVIEWING
+  OFFER
+  REJECTED
+  WITHDRAWN
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(MEMBER)
+  avatarColor  String   @default("#2563eb")
+  createdAt    DateTime @default(now())
+
+  teamId String?
+  team   Team?   @relation(fields: [teamId], references: [id])
+
+  assignedProfiles Profile[] @relation("ProfileAssignments")
+  ownedProcesses   InterviewProcess[] @relation("ProcessOwner")
+  bookedRounds     Round[]            @relation("RoundBookedBy")
+}
+
+model Team {
+  id      String @id @default(cuid())
+  name    String
+  members User[]
+}
+
+model Profile {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  displayName   String
+  fullName      String
+  email         String
+  phone         String?
+  location      String?
+  zipCode       String?
+  country       String
+  timezone      String
+  linkedinUrl   String?
+  githubUrl     String?
+  resumeFileUrl String?
+  starred       Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  assignedMembers User[] @relation("ProfileAssignments")
+
+  experiences            Experience[]
+  availabilityRules      AvailabilityRule[]
+  availabilityOverrides  AvailabilityOverride[]
+  processes              InterviewProcess[]
+  applications           Application[]
+}
+
+model Experience {
+  id        String    @id @default(cuid())
+  profileId String
+  company   String
+  role      String
+  location  String?
+  startDate DateTime
+  endDate   DateTime?
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+}
+
+model AvailabilityRule {
+  id          String @id @default(cuid())
+  profileId   String
+  weekday     Int
+  startMinute Int
+  endMinute   Int
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+}
+
+model AvailabilityOverride {
+  id          String       @id @default(cuid())
+  profileId   String
+  date        DateTime     @db.Date
+  startMinute Int?
+  endMinute   Int?
+  type        OverrideType
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, date])
+}
+
+model InterviewProcess {
+  id            String        @id @default(cuid())
+  profileId     String
+  companyName   String
+  jobTitle      String
+  jobUrl        String?
+  ownerMemberId String
+  status        ProcessStatus
+  note          String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  owner   User    @relation("ProcessOwner", fields: [ownerMemberId], references: [id])
+  rounds  Round[]
+
+  @@index([profileId])
+  @@index([ownerMemberId])
+  @@index([status])
+}
+
+model Round {
+  id              String       @id @default(cuid())
+  processId       String
+  roundNumber     Int
+  type            RoundType
+  startAt         DateTime
+  endAt           DateTime
+  interviewerName String
+  meetingLink     String?
+  bookedById      String
+  outcome         RoundOutcome @default(PENDING)
+  rating          Int?
+  feedback        String?
+  createdAt       DateTime     @default(now())
+
+  process  InterviewProcess @relation(fields: [processId], references: [id], onDelete: Cascade)
+  bookedBy User             @relation("RoundBookedBy", fields: [bookedById], references: [id])
+
+  @@index([processId])
+  @@index([startAt, endAt])
+  @@index([bookedById])
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  body      String
+  createdAt DateTime @default(now())
+}
+
+model Application {
+  id        String            @id @default(cuid())
+  profileId String
+  company   String
+  jobTitle  String
+  url       String?
+  status    ApplicationStatus @default(SAVED)
+  appliedAt DateTime?
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+}

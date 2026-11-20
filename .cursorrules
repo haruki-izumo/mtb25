@@ -1,0 +1,1 @@
+Always follow docs/SPEC.md; store times in UTC; never skip server-side validation.
