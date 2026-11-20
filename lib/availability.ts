@@ -39,6 +39,15 @@ export function zonedDateKey(date: Date, timeZone: string): string {
   return format(zoned, "yyyy-MM-dd");
 }
 
+/**
+ * Calendar YYYY-MM-DD for a Prisma `@db.Date` value.
+ * These are stored as UTC midnight for the calendar day — never format with
+ * the server's local timezone or the date shifts west of UTC.
+ */
+export function calendarDateKey(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
 /** Weekday 0–6 for an instant in a timezone. */
 export function zonedWeekday(date: Date, timeZone: string): number {
   return toZonedTime(date, timeZone).getDay();

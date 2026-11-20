@@ -1,12 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { addMinutes, format } from "date-fns";
+import { addMinutes } from "date-fns";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSession, assertCanAccessProfile } from "@/lib/auth-helpers";
 import {
   BOOKING_DURATIONS,
+  calendarDateKey,
   getBookableSlots,
   getOpenIntervalsForDay,
   rangesOverlap,
@@ -126,7 +127,7 @@ export async function bookRound(input: BookRoundInput): Promise<BookRoundResult>
             endMinute: r.endMinute,
           })),
           overrides: profile.availabilityOverrides.map((o) => ({
-            date: format(o.date, "yyyy-MM-dd"),
+            date: calendarDateKey(o.date),
             startMinute: o.startMinute,
             endMinute: o.endMinute,
             type: o.type,

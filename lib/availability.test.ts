@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  calendarDateKey,
   formatAvailabilityText,
   getBookableSlots,
   getOpenIntervalsForDay,
@@ -8,6 +9,14 @@ import {
   zonedDateKey,
   zonedWeekday,
 } from "./availability";
+
+describe("calendarDateKey", () => {
+  it("keeps @db.Date UTC midnight on the same calendar day west of UTC", () => {
+    // Prisma Date columns come back as UTC midnight for the stored day
+    const monday = new Date("2024-01-15T00:00:00.000Z");
+    expect(calendarDateKey(monday)).toBe("2024-01-15");
+  });
+});
 
 describe("localMinutesToUtc / zoned helpers", () => {
   it("converts America/New_York winter time (EST, UTC-5)", () => {

@@ -10,9 +10,11 @@ import {
   deleteAvailabilityRule,
   updateAvailabilityRule,
   addOpenOverride,
+  addBlockOverride,
 } from "@/app/actions/availability";
 import {
   addInterviewerOpenOverride,
+  addInterviewerBlockOverride,
   createInterviewerAvailabilityRule,
   deleteInterviewerAvailabilityRule,
   updateInterviewerAvailabilityRule,
@@ -106,6 +108,8 @@ export function AvailabilityView({
     dateKey: string;
     startHour: number;
     endHour: number;
+    mode: "open" | "close";
+    moved: boolean;
   } | null>(null);
   const [editingRule, setEditingRule] = useState<{
     id?: string;
@@ -172,16 +176,50 @@ export function AvailabilityView({
     );
   }
 
-  function finishDrag() {
+  function finishDrag(bookingDay?: DayBlock, shiftKey = false) {
     if (!drag || !canEdit) return;
-    const startHour = Math.min(drag.startHour, drag.endHour);
-    const endHour = Math.max(drag.startHour, drag.endHour) + 1;
-    const dateKey = drag.dateKey;
+    const current = drag;
+    const startHour = Math.min(current.startHour, current.endHour);
+    const endHour = Math.max(current.startHour, current.endHour) + 1;
+    const dateKey = current.dateKey;
     setDrag(null);
+
+    // Plain click on green while booking is allowed → book.
+    // Shift+click or a drag clears time instead.
+    if (
+      current.mode === "close" &&
+      !current.moved &&
+      canBook &&
+      !shiftKey &&
+      bookingDay
+    ) {
+      setBooking({
+        dateKey,
+        hour: current.startHour,
+        open: bookingDay.open,
+      });
+      return;
+    }
+
     setError(null);
     startTransition(async () => {
       try {
-        if (isInterviewerMode && interviewer) {
+        if (current.mode === "close") {
+          if (isInterviewerMode && interviewer) {
+            await addInterviewerBlockOverride({
+              dateKey,
+              startMinute: startHour * 60,
+              endMinute: endHour * 60,
+            });
+          } else if (profile) {
+            await addBlockOverride({
+              profileId: profile.id,
+              dateKey,
+              startMinute: startHour * 60,
+              endMinute: endHour * 60,
+            });
+          }
+        } else if (isInterviewerMode && interviewer) {
           await addInterviewerOpenOverride({
             dateKey,
             startMinute: startHour * 60,
@@ -197,7 +235,11 @@ export function AvailabilityView({
         }
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : "Failed to add availability",
+          err instanceof Error
+            ? err.message
+            : current.mode === "close"
+              ? "Failed to clear availability"
+              : "Failed to add availability",
         );
       }
     });
@@ -298,8 +340,8 @@ export function AvailabilityView({
             </div>
             <p className="text-xs text-slate-500">
               {canBook
-                ? "Click green to book · drag empty cells to add open time"
-                : "Drag empty cells to add open time · edit weekly rules in the Rules tab"}
+                ? "Click green to book · drag empty to add · drag / Shift+click green to clear"
+                : "Drag empty to add · drag green to clear · edit weekly rules in the Rules tab"}
             </p>
           </div>
 
@@ -315,10 +357,10 @@ export function AvailabilityView({
                   className="border-b border-l border-slate-100 px-2 py-3 text-center"
                 >
                   <p className="text-xs uppercase text-slate-400">
-                    {format(new Date(d.dateIso), "EEE")}
+                    {DAY_NAMES[d.weekday]}
                   </p>
                   <p className="text-sm font-semibold text-slate-800">
-                    {format(new Date(d.dateIso), "d")}
+                    {Number(d.dateKey.slice(8, 10))}
                   </p>
                 </div>
               ))}
@@ -347,13 +389,18 @@ export function AvailabilityView({
                           state === "booked" &&
                             "bg-[repeating-linear-gradient(-45deg,#e2e8f0,#e2e8f0_6px,#94a3b8_6px,#94a3b8_12px)]",
                           state === "empty" && "hover:bg-slate-50",
-                          inDrag && "bg-blue-200/70",
+                          inDrag &&
+                            drag.mode === "open" &&
+                            "bg-blue-200/70",
+                          inDrag &&
+                            drag.mode === "close" &&
+                            "bg-rose-200/70",
                         )}
-                          title={
+                        title={
                           state === "open"
                             ? canBook
-                              ? "Available — click to book"
-                              : "Available"
+                              ? "Available — click to book, drag or Shift+click to clear"
+                              : "Available — drag or click to clear"
                             : state === "empty"
                               ? "Drag to add open availability"
                               : state
@@ -364,23 +411,31 @@ export function AvailabilityView({
                               dateKey: d.dateKey,
                               startHour: hour,
                               endHour: hour,
+                              mode: "open",
+                              moved: false,
+                            });
+                          } else if (state === "open") {
+                            setDrag({
+                              dateKey: d.dateKey,
+                              startHour: hour,
+                              endHour: hour,
+                              mode: "close",
+                              moved: false,
                             });
                           }
                         }}
                         onMouseEnter={() => {
                           if (drag && drag.dateKey === d.dateKey) {
-                            setDrag({ ...drag, endHour: hour });
-                          }
-                        }}
-                        onMouseUp={() => {
-                          if (drag) finishDrag();
-                          else if (state === "open" && canBook) {
-                            setBooking({
-                              dateKey: d.dateKey,
-                              hour,
-                              open: d.open,
+                            setDrag({
+                              ...drag,
+                              endHour: hour,
+                              moved:
+                                drag.moved || hour !== drag.startHour,
                             });
                           }
+                        }}
+                        onMouseUp={(e) => {
+                          if (drag) finishDrag(d, e.shiftKey);
                         }}
                       />
                     );

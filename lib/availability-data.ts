@@ -3,6 +3,7 @@ import type { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { profileAccessWhere } from "@/lib/access";
 import {
+  calendarDateKey,
   formatAvailabilityText,
   getOpenIntervalsForDay,
   localDayEndUtc,
@@ -143,7 +144,7 @@ export async function getInterviewerAvailabilityData(params: {
     endMinute: r.endMinute,
   }));
   const overrides = user.availabilityOverrides.map((o) => ({
-    date: format(o.date, "yyyy-MM-dd"),
+    date: calendarDateKey(o.date),
     startMinute: o.startMinute,
     endMinute: o.endMinute,
     type: o.type as "BLOCK" | "OPEN",
@@ -257,7 +258,7 @@ export async function getAvailabilityPageData(params: {
   }));
 
   const overrides = profile.availabilityOverrides.map((o) => ({
-    date: format(o.date, "yyyy-MM-dd"),
+    date: calendarDateKey(o.date),
     startMinute: o.startMinute,
     endMinute: o.endMinute,
     type: o.type as "BLOCK" | "OPEN",

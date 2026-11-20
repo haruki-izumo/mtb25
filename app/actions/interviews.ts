@@ -8,13 +8,13 @@ import { prisma } from "@/lib/prisma";
 import { requireSession, assertCanAccessProfile } from "@/lib/auth-helpers";
 import {
   BOOKING_DURATIONS,
+  calendarDateKey,
   getBookableSlots,
   getOpenIntervalsForDay,
   rangesOverlap,
   zonedDateKey,
   type BookingDuration,
 } from "@/lib/availability";
-import { format } from "date-fns";
 
 const statusSchema = z.object({
   processId: z.string().min(1),
@@ -224,7 +224,7 @@ export async function addRoundToProcess(
             endMinute: r.endMinute,
           })),
           overrides: profile.availabilityOverrides.map((o) => ({
-            date: format(o.date, "yyyy-MM-dd"),
+            date: calendarDateKey(o.date),
             startMinute: o.startMinute,
             endMinute: o.endMinute,
             type: o.type,

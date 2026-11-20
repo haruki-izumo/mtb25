@@ -103,21 +103,74 @@ export async function deleteInterviewerAvailabilityRule(id: string) {
   revalidatePath("/availability");
 }
 
-export async function addInterviewerOpenOverride(input: {
-  userId?: string;
-  dateKey: string;
-  startMinute: number;
-  endMinute: number;
-}) {
+const interviewerRangeSchema = z.object({
+  userId: z.string().min(1).optional(),
+  dateKey: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  startMinute: z.number().int().min(0),
+  endMinute: z.number().int().min(1),
+});
+
+function minutesOverlap(
+  aStart: number,
+  aEnd: number,
+  bStart: number | null,
+  bEnd: number | null,
+) {
+  const start = bStart ?? 0;
+  const end = bEnd ?? 24 * 60;
+  return aStart < end && aEnd > start;
+}
+
+export async function addInterviewerOpenOverride(
+  input: z.infer<typeof interviewerRangeSchema>,
+) {
   const session = await requireInterviewerSelf();
-  const parsed = z
-    .object({
-      userId: z.string().min(1).optional(),
-      dateKey: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      startMinute: z.number().int().min(0),
-      endMinute: z.number().int().min(1),
-    })
-    .parse(input);
+  const parsed = interviewerRangeSchema.parse(input);
+  if (parsed.endMinute <= parsed.startMinute) {
+    throw new Error("End time must be after start time");
+  }
+
+  const userId = targetUserId(session, parsed.userId);
+  if (session.user.role === "INTERVIEWER" && userId !== session.user.id) {
+    throw new Error("Forbidden");
+  }
+
+  const date = new Date(`${parsed.dateKey}T00:00:00.000Z`);
+  const blockers = await prisma.userAvailabilityOverride.findMany({
+    where: { userId, date, type: "BLOCK" },
+  });
+  const overlapping = blockers.filter((o) =>
+    minutesOverlap(
+      parsed.startMinute,
+      parsed.endMinute,
+      o.startMinute,
+      o.endMinute,
+    ),
+  );
+
+  await prisma.$transaction([
+    ...overlapping.map((o) =>
+      prisma.userAvailabilityOverride.delete({ where: { id: o.id } }),
+    ),
+    prisma.userAvailabilityOverride.create({
+      data: {
+        userId,
+        date,
+        startMinute: parsed.startMinute,
+        endMinute: parsed.endMinute,
+        type: "OPEN",
+      },
+    }),
+  ]);
+  revalidatePath("/availability");
+}
+
+/** Block a time range (drag on green cells to deselect). */
+export async function addInterviewerBlockOverride(
+  input: z.infer<typeof interviewerRangeSchema>,
+) {
+  const session = await requireInterviewerSelf();
+  const parsed = interviewerRangeSchema.parse(input);
   if (parsed.endMinute <= parsed.startMinute) {
     throw new Error("End time must be after start time");
   }
@@ -133,7 +186,7 @@ export async function addInterviewerOpenOverride(input: {
       date: new Date(`${parsed.dateKey}T00:00:00.000Z`),
       startMinute: parsed.startMinute,
       endMinute: parsed.endMinute,
-      type: "OPEN",
+      type: "BLOCK",
     },
   });
   revalidatePath("/availability");
