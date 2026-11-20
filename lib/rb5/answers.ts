@@ -1,22 +1,63 @@
-const express = require("express");
-const { requireAuth } = require("./auth");
-const { getProfile } = require("./profiles");
+type AnswerQuestion = {
+  label: string;
+  options: string[] | null;
+};
 
-function flattenQuestions(questions) {
+type AnswerProfile = {
+  name?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  location?: string;
+  zipCode?: string;
+  country?: string;
+  linkedin?: string;
+  github?: string;
+  experience?: { start?: string }[];
+  autoFillPrefs?: Record<string, unknown>;
+} | null;
+
+type AnswerResume = {
+  contact?: {
+    full_name?: string;
+    email?: string;
+    phone?: string;
+    location?: string;
+    linkedin?: string;
+    github?: string;
+  };
+  summary?: string;
+  headline_role?: string;
+  experience?: { start?: string }[];
+} | null;
+
+type JobData = {
+  company_name?: string;
+  job_title?: string;
+} | null;
+
+export function flattenQuestions(questions: unknown): AnswerQuestion[] {
   if (!Array.isArray(questions)) return [];
   return questions.map((q) => {
     if (typeof q === "string") return { label: q, options: null };
     if (q && typeof q === "object") {
+      const obj = q as Record<string, unknown>;
       return {
-        label: String(q.label || q.question || q.text || "").trim(),
-        options: Array.isArray(q.options) ? q.options.map(String) : null,
+        label: String(obj.label || obj.question || obj.text || "").trim(),
+        options: Array.isArray(obj.options)
+          ? obj.options.map(String)
+          : null,
       };
     }
     return { label: String(q || ""), options: null };
   });
 }
 
-function pickOption(options, predicates) {
+function pickOption(
+  options: string[] | null | undefined,
+  predicates: Array<(o: string) => boolean>,
+) {
   if (!options?.length) return null;
   for (const pred of predicates) {
     const hit = options.find((o) => pred(String(o).toLowerCase()));
@@ -25,20 +66,50 @@ function pickOption(options, predicates) {
   return null;
 }
 
-function answerOne({ label, options }, profile, resume, jobData) {
+function estimateYears(profile: AnswerProfile, resume: AnswerResume) {
+  const exps = resume?.experience?.length
+    ? resume.experience
+    : profile?.experience || [];
+  let minStart: number | null = null;
+  for (const e of exps) {
+    const m = /^(\d{4})/.exec(String(e.start || ""));
+    if (m) {
+      const y = Number(m[1]);
+      if (!minStart || y < minStart) minStart = y;
+    }
+  }
+  if (!minStart) return 3;
+  return Math.max(1, new Date().getFullYear() - minStart);
+}
+
+export function answerOne(
+  { label, options }: AnswerQuestion,
+  profile: AnswerProfile,
+  resume: AnswerResume,
+  jobData: JobData,
+) {
   const q = String(label || "").toLowerCase();
   const contact = resume?.contact || {};
   const prefs = profile?.autoFillPrefs || {};
 
-  const fromPref = (keys) => {
+  const fromPref = (keys: string[]) => {
     for (const k of keys) {
-      if (prefs[k] != null && String(prefs[k]).trim()) return String(prefs[k]).trim();
+      const v = prefs[k];
+      if (v != null && String(v).trim()) return String(v).trim();
     }
     return null;
   };
 
-  if (/authorized|work authorization|legally.*(work|authorized)|eligible to work/.test(q)) {
-    const pref = fromPref(["workAuthorization", "authorizedToWork", "work_authorization"]);
+  if (
+    /authorized|work authorization|legally.*(work|authorized)|eligible to work/.test(
+      q,
+    )
+  ) {
+    const pref = fromPref([
+      "workAuthorization",
+      "authorizedToWork",
+      "work_authorization",
+    ]);
     if (pref) return pref;
     if (options) {
       return (
@@ -52,7 +123,11 @@ function answerOne({ label, options }, profile, resume, jobData) {
   }
 
   if (/sponsor|sponsorship|visa|h-?1b|require.*visa/.test(q)) {
-    const pref = fromPref(["needsSponsorship", "sponsorship", "visaSponsorship"]);
+    const pref = fromPref([
+      "needsSponsorship",
+      "sponsorship",
+      "visaSponsorship",
+    ]);
     if (pref) return pref;
     if (options) {
       return (
@@ -69,7 +144,10 @@ function answerOne({ label, options }, profile, resume, jobData) {
     const pref = fromPref(["willingToRelocate", "relocate"]);
     if (pref) return pref;
     if (options) {
-      return pickOption(options, [(o) => /\byes\b/.test(o), (o) => /\bno\b/.test(o)]) || options[0];
+      return (
+        pickOption(options, [(o) => /\byes\b/.test(o), (o) => /\bno\b/.test(o)]) ||
+        options[0]
+      );
     }
     return "Yes, for the right opportunity";
   }
@@ -95,7 +173,11 @@ function answerOne({ label, options }, profile, resume, jobData) {
     return "Negotiable based on total compensation and role scope";
   }
 
-  if (/start date|when can you (start|begin)|available to start|notice period/.test(q)) {
+  if (
+    /start date|when can you (start|begin)|available to start|notice period/.test(
+      q,
+    )
+  ) {
     const pref = fromPref(["startDate", "availability", "noticePeriod"]);
     if (pref) return pref;
     if (options) {
@@ -127,9 +209,14 @@ function answerOne({ label, options }, profile, resume, jobData) {
     const years = estimateYears(profile, resume);
     if (options) {
       const n = String(years);
-      const hit = options.find((o) => o.includes(n) || new RegExp(`\\b${years}\\b`).test(o));
+      const hit = options.find(
+        (o) => o.includes(n) || new RegExp(`\\b${years}\\b`).test(o),
+      );
       if (hit) return hit;
-      return options[Math.min(options.length - 1, Math.max(0, years - 1))] || options[0];
+      return (
+        options[Math.min(options.length - 1, Math.max(0, years - 1))] ||
+        options[0]
+      );
     }
     return String(years);
   }
@@ -138,7 +225,12 @@ function answerOne({ label, options }, profile, resume, jobData) {
     return contact.linkedin || profile?.linkedin || fromPref(["linkedin"]) || "";
   }
   if (/github|portfolio|website|personal site/.test(q)) {
-    return contact.github || profile?.github || fromPref(["github", "portfolio", "website"]) || "";
+    return (
+      contact.github ||
+      profile?.github ||
+      fromPref(["github", "portfolio", "website"]) ||
+      ""
+    );
   }
   if (/phone|mobile|cell/.test(q)) {
     return contact.phone || profile?.phone || "";
@@ -155,9 +247,15 @@ function answerOne({ label, options }, profile, resume, jobData) {
   if (/country/.test(q)) {
     return profile?.country || fromPref(["country"]) || "";
   }
-  if (/first name/.test(q)) return profile?.firstName || contact.full_name?.split(" ")[0] || "";
+  if (/first name/.test(q)) {
+    return profile?.firstName || contact.full_name?.split(" ")[0] || "";
+  }
   if (/last name|surname|family name/.test(q)) {
-    return profile?.lastName || contact.full_name?.split(" ").slice(1).join(" ") || "";
+    return (
+      profile?.lastName ||
+      contact.full_name?.split(" ").slice(1).join(" ") ||
+      ""
+    );
   }
   if (/full name|legal name|^name$/.test(q)) {
     return (
@@ -180,7 +278,8 @@ function answerOne({ label, options }, profile, resume, jobData) {
       contact.full_name ||
       [profile?.firstName, profile?.lastName].filter(Boolean).join(" ") ||
       "I";
-    const role = resume?.headline_role || jobData?.job_title || "software professional";
+    const role =
+      resume?.headline_role || jobData?.job_title || "software professional";
     return `${name} is a ${role} with hands-on experience delivering results across relevant projects. Happy to share more details in an interview.`;
   }
 
@@ -200,40 +299,20 @@ function answerOne({ label, options }, profile, resume, jobData) {
   return fromPref(["defaultAnswer"]) || "";
 }
 
-function estimateYears(profile, resume) {
-  const exps = resume?.experience?.length ? resume.experience : profile?.experience || [];
-  let minStart = null;
-  for (const e of exps) {
-    const m = /^(\d{4})/.exec(String(e.start || ""));
-    if (m) {
-      const y = Number(m[1]);
-      if (!minStart || y < minStart) minStart = y;
-    }
-  }
-  if (!minStart) return 3;
-  return Math.max(1, new Date().getFullYear() - minStart);
+export function answerQuestions(input: {
+  questions: unknown;
+  profile?: AnswerProfile;
+  resume?: AnswerResume;
+  jobData?: JobData;
+}) {
+  const list = flattenQuestions(input.questions);
+  return list.map((q) => ({
+    question: q.label,
+    answer: answerOne(
+      q,
+      input.profile ?? null,
+      input.resume ?? null,
+      input.jobData ?? null,
+    ),
+  }));
 }
-
-function createAnswersRouter() {
-  const router = express.Router();
-  router.use(requireAuth);
-
-  router.post("/", async (req, res) => {
-    try {
-      const { profileId, questions, job_data, resume } = req.body || {};
-      const profile = profileId ? await getProfile(profileId, req.user.uid) : null;
-      const list = flattenQuestions(questions);
-      const answers = list.map((q) => ({
-        question: q.label,
-        answer: answerOne(q, profile, resume || null, job_data || {}),
-      }));
-      return res.json({ answers });
-    } catch (e) {
-      return res.status(500).json({ message: e.message || "Answer failed" });
-    }
-  });
-
-  return router;
-}
-
-module.exports = { createAnswersRouter, answerOne };
