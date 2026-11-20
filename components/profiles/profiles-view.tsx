@@ -6,10 +6,12 @@ import { useState, useTransition } from "react";
 import { Copy, LayoutGrid, List, Pencil, Plus, Star, Trash2 } from "lucide-react";
 import {
   addProfileApiKey,
+  addProfileCertification,
   addProfileExperience,
   createProfile,
   deleteProfile,
   deleteProfileApiKey,
+  deleteProfileCertification,
   deleteProfileExperience,
   setProfileInterviewer,
   toggleProfileStar,
@@ -74,10 +76,14 @@ type Detail = {
   experiences: {
     id: string;
     company: string;
-    role: string;
     location: string | null;
     startDate: string;
     endDate: string | null;
+  }[];
+  certifications: {
+    id: string;
+    name: string;
+    date: string;
   }[];
   assignedMembers: { id: string; name: string; avatarColor: string }[];
   interviewer: { id: string; name: string; email: string } | null;
@@ -401,6 +407,13 @@ export function ProfilesView({
                   <ExperienceEditor
                     profileId={detail.id}
                     experiences={detail.experiences}
+                    pending={pending}
+                    startTransition={startTransition}
+                    onDone={() => router.refresh()}
+                  />
+                  <CertificationsEditor
+                    profileId={detail.id}
+                    certifications={detail.certifications}
                     pending={pending}
                     startTransition={startTransition}
                     onDone={() => router.refresh()}
@@ -851,7 +864,6 @@ function ExperienceEditor({
   experiences: {
     id: string;
     company: string;
-    role: string;
     location: string | null;
     startDate: string;
     endDate: string | null;
@@ -863,7 +875,6 @@ function ExperienceEditor({
   const [editing, setEditing] = useState<{
     id?: string;
     company: string;
-    role: string;
     location: string;
     startMonth: string;
     endMonth: string;
@@ -875,7 +886,6 @@ function ExperienceEditor({
     setError(null);
     setEditing({
       company: "",
-      role: "",
       location: "",
       startMonth: "",
       endMonth: "",
@@ -886,7 +896,6 @@ function ExperienceEditor({
   function openEdit(e: {
     id: string;
     company: string;
-    role: string;
     location: string | null;
     startDate: string;
     endDate: string | null;
@@ -895,7 +904,6 @@ function ExperienceEditor({
     setEditing({
       id: e.id,
       company: e.company,
-      role: e.role,
       location: e.location || "",
       startMonth: toMonthValue(e.startDate),
       endMonth: e.endDate ? toMonthValue(e.endDate) : "",
@@ -932,11 +940,12 @@ function ExperienceEditor({
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-slate-900">{e.role}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-sm font-semibold text-slate-900">
                     {e.company}
-                    {e.location ? ` · ${e.location}` : ""}
                   </p>
+                  {e.location ? (
+                    <p className="text-xs text-slate-500">{e.location}</p>
+                  ) : null}
                   <p className="text-xs text-slate-400">
                     {formatExperienceRange(e.startDate, e.endDate)}
                   </p>
@@ -955,7 +964,7 @@ function ExperienceEditor({
                     title="Delete"
                     className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
                     onClick={() => {
-                      if (!confirm(`Delete ${e.role} at ${e.company}?`)) return;
+                      if (!confirm(`Delete experience at ${e.company}?`)) return;
                       setError(null);
                       startTransition(async () => {
                         const result = await deleteProfileExperience(e.id);
@@ -988,7 +997,6 @@ function ExperienceEditor({
               e.preventDefault();
               const payload = {
                 company: editing.company,
-                role: editing.role,
                 location: editing.location,
                 startMonth: editing.startMonth,
                 endMonth: editing.current ? "" : editing.endMonth,
@@ -1015,20 +1023,6 @@ function ExperienceEditor({
                 {error}
               </p>
             ) : null}
-
-            <label className="block text-sm">
-              <span className="mb-1 block font-medium text-slate-700">Role</span>
-              <input
-                value={editing.role}
-                onChange={(e) =>
-                  setEditing((prev) =>
-                    prev ? { ...prev, role: e.target.value } : prev,
-                  )
-                }
-                required
-                className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
-              />
-            </label>
 
             <label className="block text-sm">
               <span className="mb-1 block font-medium text-slate-700">
@@ -1134,6 +1128,167 @@ function ExperienceEditor({
                 className="h-10 rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
               >
                 {pending ? "Saving…" : editing.id ? "Save" : "Add"}
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function CertificationsEditor({
+  profileId,
+  certifications,
+  pending,
+  startTransition,
+  onDone,
+}: {
+  profileId: string;
+  certifications: { id: string; name: string; date: string }[];
+  pending: boolean;
+  startTransition: (fn: () => void) => void;
+  onDone: () => void;
+}) {
+  const [adding, setAdding] = useState(false);
+  const [name, setName] = useState("");
+  const [date, setDate] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          Certifications
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            setError(null);
+            setName("");
+            setDate("");
+            setAdding(true);
+          }}
+          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50"
+        >
+          <Plus className="size-3.5" />
+          Add
+        </button>
+      </div>
+
+      {certifications.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-slate-200 px-3 py-4 text-center text-sm text-slate-500">
+          No certifications yet
+        </p>
+      ) : (
+        <ul className="space-y-2">
+          {certifications.map((c) => (
+            <li
+              key={c.id}
+              className="flex items-start justify-between gap-2 rounded-xl border border-slate-100 px-3 py-2"
+            >
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-900">{c.name}</p>
+                <p className="text-xs text-slate-400">{c.date || "—"}</p>
+              </div>
+              <button
+                type="button"
+                title="Remove"
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                onClick={() => {
+                  if (!confirm(`Remove certification “${c.name}”?`)) return;
+                  setError(null);
+                  startTransition(async () => {
+                    const result = await deleteProfileCertification({
+                      profileId,
+                      certificationId: c.id,
+                    });
+                    if (!result.ok) {
+                      setError(result.error);
+                      return;
+                    }
+                    onDone();
+                  });
+                }}
+              >
+                <Trash2 className="size-3.5" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {error && !adding ? (
+        <p className="mt-2 text-xs text-red-600">{error}</p>
+      ) : null}
+
+      {adding ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+          <form
+            className="w-full max-w-md space-y-3 rounded-2xl bg-white p-5 shadow-xl"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setError(null);
+              startTransition(async () => {
+                const result = await addProfileCertification({
+                  profileId,
+                  name,
+                  date,
+                });
+                if (!result.ok) {
+                  setError(result.error);
+                  return;
+                }
+                setAdding(false);
+                onDone();
+              });
+            }}
+          >
+            <h3 className="text-lg font-semibold text-slate-900">
+              Add certification
+            </h3>
+            {error ? (
+              <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+                {error}
+              </p>
+            ) : null}
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-slate-700">Name</span>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                placeholder="AWS Solutions Architect"
+                className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-slate-700">Date</span>
+              <input
+                type="month"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+                className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
+              />
+            </label>
+            <div className="flex justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setAdding(false);
+                  setError(null);
+                }}
+                className="h-10 rounded-xl px-4 text-sm font-medium text-slate-600 hover:bg-slate-100"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={pending}
+                className="h-10 rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+              >
+                {pending ? "Saving…" : "Add"}
               </button>
             </div>
           </form>

@@ -3,6 +3,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { ProfilesSidebar } from "@/components/profiles/profiles-sidebar";
 import { ProfilesView } from "@/components/profiles/profiles-view";
 import { requireSession } from "@/lib/auth-helpers";
+import { normalizeProfileCertifications } from "@/app/actions/profiles";
 import {
   getProfileDetail,
   getProfilesList,
@@ -58,11 +59,13 @@ export default async function ProfilesPage({
         experiences: rawDetail.experiences.map((e) => ({
           id: e.id,
           company: e.company,
-          role: e.role,
           location: e.location,
           startDate: e.startDate.toISOString(),
           endDate: e.endDate?.toISOString() ?? null,
         })),
+        certifications: normalizeProfileCertifications(
+          rawDetail.certifications,
+        ),
         assignedMembers: rawDetail.assignedMembers,
         interviewer: rawDetail.interviewer,
         apiKeys: rawDetail.apiKeys,

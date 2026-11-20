@@ -300,7 +300,6 @@ export async function deleteProfile(
 
 const experienceSchema = z.object({
   company: z.string().trim().min(1).max(120),
-  role: z.string().trim().min(1).max(120),
   location: z.string().trim().max(120).optional().or(z.literal("")),
   /** YYYY-MM */
   startMonth: z.string().regex(/^\d{4}-\d{2}$/, "Start month must be YYYY-MM"),
@@ -311,6 +310,37 @@ const experienceSchema = z.object({
     .optional()
     .or(z.literal("")),
 });
+
+const certificationSchema = z.object({
+  name: z.string().trim().min(1).max(160),
+  /** YYYY-MM */
+  date: z.string().regex(/^\d{4}-\d{2}$/, "Date must be YYYY-MM"),
+});
+
+export type ProfileCertification = {
+  id: string;
+  name: string;
+  date: string;
+};
+
+export function normalizeProfileCertifications(
+  raw: unknown,
+): ProfileCertification[] {
+  if (!Array.isArray(raw)) return [];
+  const out: ProfileCertification[] = [];
+  raw.forEach((item, index) => {
+    if (!item || typeof item !== "object") return;
+    const obj = item as Record<string, unknown>;
+    const name = String(obj.name || "").trim();
+    if (!name) return;
+    out.push({
+      id: String(obj.id || `legacy-${index}`),
+      name,
+      date: String(obj.date || "").trim(),
+    });
+  });
+  return out;
+}
 
 function monthToUtcDate(ym: string) {
   const match = /^(\d{4})-(\d{2})$/.exec(ym);
@@ -325,7 +355,6 @@ function monthToUtcDate(ym: string) {
 export async function addProfileExperience(input: {
   profileId: string;
   company: string;
-  role: string;
   location?: string;
   startMonth: string;
   endMonth?: string;
@@ -353,7 +382,7 @@ export async function addProfileExperience(input: {
       data: {
         profileId: parsed.profileId,
         company: parsed.company,
-        role: parsed.role,
+        role: "",
         location: emptyToNull(parsed.location),
         startDate,
         endDate,
@@ -377,7 +406,6 @@ export async function addProfileExperience(input: {
 export async function updateProfileExperience(input: {
   id: string;
   company: string;
-  role: string;
   location?: string;
   startMonth: string;
   endMonth?: string;
@@ -410,7 +438,7 @@ export async function updateProfileExperience(input: {
       where: { id: parsed.id },
       data: {
         company: parsed.company,
-        role: parsed.role,
+        role: "",
         location: emptyToNull(parsed.location),
         startDate,
         endDate,
@@ -453,6 +481,101 @@ export async function deleteProfileExperience(
     return {
       ok: false,
       error: err instanceof Error ? err.message : "Failed to delete experience",
+    };
+  }
+}
+
+/** Add a certification to a profile (JSON list). */
+export async function addProfileCertification(input: {
+  profileId: string;
+  name: string;
+  date: string;
+}): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+  try {
+    const session = await requireSession();
+    const parsed = certificationSchema
+      .extend({ profileId: z.string().min(1) })
+      .parse(input);
+    await assertCanAccessProfile(
+      session.user.id,
+      session.user.role,
+      parsed.profileId,
+    );
+
+    const profile = await prisma.profile.findUnique({
+      where: { id: parsed.profileId },
+      select: { certifications: true },
+    });
+    if (!profile) return { ok: false, error: "Profile not found" };
+
+    const id = crypto.randomUUID();
+    const next = [
+      ...normalizeProfileCertifications(profile.certifications),
+      { id, name: parsed.name, date: parsed.date },
+    ];
+    await prisma.profile.update({
+      where: { id: parsed.profileId },
+      data: { certifications: next },
+    });
+    revalidatePath("/profiles");
+    return { ok: true, id };
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return {
+        ok: false,
+        error: err.issues[0]?.message || "Invalid certification",
+      };
+    }
+    return {
+      ok: false,
+      error:
+        err instanceof Error ? err.message : "Failed to add certification",
+    };
+  }
+}
+
+/** Remove a certification by id from a profile. */
+export async function deleteProfileCertification(input: {
+  profileId: string;
+  certificationId: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const session = await requireSession();
+    const parsed = z
+      .object({
+        profileId: z.string().min(1),
+        certificationId: z.string().min(1),
+      })
+      .parse(input);
+    await assertCanAccessProfile(
+      session.user.id,
+      session.user.role,
+      parsed.profileId,
+    );
+
+    const profile = await prisma.profile.findUnique({
+      where: { id: parsed.profileId },
+      select: { certifications: true },
+    });
+    if (!profile) return { ok: false, error: "Profile not found" };
+
+    const current = normalizeProfileCertifications(profile.certifications);
+    const next = current.filter((c) => c.id !== parsed.certificationId);
+    if (next.length === current.length) {
+      return { ok: false, error: "Certification not found" };
+    }
+
+    await prisma.profile.update({
+      where: { id: parsed.profileId },
+      data: { certifications: next },
+    });
+    revalidatePath("/profiles");
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      error:
+        err instanceof Error ? err.message : "Failed to delete certification",
     };
   }
 }
