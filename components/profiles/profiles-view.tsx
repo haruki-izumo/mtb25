@@ -3,15 +3,36 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Copy, LayoutGrid, List, Star } from "lucide-react";
+import { Copy, LayoutGrid, List, Plus, Star, Trash2 } from "lucide-react";
 import {
   addProfileApiKey,
+  createProfile,
+  deleteProfile,
   deleteProfileApiKey,
   setProfileInterviewer,
   toggleProfileStar,
 } from "@/app/actions/profiles";
-import { countryFlag } from "@/lib/timezone";
+import { countryFlag, DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { cn } from "@/lib/utils";
+
+const PROFILE_TIMEZONES = [
+  "America/New_York",
+  "America/Chicago",
+  "America/Denver",
+  "America/Los_Angeles",
+  "America/Toronto",
+  "Europe/London",
+  "UTC",
+] as const;
+
+const PROFILE_COUNTRIES = [
+  { code: "US", label: "United States" },
+  { code: "CA", label: "Canada" },
+  { code: "GB", label: "United Kingdom" },
+  { code: "AU", label: "Australia" },
+  { code: "DE", label: "Germany" },
+  { code: "IN", label: "India" },
+] as const;
 
 type ProfileRow = {
   id: string;
@@ -75,6 +96,7 @@ type Detail = {
 } | null;
 
 type InterviewerOption = { id: string; name: string; email: string };
+type MemberOption = { id: string; name: string; email: string };
 
 function CopyField({ label, value }: { label: string; value: string | null }) {
   if (!value) return null;
@@ -104,6 +126,7 @@ export function ProfilesView({
   selected,
   detail,
   interviewers = [],
+  assignableMembers = [],
   isAdmin = false,
 }: {
   profiles: ProfileRow[];
@@ -111,11 +134,14 @@ export function ProfilesView({
   selected: string | null;
   detail: Detail;
   interviewers?: InterviewerOption[];
+  assignableMembers?: MemberOption[];
   isAdmin?: boolean;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [showAdd, setShowAdd] = useState(false);
   const filter = searchParams.get("filter") || "all";
   const view = searchParams.get("view") || "list";
   const tab = searchParams.get("tab") || "profile";
@@ -166,6 +192,19 @@ export function ProfilesView({
               <LayoutGrid className="size-4" />
             </button>
           </div>
+          {isAdmin ? (
+            <button
+              type="button"
+              onClick={() => {
+                setError(null);
+                setShowAdd(true);
+              }}
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-blue-600 px-3 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              <Plus className="size-4" />
+              Add profile
+            </button>
+          ) : null}
         </div>
 
         {profiles.length === 0 ? (
@@ -276,24 +315,57 @@ export function ProfilesView({
                   </h2>
                   <p className="text-sm text-slate-500">{detail.code}</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    startTransition(async () => {
-                      await toggleProfileStar(detail.id);
-                    })
-                  }
-                >
-                  <Star
-                    className={cn(
-                      "size-5",
-                      detail.starred
-                        ? "fill-amber-400 text-amber-400"
-                        : "text-slate-300",
-                    )}
-                  />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      startTransition(async () => {
+                        await toggleProfileStar(detail.id);
+                      })
+                    }
+                  >
+                    <Star
+                      className={cn(
+                        "size-5",
+                        detail.starred
+                          ? "fill-amber-400 text-amber-400"
+                          : "text-slate-300",
+                      )}
+                    />
+                  </button>
+                  {isAdmin ? (
+                    <button
+                      type="button"
+                      title="Delete profile"
+                      className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                      onClick={() => {
+                        if (
+                          !confirm(
+                            `Delete ${detail.fullName} (${detail.code})? This removes their interviews, availability, applications, and API keys.`,
+                          )
+                        ) {
+                          return;
+                        }
+                        setError(null);
+                        startTransition(async () => {
+                          const result = await deleteProfile(detail.id);
+                          if (!result.ok) {
+                            setError(result.error);
+                            return;
+                          }
+                          router.push("/profiles");
+                          router.refresh();
+                        });
+                      }}
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
+                  ) : null}
+                </div>
               </div>
+              {error ? (
+                <p className="mt-2 text-xs text-red-600">{error}</p>
+              ) : null}
               <div className="mt-3 flex gap-1 rounded-xl bg-slate-100 p-1">
                 {["profile", "settings", "resume", "history"].map((t) => (
                   <button
@@ -457,6 +529,317 @@ export function ProfilesView({
 
       {/* keep counts used for sidebar parent - filter chips live in page sidebar */}
       <span className="hidden">{filter}{counts.all}</span>
+
+      {showAdd ? (
+        <CreateProfileDialog
+          interviewers={interviewers}
+          members={assignableMembers}
+          pending={pending}
+          error={error}
+          onClose={() => {
+            setShowAdd(false);
+            setError(null);
+          }}
+          onSubmit={(values) => {
+            setError(null);
+            startTransition(async () => {
+              const result = await createProfile(values);
+              if (!result.ok) {
+                setError(result.error);
+                return;
+              }
+              setShowAdd(false);
+              router.push(`/profiles?id=${result.id}`);
+              router.refresh();
+            });
+          }}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function CreateProfileDialog({
+  interviewers,
+  members,
+  pending,
+  error,
+  onClose,
+  onSubmit,
+}: {
+  interviewers: InterviewerOption[];
+  members: MemberOption[];
+  pending: boolean;
+  error: string | null;
+  onClose: () => void;
+  onSubmit: (values: {
+    code: string;
+    displayName: string;
+    fullName: string;
+    email: string;
+    phone?: string;
+    location?: string;
+    zipCode?: string;
+    country: string;
+    timezone: string;
+    linkedinUrl?: string;
+    githubUrl?: string;
+    interviewerId: string | null;
+    assignedMemberIds: string[];
+  }) => void;
+}) {
+  const [code, setCode] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [location, setLocation] = useState("");
+  const [zipCode, setZipCode] = useState("");
+  const [country, setCountry] = useState("US");
+  const [timezone, setTimezone] = useState(DEFAULT_TIMEZONE);
+  const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [githubUrl, setGithubUrl] = useState("");
+  const [interviewerId, setInterviewerId] = useState("");
+  const [assignedMemberIds, setAssignedMemberIds] = useState<string[]>([]);
+
+  function toggleMember(id: string) {
+    setAssignedMemberIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+      <form
+        className="max-h-[90vh] w-full max-w-lg space-y-3 overflow-y-auto rounded-2xl bg-white p-5 shadow-xl"
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit({
+            code,
+            displayName,
+            fullName,
+            email,
+            phone,
+            location,
+            zipCode,
+            country,
+            timezone,
+            linkedinUrl,
+            githubUrl,
+            interviewerId: interviewerId || null,
+            assignedMemberIds,
+          });
+        }}
+      >
+        <h3 className="text-lg font-semibold text-slate-900">Add profile</h3>
+        {error ? (
+          <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+            {error}
+          </p>
+        ) : null}
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-slate-700">Code</span>
+            <input
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="US-07"
+              required
+              className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
+            />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-slate-700">
+              Display name
+            </span>
+            <input
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Alex"
+              required
+              className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
+            />
+          </label>
+        </div>
+
+        <label className="block text-sm">
+          <span className="mb-1 block font-medium text-slate-700">Full name</span>
+          <input
+            value={fullName}
+            onChange={(e) => {
+              const next = e.target.value;
+              setFullName(next);
+              if (!displayName.trim()) {
+                setDisplayName(next.trim().split(/\s+/)[0] || "");
+              }
+            }}
+            required
+            className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
+          />
+        </label>
+
+        <label className="block text-sm">
+          <span className="mb-1 block font-medium text-slate-700">Email</span>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
+          />
+        </label>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-slate-700">Phone</span>
+            <input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
+            />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-slate-700">Zip</span>
+            <input
+              value={zipCode}
+              onChange={(e) => setZipCode(e.target.value)}
+              className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
+            />
+          </label>
+        </div>
+
+        <label className="block text-sm">
+          <span className="mb-1 block font-medium text-slate-700">Location</span>
+          <input
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder="New York, NY"
+            className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
+          />
+        </label>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-slate-700">Country</span>
+            <select
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
+              className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
+            >
+              {PROFILE_COUNTRIES.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {countryFlag(c.code)} {c.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-slate-700">
+              Timezone
+            </span>
+            <select
+              value={timezone}
+              onChange={(e) => setTimezone(e.target.value)}
+              className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
+            >
+              {PROFILE_TIMEZONES.map((tz) => (
+                <option key={tz} value={tz}>
+                  {tz}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-slate-700">
+              LinkedIn URL
+            </span>
+            <input
+              type="url"
+              value={linkedinUrl}
+              onChange={(e) => setLinkedinUrl(e.target.value)}
+              placeholder="https://linkedin.com/in/…"
+              className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
+            />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-slate-700">
+              GitHub URL
+            </span>
+            <input
+              type="url"
+              value={githubUrl}
+              onChange={(e) => setGithubUrl(e.target.value)}
+              placeholder="https://github.com/…"
+              className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
+            />
+          </label>
+        </div>
+
+        <label className="block text-sm">
+          <span className="mb-1 block font-medium text-slate-700">
+            Interviewer
+          </span>
+          <select
+            value={interviewerId}
+            onChange={(e) => setInterviewerId(e.target.value)}
+            className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
+          >
+            <option value="">None</option>
+            {interviewers.map((i) => (
+              <option key={i.id} value={i.id}>
+                {i.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {members.length ? (
+          <div>
+            <p className="mb-1 text-sm font-medium text-slate-700">
+              Assigned members
+            </p>
+            <div className="max-h-36 space-y-1 overflow-y-auto rounded-xl border border-slate-200 p-2">
+              {members.map((m) => (
+                <label
+                  key={m.id}
+                  className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-slate-50"
+                >
+                  <input
+                    type="checkbox"
+                    checked={assignedMemberIds.includes(m.id)}
+                    onChange={() => toggleMember(m.id)}
+                  />
+                  <span className="min-w-0 truncate">
+                    {m.name}
+                    <span className="text-slate-400"> · {m.email}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        <div className="flex justify-end gap-2 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-10 rounded-xl px-4 text-sm font-medium text-slate-600 hover:bg-slate-100"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={pending}
+            className="h-10 rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+          >
+            {pending ? "Creating…" : "Create profile"}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

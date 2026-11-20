@@ -192,7 +192,7 @@ export async function getAvailabilityPageData(params: {
 
   const access = profileAccessWhere(params.userId, params.role);
   const profiles = await prisma.profile.findMany({
-    where: access,
+    where: access ?? {},
     select: {
       id: true,
       code: true,
@@ -203,8 +203,14 @@ export async function getAvailabilityPageData(params: {
     orderBy: { code: "asc" },
   });
 
-  const profileId = params.profileId || profiles[0]?.id;
-  if (!profileId) {
+  const requestedId = params.profileId;
+  const fallbackId = profiles[0]?.id;
+  const preferredId =
+    requestedId && profiles.some((p) => p.id === requestedId)
+      ? requestedId
+      : fallbackId;
+
+  if (!preferredId) {
     return {
       mode: "profile" as const,
       profiles,
@@ -216,7 +222,7 @@ export async function getAvailabilityPageData(params: {
   }
 
   const profile = await prisma.profile.findFirst({
-    where: { id: profileId, ...access },
+    where: { id: preferredId, ...(access ?? {}) },
     include: {
       availabilityRules: true,
       availabilityOverrides: true,

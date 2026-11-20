@@ -1,13 +1,75 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { unlink } from "fs/promises";
+import path from "path";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
   requireSession,
   requireRole,
   assertCanAccessProfile,
 } from "@/lib/auth-helpers";
+
+const createProfileSchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .min(2)
+    .max(20)
+    .regex(/^[A-Za-z0-9-]+$/, "Code may only contain letters, numbers, and hyphens"),
+  displayName: z.string().trim().min(1).max(80),
+  fullName: z.string().trim().min(1).max(120),
+  email: z.string().trim().email(),
+  phone: z.string().trim().max(40).optional().or(z.literal("")),
+  location: z.string().trim().max(120).optional().or(z.literal("")),
+  zipCode: z.string().trim().max(20).optional().or(z.literal("")),
+  country: z
+    .string()
+    .trim()
+    .length(2, "Use a 2-letter country code")
+    .transform((v) => v.toUpperCase()),
+  timezone: z.string().trim().min(1).max(64),
+  linkedinUrl: z.string().trim().optional(),
+  githubUrl: z.string().trim().optional(),
+  interviewerId: z.string().min(1).nullable().optional(),
+  assignedMemberIds: z.array(z.string().min(1)).optional(),
+}).superRefine((data, ctx) => {
+  for (const key of ["linkedinUrl", "githubUrl"] as const) {
+    const value = data[key]?.trim();
+    if (!value) continue;
+    if (!URL.canParse(value)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [key],
+        message: `${key === "linkedinUrl" ? "LinkedIn" : "GitHub"} must be a valid URL`,
+      });
+    }
+  }
+});
+
+function splitFullName(fullName: string) {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length <= 1) {
+    return { firstName: parts[0] || "", lastName: "" };
+  }
+  return { firstName: parts[0], lastName: parts.slice(1).join(" ") };
+}
+
+function emptyToNull(value: string | undefined) {
+  const v = value?.trim();
+  return v ? v : null;
+}
+
+async function tryRemoveLocalUpload(url: string | null | undefined) {
+  if (!url || !url.startsWith("/uploads/")) return;
+  try {
+    await unlink(path.join(process.cwd(), "public", url.replace(/^\//, "")));
+  } catch {
+    /* best-effort — missing file is fine */
+  }
+}
 
 export async function toggleProfileStar(profileId: string) {
   z.string().min(1).parse(profileId);
@@ -91,6 +153,147 @@ export async function deleteProfileApiKey(
     return {
       ok: false,
       error: err instanceof Error ? err.message : "Failed to delete API key",
+    };
+  }
+}
+
+/** Admin creates a new candidate profile. */
+export async function createProfile(
+  input: z.infer<typeof createProfileSchema>,
+): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+  try {
+    await requireRole(["ADMIN"]);
+    const parsed = createProfileSchema.parse(input);
+    const { firstName, lastName } = splitFullName(parsed.fullName);
+
+    if (parsed.interviewerId) {
+      const interviewer = await prisma.user.findFirst({
+        where: { id: parsed.interviewerId, role: "INTERVIEWER" },
+        select: { id: true },
+      });
+      if (!interviewer) {
+        return { ok: false, error: "Selected user is not an interviewer" };
+      }
+    }
+
+    const memberIds = parsed.assignedMemberIds ?? [];
+    if (memberIds.length) {
+      const members = await prisma.user.findMany({
+        where: {
+          id: { in: memberIds },
+          role: { in: ["ADMIN", "MEMBER"] },
+        },
+        select: { id: true },
+      });
+      if (members.length !== memberIds.length) {
+        return { ok: false, error: "One or more assigned members are invalid" };
+      }
+    }
+
+    const profile = await prisma.profile.create({
+      data: {
+        code: parsed.code.toUpperCase(),
+        displayName: parsed.displayName,
+        fullName: parsed.fullName,
+        firstName: firstName || null,
+        lastName: lastName || null,
+        email: parsed.email.toLowerCase(),
+        phone: emptyToNull(parsed.phone),
+        location: emptyToNull(parsed.location),
+        zipCode: emptyToNull(parsed.zipCode),
+        country: parsed.country,
+        timezone: parsed.timezone,
+        linkedinUrl: emptyToNull(parsed.linkedinUrl),
+        githubUrl: emptyToNull(parsed.githubUrl),
+        interviewerId: parsed.interviewerId || null,
+        assignedMembers: memberIds.length
+          ? { connect: memberIds.map((id) => ({ id })) }
+          : undefined,
+      },
+      select: { id: true },
+    });
+
+    revalidatePath("/profiles");
+    revalidatePath("/availability");
+    revalidatePath("/team");
+    revalidatePath("/interviews");
+    return { ok: true, id: profile.id };
+  } catch (err) {
+    if (
+      err &&
+      typeof err === "object" &&
+      "digest" in err &&
+      typeof (err as { digest?: string }).digest === "string" &&
+      (err as { digest: string }).digest.startsWith("NEXT_")
+    ) {
+      throw err;
+    }
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      return { ok: false, error: "A profile with that code already exists" };
+    }
+    if (err instanceof z.ZodError) {
+      return { ok: false, error: err.issues[0]?.message || "Invalid profile data" };
+    }
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Failed to create profile",
+    };
+  }
+}
+
+/** Admin permanently deletes a profile and cascaded related rows. */
+export async function deleteProfile(
+  profileId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    await requireRole(["ADMIN"]);
+    z.string().min(1).parse(profileId);
+
+    const profile = await prisma.profile.findUnique({
+      where: { id: profileId },
+      select: {
+        id: true,
+        resumeFileUrl: true,
+        displayName: true,
+        processes: { select: { resumeFileUrl: true } },
+        applications: {
+          select: { resumePdfUrl: true, coverPdfUrl: true },
+        },
+      },
+    });
+    if (!profile) return { ok: false, error: "Profile not found" };
+
+    await prisma.profile.delete({ where: { id: profileId } });
+
+    await tryRemoveLocalUpload(profile.resumeFileUrl);
+    for (const process of profile.processes) {
+      await tryRemoveLocalUpload(process.resumeFileUrl);
+    }
+    for (const app of profile.applications) {
+      await tryRemoveLocalUpload(app.resumePdfUrl);
+      await tryRemoveLocalUpload(app.coverPdfUrl);
+    }
+
+    revalidatePath("/profiles");
+    revalidatePath("/interviews");
+    revalidatePath("/availability");
+    revalidatePath("/meetings");
+    revalidatePath("/team");
+    revalidatePath("/");
+    return { ok: true };
+  } catch (err) {
+    if (
+      err &&
+      typeof err === "object" &&
+      "digest" in err &&
+      typeof (err as { digest?: string }).digest === "string" &&
+      (err as { digest: string }).digest.startsWith("NEXT_")
+    ) {
+      throw err;
+    }
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Failed to delete profile",
     };
   }
 }

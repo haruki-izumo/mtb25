@@ -119,3 +119,12 @@ export async function listInterviewers() {
     orderBy: { name: "asc" },
   });
 }
+
+/** Members/admins who can be assigned to profiles. */
+export async function listAssignableMembers() {
+  return prisma.user.findMany({
+    where: { role: { in: ["ADMIN", "MEMBER"] } },
+    select: { id: true, name: true, email: true },
+    orderBy: { name: "asc" },
+  });
+}

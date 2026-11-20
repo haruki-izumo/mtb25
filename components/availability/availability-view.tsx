@@ -95,6 +95,7 @@ export function AvailabilityView({
     : (profile?.rules ?? []);
   const canEdit = isInterviewerMode ? !!interviewer : !!profile;
   const canBook = !isInterviewerMode && !!profile;
+  const hasProfileChoices = !isInterviewerMode && profiles.length > 0;
   const router = useRouter();
   const searchParams = useSearchParams();
   const [pending, startTransition] = useTransition();
@@ -167,12 +168,19 @@ export function AvailabilityView({
     return map;
   }, [days, subjectTimezone]);
 
-  if (!canEdit) {
+  if (isInterviewerMode && !interviewer) {
     return (
       <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
-        {isInterviewerMode
-          ? "Interviewer account not found."
-          : "No profiles available."}
+        Interviewer account not found.
+      </div>
+    );
+  }
+
+  if (!isInterviewerMode && profiles.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
+        No profiles available.
+        {isAdmin ? " Add a profile first, then set its availability here." : ""}
       </div>
     );
   }
@@ -261,12 +269,17 @@ export function AvailabilityView({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {!isInterviewerMode && profile ? (
+          {hasProfileChoices ? (
             <select
-              value={profile.id}
-              onChange={(e) => navigate({ profileId: e.target.value })}
+              value={profile?.id ?? ""}
+              onChange={(e) => navigate({ profileId: e.target.value || null })}
               className="h-9 min-w-[220px] rounded-xl border border-slate-200 bg-white px-3 text-sm"
             >
+              {!profile ? (
+                <option value="" disabled>
+                  Select a profile…
+                </option>
+              ) : null}
               {profiles.map((p) => (
                 <option key={p.id} value={p.id}>
                   {countryFlag(p.country)} {p.code}.{p.displayName}
@@ -277,12 +290,19 @@ export function AvailabilityView({
           <button
             type="button"
             onClick={() => setShowText(true)}
-            className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            disabled={!canEdit}
+            className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Get availability as Text
           </button>
         </div>
       </div>
+
+      {!canEdit && hasProfileChoices ? (
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
+          Select a profile to view and edit availability.
+        </div>
+      ) : null}
 
       {error ? (
         <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
@@ -290,6 +310,8 @@ export function AvailabilityView({
         </p>
       ) : null}
 
+      {canEdit ? (
+      <>
       <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1">
         <button
           type="button"
@@ -534,6 +556,8 @@ export function AvailabilityView({
           </ul>
         </div>
       )}
+      </>
+      ) : null}
 
       {showText ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">

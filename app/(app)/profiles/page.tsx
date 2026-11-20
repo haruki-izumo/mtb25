@@ -6,6 +6,7 @@ import { requireSession } from "@/lib/auth-helpers";
 import {
   getProfileDetail,
   getProfilesList,
+  listAssignableMembers,
   listInterviewers,
 } from "@/lib/profiles-data";
 
@@ -26,10 +27,12 @@ export default async function ProfilesPage({
   const q = first(sp.q);
   const selectedId = first(sp.id);
 
-  const [{ profiles, counts }, interviewers] = await Promise.all([
-    getProfilesList(session.user.id, session.user.role, { filter, q }),
-    listInterviewers(),
-  ]);
+  const [{ profiles, counts }, interviewers, assignableMembers] =
+    await Promise.all([
+      getProfilesList(session.user.id, session.user.role, { filter, q }),
+      listInterviewers(),
+      session.user.role === "ADMIN" ? listAssignableMembers() : Promise.resolve([]),
+    ]);
 
   const detailId = selectedId || profiles[0]?.id || null;
   const rawDetail = detailId
@@ -96,6 +99,7 @@ export default async function ProfilesPage({
             selected={detailId}
             detail={detail}
             interviewers={interviewers}
+            assignableMembers={assignableMembers}
             isAdmin={session.user.role === "ADMIN"}
           />
         </Suspense>
