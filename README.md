@@ -133,6 +133,28 @@ Without `AUTH_SECRET`, Auth.js fails at runtime with `MissingSecret`.
 
 `npm run build` runs `prisma generate` before `next build` so TypeScript sees the current schema. `prisma migrate deploy` applies migrations to the Render database.
 
+**Seed demo users (one-time)**
+
+`migrate deploy` does **not** create accounts. Until you seed, `admin@example.com` / `password123` will fail with “Invalid email or password”.
+
+From your machine (use the Postgres **External** URL from Render):
+
+```bash
+$env:DATABASE_URL="postgresql://USER:PASSWORD@HOST/DB?sslmode=require"
+npm run db:seed
+```
+
+Or in the Render shell for the web service (migrate first if tables are missing):
+
+```bash
+npx prisma migrate deploy
+npx prisma db seed
+```
+
+If seed fails with `The table public.Round does not exist`, migrations were never applied — run `migrate deploy` then seed again.
+
+Warning: the seed script **wipes all existing rows** then recreates demo data.
+
 ## Notes
 
 - All timestamps are stored in **UTC**
