@@ -30,9 +30,12 @@ export function CountdownCard({
   nextRound: NextRound;
   displayTimeZone: string;
 }) {
-  const [now, setNow] = useState(() => Date.now());
+  // null until mount so SSR and the first client paint match (avoids
+  // second-boundary hydration mismatches with Date.now()).
+  const [now, setNow] = useState<number | null>(null);
 
   useEffect(() => {
+    setNow(Date.now());
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
@@ -47,7 +50,8 @@ export function CountdownCard({
   }
 
   const start = new Date(nextRound.startAt).getTime();
-  const remaining = formatRemaining(start - now);
+  const remaining =
+    now == null ? "--:--:--" : formatRemaining(start - now);
 
   return (
     <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-6 shadow-sm">

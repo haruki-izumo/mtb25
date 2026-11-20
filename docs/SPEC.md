@@ -25,8 +25,8 @@ status pipeline until it ends in an offer or is closed.
 
 ## Layout (match the screenshots' style)
 - Fixed narrow left icon rail (~80px, light gray bg) with icon + label below:
-  Home, Meetings, Availability, Interview, Application, Chat, To Do, Resume,
-  divider, Profile, My Team, More; Settings pinned at bottom.
+  Home, Meetings, Availability, Interview, Application, Projects,
+  divider, Profile, My Team; Settings pinned at bottom.
   Active item = white rounded card. Badge support (e.g. red "99+").
 - Second column (~280px): contextual sidebar (filters, mini-calendar, category lists with counts)
 - Main content area: white, rounded cards, subtle borders, blue primary (#2563eb-ish),
@@ -75,7 +75,7 @@ Put status/group definitions in one config file (lib/status.ts) with label, icon
 
 ## Pages
 1. Home (/): big live clock + date; countdown card to the next round
-   (hh:mm:ss, profile code, company, time); quick-link tiles (Meetings, Availability, Chat,
+   (hh:mm:ss, profile code, company, time); quick-link tiles (Meetings, Availability,
    Profile, Interview); 3 stat cards (Next step count, Follow-up count, Upcoming count);
    previous week vs this week (meeting count + avg rating with up/down arrow);
    "Today's meetings" checklist with progress bar (x/y done); "Team updates" panel.
@@ -107,6 +107,14 @@ Put status/group definitions in one config file (lib/status.ts) with label, icon
 6. My Team (/team): members table (avatar initials with color, name, email, role icon,
    assigned profiles shown as flag + count by country). Admin can invite/edit/assign.
 7. Settings: user timezone, password, theme.
+8. Projects (/projects) — ADMIN and MEMBER only:
+   Client master (inline create from project form), project codes `PRJ-YYYY-####`,
+   status workflow seeded in DB (Secured → … → Closed / Cancelled) with comment-required
+   transitions for On Hold / Cancelled. List: search, filters, summary cards, CSV export,
+   table + Kanban (HTML5 drag-and-drop → status change dialog). Create/edit form with
+   dirty-leave warning. Detail: overview, timeline, status history, activity (budget /
+   manager / dates), attachments via existing local upload pattern. Soft archive.
+   Server Actions + Zod; no new UI libraries.
 
 ## Non-functional
 - All times stored in UTC; display in the user's selected timezone

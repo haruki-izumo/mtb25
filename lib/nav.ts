@@ -3,15 +3,12 @@ import {
   Calendar,
   CalendarDays,
   ClipboardList,
-  FileText,
+  FolderKanban,
   Home,
-  MessageSquare,
-  MoreHorizontal,
   Settings,
   Users,
   UserRound,
   Briefcase,
-  CheckSquare,
 } from "lucide-react";
 
 export type NavItem = {
@@ -28,15 +25,12 @@ export const PRIMARY_NAV: NavItem[] = [
   { href: "/availability", label: "Availability", icon: Calendar },
   { href: "/interviews", label: "Interview", icon: Briefcase },
   { href: "/applications", label: "Application", icon: ClipboardList, disabled: true },
-  { href: "/chat", label: "Chat", icon: MessageSquare, disabled: true },
-  { href: "/todo", label: "To Do", icon: CheckSquare, disabled: true },
-  { href: "/resumes", label: "Resume", icon: FileText, disabled: true },
+  { href: "/projects", label: "Projects", icon: FolderKanban },
 ];
 
 export const SECONDARY_NAV: NavItem[] = [
   { href: "/profiles", label: "Profile", icon: UserRound },
   { href: "/team", label: "My Team", icon: Users },
-  { href: "/more", label: "More", icon: MoreHorizontal, disabled: true },
 ];
 
 export const SETTINGS_NAV: NavItem = {

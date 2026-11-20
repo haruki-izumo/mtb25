@@ -88,6 +88,14 @@ model User {
 
   availabilityRules     UserAvailabilityRule[]
   availabilityOverrides UserAvailabilityOverride[]
+
+  managedProjects       Project[]             @relation("ProjectManager")
+  projectMemberships    Project[]             @relation("ProjectTeam")
+  createdProjects       Project[]             @relation("ProjectCreatedBy")
+  updatedProjects       Project[]             @relation("ProjectUpdatedBy")
+  projectStatusChanges  ProjectStatusHistory[]
+  projectActivities     ProjectActivity[]
+  projectAttachments    ProjectAttachment[]
 }
 
 model Team {
@@ -303,4 +311,172 @@ model Application {
   @@index([profileId])
   @@index([ownerId])
   @@index([createdAt])
+}
+
+enum ProjectPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ProjectActivityType {
+  STATUS_CHANGE
+  FIELD_EDIT
+  COMMENT
+  FILE_UPLOAD
+  CREATED
+}
+
+model Client {
+  id            String   @id @default(cuid())
+  name          String
+  country       String
+  contactPerson String?
+  email         String?
+  phone         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  projects Project[]
+
+  @@index([name])
+  @@index([country])
+}
+
+model ProjectType {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  sortOrder Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  projects Project[]
+}
+
+model ProjectStatusDef {
+  id        String  @id @default(cuid())
+  key       String  @unique
+  name      String
+  color     String
+  sortOrder Int
+  isFinal   Boolean @default(false)
+
+  projectsAsStatus Project[] @relation("ProjectCurrentStatus")
+  transitionsFrom  ProjectStatusTransition[] @relation("TransitionFrom")
+  transitionsTo    ProjectStatusTransition[] @relation("TransitionTo")
+  historyFrom      ProjectStatusHistory[] @relation("HistoryFrom")
+  historyTo        ProjectStatusHistory[] @relation("HistoryTo")
+}
+
+model ProjectStatusTransition {
+  id           String @id @default(cuid())
+  fromStatusId String
+  toStatusId   String
+
+  fromStatus ProjectStatusDef @relation("TransitionFrom", fields: [fromStatusId], references: [id], onDelete: Cascade)
+  toStatus   ProjectStatusDef @relation("TransitionTo", fields: [toStatusId], references: [id], onDelete: Cascade)
+
+  @@unique([fromStatusId, toStatusId])
+}
+
+model Project {
+  id              String          @id @default(cuid())
+  projectCode     String          @unique
+  projectName     String
+  clientId        String
+  country         String
+  city            String?
+  industry        String?
+  projectTypeId   String?
+  description     String
+  scopeOfWork     String?
+  budget          Decimal         @db.Decimal(14, 2)
+  currency        String          @default("USD")
+  contractValue   Decimal?        @db.Decimal(14, 2)
+  paymentTerms    String?
+  dateSecured     DateTime        @db.Date
+  startDate       DateTime?       @db.Date
+  expectedEndDate DateTime?       @db.Date
+  actualEndDate   DateTime?       @db.Date
+  projectManagerId String
+  priority        ProjectPriority @default(MEDIUM)
+  statusId        String
+  progressPercent Int             @default(0)
+  tags            String[]        @default([])
+  notes           String?
+  archivedAt      DateTime?
+  createdById     String
+  updatedById     String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  client         Client           @relation(fields: [clientId], references: [id])
+  projectType    ProjectType?     @relation(fields: [projectTypeId], references: [id], onDelete: SetNull)
+  status         ProjectStatusDef @relation("ProjectCurrentStatus", fields: [statusId], references: [id])
+  projectManager User             @relation("ProjectManager", fields: [projectManagerId], references: [id])
+  teamMembers    User[]           @relation("ProjectTeam")
+  createdBy      User             @relation("ProjectCreatedBy", fields: [createdById], references: [id])
+  updatedBy      User?            @relation("ProjectUpdatedBy", fields: [updatedById], references: [id])
+  statusHistory  ProjectStatusHistory[]
+  activities     ProjectActivity[]
+  attachments    ProjectAttachment[]
+
+  @@index([statusId])
+  @@index([projectManagerId])
+  @@index([clientId])
+  @@index([dateSecured])
+  @@index([archivedAt])
+  @@index([updatedAt])
+}
+
+model ProjectStatusHistory {
+  id           String   @id @default(cuid())
+  projectId    String
+  fromStatusId String?
+  toStatusId   String
+  changedById  String
+  changedAt    DateTime @default(now())
+  comment      String?
+
+  project    Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  fromStatus ProjectStatusDef? @relation("HistoryFrom", fields: [fromStatusId], references: [id], onDelete: SetNull)
+  toStatus   ProjectStatusDef  @relation("HistoryTo", fields: [toStatusId], references: [id])
+  changedBy  User              @relation(fields: [changedById], references: [id])
+
+  @@index([projectId, changedAt])
+}
+
+model ProjectActivity {
+  id        String              @id @default(cuid())
+  projectId String
+  userId    String
+  type      ProjectActivityType
+  message   String
+  meta      Json?
+  createdAt DateTime            @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@index([projectId, createdAt])
+}
+
+model ProjectAttachment {
+  id           String   @id @default(cuid())
+  projectId    String
+  fileName     String
+  url          String
+  uploadedById String
+  createdAt    DateTime @default(now())
+
+  project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  uploadedBy User    @relation(fields: [uploadedById], references: [id])
+
+  @@index([projectId])
+}
+
+model ProjectCodeCounter {
+  year  Int @id
+  lastN Int @default(0)
 }

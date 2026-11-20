@@ -5,7 +5,6 @@ import {
   Briefcase,
   Calendar,
   CalendarDays,
-  MessageSquare,
   Minus,
   UserRound,
 } from "lucide-react";
@@ -22,7 +21,6 @@ import { cn } from "@/lib/utils";
 const QUICK_LINKS = [
   { href: "/meetings", label: "Meetings", icon: CalendarDays, color: "bg-blue-50 text-blue-700" },
   { href: "/availability", label: "Availability", icon: Calendar, color: "bg-emerald-50 text-emerald-700" },
-  { href: "/chat", label: "Chat", icon: MessageSquare, color: "bg-violet-50 text-violet-700" },
   { href: "/profiles", label: "Profile", icon: UserRound, color: "bg-amber-50 text-amber-700" },
   { href: "/interviews", label: "Interview", icon: Briefcase, color: "bg-cyan-50 text-cyan-700" },
 ] as const;

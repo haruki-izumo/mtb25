@@ -10,6 +10,7 @@ import {
   startOfDay,
   subWeeks,
 } from "date-fns";
+import { seedProjectWorkflow } from "../lib/projects/seed-projects";
 
 const prisma = new PrismaClient();
 
@@ -614,6 +615,10 @@ async function main() {
   });
 
   console.log(`Created ${processCount} processes with ${roundCount} rounds`);
+
+  await seedProjectWorkflow(prisma);
+  console.log("Seeded project statuses, transitions, and types");
+
   console.log("Seed complete.");
   console.log("");
   console.log("Login credentials (all users):");
