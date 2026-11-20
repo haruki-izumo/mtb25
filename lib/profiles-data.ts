@@ -84,6 +84,7 @@ export async function getProfilesList(
     orderBy: [{ starred: "desc" }, { code: "asc" }],
     include: {
       _count: { select: { processes: true, experiences: true } },
+      assignedMembers: { select: { id: true } },
     },
   });
 
@@ -115,6 +116,8 @@ export async function getProfilesList(
       githubUrl: p.githubUrl,
       resumeFileUrl: p.resumeFileUrl,
       starred: p.starred,
+      interviewerId: p.interviewerId,
+      assignedMemberIds: p.assignedMembers.map((m) => m.id),
       processCount: p._count.processes,
       experienceCount: p._count.experiences,
     })),

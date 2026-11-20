@@ -16,7 +16,7 @@ import {
   normalizeProfileEducation,
 } from "@/lib/profiles-data";
 
-const createProfileSchema = z.object({
+const profileFieldsSchema = z.object({
   code: z
     .string()
     .trim()
@@ -52,6 +52,43 @@ const createProfileSchema = z.object({
     }
   }
 });
+
+const createProfileSchema = profileFieldsSchema;
+
+const updateProfileSchema = profileFieldsSchema.extend({
+  id: z.string().min(1),
+});
+
+async function validateInterviewerAndMembers(input: {
+  interviewerId?: string | null;
+  assignedMemberIds?: string[];
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (input.interviewerId) {
+    const interviewer = await prisma.user.findFirst({
+      where: { id: input.interviewerId, role: "INTERVIEWER" },
+      select: { id: true },
+    });
+    if (!interviewer) {
+      return { ok: false, error: "Selected user is not an interviewer" };
+    }
+  }
+
+  const memberIds = input.assignedMemberIds ?? [];
+  if (memberIds.length) {
+    const members = await prisma.user.findMany({
+      where: {
+        id: { in: memberIds },
+        role: { in: ["ADMIN", "MEMBER"] },
+      },
+      select: { id: true },
+    });
+    if (members.length !== memberIds.length) {
+      return { ok: false, error: "One or more assigned members are invalid" };
+    }
+  }
+
+  return { ok: true };
+}
 
 function splitFullName(fullName: string) {
   const parts = fullName.trim().split(/\s+/).filter(Boolean);
@@ -170,29 +207,10 @@ export async function createProfile(
     const parsed = createProfileSchema.parse(input);
     const { firstName, lastName } = splitFullName(parsed.fullName);
 
-    if (parsed.interviewerId) {
-      const interviewer = await prisma.user.findFirst({
-        where: { id: parsed.interviewerId, role: "INTERVIEWER" },
-        select: { id: true },
-      });
-      if (!interviewer) {
-        return { ok: false, error: "Selected user is not an interviewer" };
-      }
-    }
+    const related = await validateInterviewerAndMembers(parsed);
+    if (!related.ok) return related;
 
     const memberIds = parsed.assignedMemberIds ?? [];
-    if (memberIds.length) {
-      const members = await prisma.user.findMany({
-        where: {
-          id: { in: memberIds },
-          role: { in: ["ADMIN", "MEMBER"] },
-        },
-        select: { id: true },
-      });
-      if (members.length !== memberIds.length) {
-        return { ok: false, error: "One or more assigned members are invalid" };
-      }
-    }
 
     const profile = await prisma.profile.create({
       data: {
@@ -241,6 +259,75 @@ export async function createProfile(
     return {
       ok: false,
       error: err instanceof Error ? err.message : "Failed to create profile",
+    };
+  }
+}
+
+/** Admin updates an existing candidate profile. */
+export async function updateProfile(
+  input: z.infer<typeof updateProfileSchema>,
+): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+  try {
+    await requireRole(["ADMIN"]);
+    const parsed = updateProfileSchema.parse(input);
+    const { firstName, lastName } = splitFullName(parsed.fullName);
+
+    const existing = await prisma.profile.findUnique({
+      where: { id: parsed.id },
+      select: { id: true },
+    });
+    if (!existing) return { ok: false, error: "Profile not found" };
+
+    const related = await validateInterviewerAndMembers(parsed);
+    if (!related.ok) return related;
+
+    const memberIds = parsed.assignedMemberIds ?? [];
+
+    await prisma.profile.update({
+      where: { id: parsed.id },
+      data: {
+        code: parsed.code.toUpperCase(),
+        displayName: parsed.displayName,
+        fullName: parsed.fullName,
+        firstName: firstName || null,
+        lastName: lastName || null,
+        email: parsed.email.toLowerCase(),
+        phone: emptyToNull(parsed.phone),
+        location: emptyToNull(parsed.location),
+        zipCode: emptyToNull(parsed.zipCode),
+        country: parsed.country,
+        timezone: parsed.timezone,
+        linkedinUrl: emptyToNull(parsed.linkedinUrl),
+        githubUrl: emptyToNull(parsed.githubUrl),
+        interviewerId: parsed.interviewerId || null,
+        assignedMembers: { set: memberIds.map((id) => ({ id })) },
+      },
+    });
+
+    revalidatePath("/profiles");
+    revalidatePath("/availability");
+    revalidatePath("/team");
+    revalidatePath("/interviews");
+    return { ok: true, id: parsed.id };
+  } catch (err) {
+    if (
+      err &&
+      typeof err === "object" &&
+      "digest" in err &&
+      typeof (err as { digest?: string }).digest === "string" &&
+      (err as { digest: string }).digest.startsWith("NEXT_")
+    ) {
+      throw err;
+    }
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      return { ok: false, error: "A profile with that code already exists" };
+    }
+    if (err instanceof z.ZodError) {
+      return { ok: false, error: err.issues[0]?.message || "Invalid profile data" };
+    }
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Failed to update profile",
     };
   }
 }
