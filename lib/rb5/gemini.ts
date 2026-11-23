@@ -8,11 +8,15 @@ export async function chatCompletion(params: {
   const useGemini = !key.startsWith("sk-") || process.env.FORCE_GEMINI === "true";
 
   if (useGemini && !key.startsWith("sk-")) {
-    const geminiModel = process.env.GEMINI_MODEL || "gemini-2.0-flash";
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${encodeURIComponent(key)}`;
+    // gemini-2.0-flash / 2.5-flash are retired for new AI Studio (AQ.) keys.
+    const geminiModel = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent`;
     const res = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": key,
+      },
       body: JSON.stringify({
         contents: [{ role: "user", parts: [{ text: params.prompt }] }],
         generationConfig: { temperature: 0.4 },
