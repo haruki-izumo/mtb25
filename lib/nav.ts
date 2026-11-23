@@ -24,7 +24,7 @@ export const PRIMARY_NAV: NavItem[] = [
   { href: "/meetings", label: "Meetings", icon: CalendarDays },
   { href: "/availability", label: "Availability", icon: Calendar },
   { href: "/interviews", label: "Interview", icon: Briefcase },
-  { href: "/applications", label: "Application", icon: ClipboardList, disabled: true },
+  { href: "/applications", label: "Application", icon: ClipboardList },
   { href: "/projects", label: "Projects", icon: FolderKanban },
 ];
 

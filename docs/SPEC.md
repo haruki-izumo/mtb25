@@ -51,7 +51,8 @@ status pipeline until it ends in an offer or is closed.
   bookedById (User), outcome (PENDING|PASSED|FAILED|RESCHEDULED|CANCELED|NO_SHOW),
   rating Int? (1-5), feedback text?, createdAt
 - Announcement: id, title, body, createdAt (for "Team updates" panel)
-- Application (optional, phase 8): id, profileId, company, jobTitle, url, status, appliedAt
+- Application: id, profileId, company, jobTitle, url, status, appliedAt, submitted.
+  Rows are created by the resume-generator extension. The Application page lists them per profile.
 
 ## Process status pipeline
 Grouped exactly like the Interviews sidebar:
@@ -100,15 +101,21 @@ Put status/group definitions in one config file (lib/status.ts) with label, icon
    Below the header: horizontal row of round cards (number badge, type icon, date/time range,
    interviewer, 5-star rating, feedback text, outcome icon) + dashed "Add round" card.
    Editing a round opens a dialog (outcome, rating, feedback, reschedule).
-5. Profiles (/profiles): sidebar with All / Starred / by country (flag + count).
+5. Application (/applications): sidebar lists accessible profiles with counts.
+   Main list is every extension generation for the selected profile (or all of them):
+   company, role, job link, submitted flag, status, resume and cover PDFs.
+   Admins and members can mark submitted and change status. Interviewers are read-only
+   and only see profiles they handle.
+6. Profiles (/profiles): sidebar with All / Starred / by country (flag + count).
    Table (Name with flag, Email, Star) with grid/list toggle and search.
    Right detail panel with tabs Profile | Settings | Resume | History:
    copyable fields (copy icon), Experience list, resume upload/preview,
    history = all processes for that profile.
-6. My Team (/team): members table (avatar initials with color, name, email, role icon,
+7. My Team (/team): members table (avatar initials with color, name, email, role icon,
    assigned profiles shown as flag + count by country). Admin can invite/edit/assign.
-7. Settings: user timezone, password, theme.
-8. Projects (/projects) — ADMIN and MEMBER only:
+   Interviewers have no access.
+8. Settings: user timezone, password, theme.
+9. Projects (/projects) — ADMIN and MEMBER only:
    Client master (inline create from project form), project codes `PRJ-YYYY-####`,
    status workflow seeded in DB (Secured → … → Closed / Cancelled) with comment-required
    transitions for On Hold / Cancelled. List: search, filters, summary cards, CSV export,
