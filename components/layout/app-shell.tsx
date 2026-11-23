@@ -1,16 +1,18 @@
 import type { ReactNode } from "react";
 import { IconRail } from "@/components/layout/icon-rail";
+import { requireSession } from "@/lib/auth-helpers";
 
-export function AppShell({
+export async function AppShell({
   sidebar,
   children,
 }: {
   sidebar?: ReactNode;
   children: ReactNode;
 }) {
+  const session = await requireSession();
   return (
     <div className="min-h-screen bg-slate-100">
-      <IconRail />
+      <IconRail role={session.user.role} />
       <div className="pl-20">
         <div className="flex min-h-screen">
           {sidebar ? (

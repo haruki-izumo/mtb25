@@ -155,18 +155,22 @@ export async function getProfileDetail(
     },
   });
   if (!profile) return null;
+  const apiKeys =
+    role === "INTERVIEWER"
+      ? []
+      : profile.apiKeys.map((k) => ({
+          id: k.id,
+          mode: k.mode,
+          label: k.label,
+          createdAt: k.createdAt,
+          keyPreview:
+            k.key.length > 8
+              ? `${k.key.slice(0, 4)}…${k.key.slice(-4)}`
+              : "****",
+        }));
   return {
     ...profile,
-    apiKeys: profile.apiKeys.map((k) => ({
-      id: k.id,
-      mode: k.mode,
-      label: k.label,
-      createdAt: k.createdAt,
-      keyPreview:
-        k.key.length > 8
-          ? `${k.key.slice(0, 4)}…${k.key.slice(-4)}`
-          : "****",
-    })),
+    apiKeys,
   };
 }
 

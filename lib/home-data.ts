@@ -5,10 +5,12 @@ import {
   startOfWeek,
   subWeeks,
 } from "date-fns";
+import type { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { profileAccessWhere } from "@/lib/access";
 import { getStatusesInGroup } from "@/lib/status";
 
-export async function getHomeDashboardData(userId: string, role: string) {
+export async function getHomeDashboardData(userId: string, role: Role) {
   const now = new Date();
   const todayStart = startOfDay(now);
   const todayEnd = endOfDay(now);
@@ -17,10 +19,7 @@ export async function getHomeDashboardData(userId: string, role: string) {
   const prevWeekStart = subWeeks(thisWeekStart, 1);
   const prevWeekEnd = endOfWeek(prevWeekStart, { weekStartsOn: 0 });
 
-  const profileFilter =
-    role === "ADMIN"
-      ? undefined
-      : { assignedMembers: { some: { id: userId } } };
+  const profileFilter = profileAccessWhere(userId, role);
 
   const processWhere = profileFilter ? { profile: profileFilter } : {};
 

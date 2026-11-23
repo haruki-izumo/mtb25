@@ -57,6 +57,7 @@ export function AvailabilityView({
   days,
   textSummary,
   isAdmin = false,
+  readOnly = false,
 }: {
   mode?: "profile" | "interviewer";
   profiles: {
@@ -86,6 +87,7 @@ export function AvailabilityView({
   days: DayBlock[];
   textSummary: string;
   isAdmin?: boolean;
+  readOnly?: boolean;
 }) {
   const isInterviewerMode = mode === "interviewer";
   const subjectTimezone =
@@ -94,7 +96,8 @@ export function AvailabilityView({
     ? (interviewer?.rules ?? [])
     : (profile?.rules ?? []);
   const canEdit = isInterviewerMode ? !!interviewer : !!profile;
-  const canBook = !isInterviewerMode && !!profile;
+  const canMutate = canEdit && !readOnly;
+  const canBook = !readOnly && !isInterviewerMode && !!profile;
   const hasProfileChoices = !isInterviewerMode && profiles.length > 0;
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -179,14 +182,18 @@ export function AvailabilityView({
   if (!isInterviewerMode && profiles.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
-        No profiles available.
-        {isAdmin ? " Add a profile first, then set its availability here." : ""}
+        {readOnly
+          ? "No profiles are assigned to you."
+          : "No profiles available."}
+        {!readOnly && isAdmin
+          ? " Add a profile first, then set its availability here."
+          : ""}
       </div>
     );
   }
 
   function finishDrag(bookingDay?: DayBlock, shiftKey = false) {
-    if (!drag || !canEdit) return;
+    if (!drag || !canMutate) return;
     const current = drag;
     const startHour = Math.min(current.startHour, current.endHour);
     const endHour = Math.max(current.startHour, current.endHour) + 1;
@@ -362,9 +369,11 @@ export function AvailabilityView({
               </span>
             </div>
             <p className="text-xs text-slate-500">
-              {canBook
-                ? "Click green to book · drag empty to add · drag / Shift+click green to clear"
-                : "Drag empty to add · drag green to clear · edit weekly rules in the Rules tab"}
+              {readOnly
+                ? "View only"
+                : canBook
+                  ? "Click green to book · drag empty to add · drag / Shift+click green to clear"
+                  : "Drag empty to add · drag green to clear · edit weekly rules in the Rules tab"}
             </p>
           </div>
 
@@ -429,6 +438,7 @@ export function AvailabilityView({
                               : state
                         }
                         onMouseDown={() => {
+                          if (!canMutate) return;
                           if (state === "empty") {
                             setDrag({
                               dateKey: d.dateKey,
@@ -483,19 +493,21 @@ export function AvailabilityView({
             <h3 className="text-sm font-semibold text-slate-900">
               Recurring weekly rules
             </h3>
-            <button
-              type="button"
-              onClick={() =>
-                setEditingRule({
-                  weekday: 1,
-                  startMinute: 10 * 60,
-                  endMinute: 15 * 60,
-                })
-              }
-              className="h-8 rounded-lg bg-blue-600 px-3 text-xs font-medium text-white"
-            >
-              Add rule
-            </button>
+            {canMutate ? (
+              <button
+                type="button"
+                onClick={() =>
+                  setEditingRule({
+                    weekday: 1,
+                    startMinute: 10 * 60,
+                    endMinute: 15 * 60,
+                  })
+                }
+                className="h-8 rounded-lg bg-blue-600 px-3 text-xs font-medium text-white"
+              >
+                Add rule
+              </button>
+            ) : null}
           </div>
           <ul className="mt-4 space-y-2">
             {subjectRules.length === 0 ? (
@@ -518,38 +530,40 @@ export function AvailabilityView({
                     <span className="text-slate-600">
                       {fmtMinute(r.startMinute)} – {fmtMinute(r.endMinute)}
                     </span>
-                    <div className="flex gap-1">
-                      <button
-                        type="button"
-                        className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-                        onClick={() =>
-                          setEditingRule({
-                            id: r.id,
-                            weekday: r.weekday,
-                            startMinute: r.startMinute,
-                            endMinute: r.endMinute,
-                          })
-                        }
-                      >
-                        <Pencil className="size-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
-                        onClick={() => {
-                          if (!confirm("Delete this rule?")) return;
-                          startTransition(async () => {
-                            if (isInterviewerMode) {
-                              await deleteInterviewerAvailabilityRule(r.id);
-                            } else {
-                              await deleteAvailabilityRule(r.id);
-                            }
-                          });
-                        }}
-                      >
-                        <Trash2 className="size-3.5" />
-                      </button>
-                    </div>
+                    {canMutate ? (
+                      <div className="flex gap-1">
+                        <button
+                          type="button"
+                          className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                          onClick={() =>
+                            setEditingRule({
+                              id: r.id,
+                              weekday: r.weekday,
+                              startMinute: r.startMinute,
+                              endMinute: r.endMinute,
+                            })
+                          }
+                        >
+                          <Pencil className="size-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                          onClick={() => {
+                            if (!confirm("Delete this rule?")) return;
+                            startTransition(async () => {
+                              if (isInterviewerMode) {
+                                await deleteInterviewerAvailabilityRule(r.id);
+                              } else {
+                                await deleteAvailabilityRule(r.id);
+                              }
+                            });
+                          }}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      </div>
+                    ) : null}
                   </li>
                 ))
             )}

@@ -27,70 +27,48 @@ export default async function AvailabilityPage({
     weekStart: first(sp.week),
   });
 
-  const isInterviewerMode = data.mode === "interviewer";
+  const readOnly = session.user.role === "INTERVIEWER";
 
   return (
     <AppShell
       sidebar={
         <div className="space-y-3">
-          {isInterviewerMode ? (
-            <>
-              <h2 className="text-sm font-semibold text-slate-900">
-                My availability
-              </h2>
-              <p className="text-xs text-slate-500">
-                Set when you are free to take interviews. Times use your
-                timezone.
-              </p>
-              {data.mode === "interviewer" && data.interviewer ? (
-                <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm">
-                  <p className="font-medium text-slate-900">
-                    {data.interviewer.name}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {data.interviewer.timezone}
-                  </p>
-                </div>
-              ) : null}
-            </>
-          ) : (
-            <>
-              <h2 className="text-sm font-semibold text-slate-900">Profiles</h2>
-              <p className="text-xs text-slate-500">
-                Choose a profile to view and edit weekly availability.
-              </p>
-              <ul className="space-y-1">
-                {data.mode === "profile"
-                  ? data.profiles.map((p) => {
-                      const params = new URLSearchParams();
-                      params.set("profileId", p.id);
-                      const week = first(sp.week);
-                      if (week) params.set("week", week);
-                      return (
-                        <li key={p.id}>
-                          <Link
-                            href={`/availability?${params.toString()}`}
-                            className={cn(
-                              "block rounded-xl px-3 py-2 text-sm transition hover:bg-white hover:shadow-sm",
-                              data.profile?.id === p.id
-                                ? "bg-white font-semibold shadow-sm ring-1 ring-slate-200"
-                                : "text-slate-600",
-                            )}
-                          >
-                            {countryFlag(p.country)} {p.code}.{p.displayName}
-                          </Link>
-                        </li>
-                      );
-                    })
-                  : null}
-              </ul>
-              {data.mode === "profile" && data.profiles.length === 0 ? (
-                <p className="rounded-xl border border-dashed border-slate-200 px-3 py-4 text-center text-xs text-slate-500">
-                  No profiles yet
-                </p>
-              ) : null}
-            </>
-          )}
+          <h2 className="text-sm font-semibold text-slate-900">
+            {readOnly ? "Your profiles" : "Profiles"}
+          </h2>
+          <p className="text-xs text-slate-500">
+            {readOnly
+              ? "Availability for profiles you are assigned to interview."
+              : "Choose a profile to view and edit weekly availability."}
+          </p>
+          <ul className="space-y-1">
+            {data.profiles.map((p) => {
+              const params = new URLSearchParams();
+              params.set("profileId", p.id);
+              const week = first(sp.week);
+              if (week) params.set("week", week);
+              return (
+                <li key={p.id}>
+                  <Link
+                    href={`/availability?${params.toString()}`}
+                    className={cn(
+                      "block rounded-xl px-3 py-2 text-sm transition hover:bg-white hover:shadow-sm",
+                      data.profile?.id === p.id
+                        ? "bg-white font-semibold shadow-sm ring-1 ring-slate-200"
+                        : "text-slate-600",
+                    )}
+                  >
+                    {countryFlag(p.country)} {p.code}.{p.displayName}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+          {data.profiles.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-slate-200 px-3 py-4 text-center text-xs text-slate-500">
+              {readOnly ? "No profiles assigned to you" : "No profiles yet"}
+            </p>
+          ) : null}
         </div>
       }
     >
@@ -99,29 +77,17 @@ export default async function AvailabilityPage({
           <div className="h-96 animate-pulse rounded-2xl bg-slate-100" />
         }
       >
-        {data.mode === "interviewer" ? (
-          <AvailabilityView
-            mode="interviewer"
-            profiles={[]}
-            profile={null}
-            interviewer={data.interviewer}
-            weekStartIso={data.weekStart}
-            days={data.days}
-            textSummary={data.textSummary}
-            isAdmin={session.user.role === "ADMIN"}
-          />
-        ) : (
-          <AvailabilityView
-            mode="profile"
-            profiles={data.profiles}
-            profile={data.profile}
-            interviewer={null}
-            weekStartIso={data.weekStart}
-            days={data.days}
-            textSummary={data.textSummary}
-            isAdmin={session.user.role === "ADMIN"}
-          />
-        )}
+        <AvailabilityView
+          mode="profile"
+          profiles={data.profiles}
+          profile={data.profile}
+          interviewer={null}
+          weekStartIso={data.weekStart}
+          days={data.days}
+          textSummary={data.textSummary}
+          isAdmin={session.user.role === "ADMIN"}
+          readOnly={readOnly}
+        />
       </Suspense>
     </AppShell>
   );

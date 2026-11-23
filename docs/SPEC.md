@@ -19,9 +19,10 @@ status pipeline until it ends in an offer or is closed.
 - Docker Compose for local Postgres
 
 ## Roles
-- ADMIN: manages profiles, members, all interviews
-- MEMBER: books/edits interviews for profiles assigned to them; sees team calendar
-- Members are assigned to profiles (many-to-many)
+- ADMIN: manages profiles, members, all interviews, and projects
+- MEMBER: books/edits interviews for profiles assigned to them; sees team calendar; projects
+- INTERVIEWER: read-only. No Projects and no My Team. On Meetings, Availability, Interview, and Profile, sees only profiles they are assigned to handle (`Profile.interviewerId`) and the meetings and processes tied to those profiles
+- Members are assigned to profiles (many-to-many). Each profile has at most one interviewer
 
 ## Layout (match the screenshots' style)
 - Fixed narrow left icon rail (~80px, light gray bg) with icon + label below:

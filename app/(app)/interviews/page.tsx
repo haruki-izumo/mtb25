@@ -99,6 +99,7 @@ export default async function InterviewsPage({
                 key={process.id}
                 process={process}
                 isAdmin={session.user.role === "ADMIN"}
+                readOnly={session.user.role === "INTERVIEWER"}
               />
             ))}
           </div>

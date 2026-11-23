@@ -194,6 +194,7 @@ export function ProfilesView({
   interviewers = [],
   assignableMembers = [],
   isAdmin = false,
+  readOnly = false,
 }: {
   profiles: ProfileRow[];
   counts: { all: number; starred: number; byCountry: Record<string, number> };
@@ -202,6 +203,7 @@ export function ProfilesView({
   interviewers?: InterviewerOption[];
   assignableMembers?: MemberOption[];
   isAdmin?: boolean;
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -366,8 +368,10 @@ export function ProfilesView({
                     <td className="px-4 py-3 text-center">
                       <button
                         type="button"
+                        disabled={readOnly}
                         onClick={(e) => {
                           e.stopPropagation();
+                          if (readOnly) return;
                           startTransition(async () => {
                             await toggleProfileStar(p.id);
                           });
@@ -421,11 +425,13 @@ export function ProfilesView({
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
-                    onClick={() =>
+                    disabled={readOnly}
+                    onClick={() => {
+                      if (readOnly) return;
                       startTransition(async () => {
                         await toggleProfileStar(detail.id);
-                      })
-                    }
+                      });
+                    }}
                   >
                     <Star
                       className={cn(
@@ -517,6 +523,7 @@ export function ProfilesView({
                     pending={pending}
                     startTransition={startTransition}
                     onDone={() => router.refresh()}
+                    readOnly={readOnly}
                   />
                   <EducationEditor
                     profileId={detail.id}
@@ -524,6 +531,7 @@ export function ProfilesView({
                     pending={pending}
                     startTransition={startTransition}
                     onDone={() => router.refresh()}
+                    readOnly={readOnly}
                   />
                   <CertificationsEditor
                     profileId={detail.id}
@@ -531,19 +539,22 @@ export function ProfilesView({
                     pending={pending}
                     startTransition={startTransition}
                     onDone={() => router.refresh()}
+                    readOnly={readOnly}
                   />
                 </>
               ) : null}
 
               {tab === "settings" ? (
                 <div className="space-y-3 text-sm text-slate-600">
-                  <ApiKeysEditor
-                    profileId={detail.id}
-                    keys={detail.apiKeys || []}
-                    pending={pending}
-                    startTransition={startTransition}
-                    onDone={() => router.refresh()}
-                  />
+                  {readOnly ? null : (
+                    <ApiKeysEditor
+                      profileId={detail.id}
+                      keys={detail.apiKeys || []}
+                      pending={pending}
+                      startTransition={startTransition}
+                      onDone={() => router.refresh()}
+                    />
+                  )}
                   <div>
                     <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
                       Interviewer
@@ -1009,6 +1020,7 @@ function ExperienceEditor({
   pending,
   startTransition,
   onDone,
+  readOnly = false,
 }: {
   profileId: string;
   experiences: {
@@ -1021,6 +1033,7 @@ function ExperienceEditor({
   pending: boolean;
   startTransition: (fn: () => void) => void;
   onDone: () => void;
+  readOnly?: boolean;
 }) {
   const [editing, setEditing] = useState<{
     id?: string;
@@ -1067,14 +1080,16 @@ function ExperienceEditor({
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
           Experience
         </p>
-        <button
-          type="button"
-          onClick={openCreate}
-          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50"
-        >
-          <Plus className="size-3.5" />
-          Add
-        </button>
+        {readOnly ? null : (
+          <button
+            type="button"
+            onClick={openCreate}
+            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50"
+          >
+            <Plus className="size-3.5" />
+            Add
+          </button>
+        )}
       </div>
 
       {experiences.length === 0 ? (
@@ -1100,35 +1115,37 @@ function ExperienceEditor({
                     {formatExperienceRange(e.startDate, e.endDate)}
                   </p>
                 </div>
-                <div className="flex shrink-0 gap-1">
-                  <button
-                    type="button"
-                    title="Edit"
-                    className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-                    onClick={() => openEdit(e)}
-                  >
-                    <Pencil className="size-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    title="Delete"
-                    className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
-                    onClick={() => {
-                      if (!confirm(`Delete experience at ${e.company}?`)) return;
-                      setError(null);
-                      startTransition(async () => {
-                        const result = await deleteProfileExperience(e.id);
-                        if (!result.ok) {
-                          setError(result.error);
-                          return;
-                        }
-                        onDone();
-                      });
-                    }}
-                  >
-                    <Trash2 className="size-3.5" />
-                  </button>
-                </div>
+                {readOnly ? null : (
+                  <div className="flex shrink-0 gap-1">
+                    <button
+                      type="button"
+                      title="Edit"
+                      className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                      onClick={() => openEdit(e)}
+                    >
+                      <Pencil className="size-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      title="Delete"
+                      className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                      onClick={() => {
+                        if (!confirm(`Delete experience at ${e.company}?`)) return;
+                        setError(null);
+                        startTransition(async () => {
+                          const result = await deleteProfileExperience(e.id);
+                          if (!result.ok) {
+                            setError(result.error);
+                            return;
+                          }
+                          onDone();
+                        });
+                      }}
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
             </li>
           ))}
@@ -1298,6 +1315,7 @@ function EducationEditor({
   pending,
   startTransition,
   onDone,
+  readOnly = false,
 }: {
   profileId: string;
   education: {
@@ -1310,6 +1328,7 @@ function EducationEditor({
   pending: boolean;
   startTransition: (fn: () => void) => void;
   onDone: () => void;
+  readOnly?: boolean;
 }) {
   const [editing, setEditing] = useState<{
     id?: string;
@@ -1356,14 +1375,16 @@ function EducationEditor({
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
           Education
         </p>
-        <button
-          type="button"
-          onClick={openCreate}
-          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50"
-        >
-          <Plus className="size-3.5" />
-          Add
-        </button>
+        {readOnly ? null : (
+          <button
+            type="button"
+            onClick={openCreate}
+            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50"
+          >
+            <Plus className="size-3.5" />
+            Add
+          </button>
+        )}
       </div>
 
       {education.length === 0 ? (
@@ -1389,38 +1410,40 @@ function EducationEditor({
                     {formatEducationRange(e.start, e.end)}
                   </p>
                 </div>
-                <div className="flex shrink-0 gap-1">
-                  <button
-                    type="button"
-                    title="Edit"
-                    className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-                    onClick={() => openEdit(e)}
-                  >
-                    <Pencil className="size-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    title="Delete"
-                    className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
-                    onClick={() => {
-                      if (!confirm(`Delete education at ${e.school}?`)) return;
-                      setError(null);
-                      startTransition(async () => {
-                        const result = await deleteProfileEducation({
-                          profileId,
-                          educationId: e.id,
+                {readOnly ? null : (
+                  <div className="flex shrink-0 gap-1">
+                    <button
+                      type="button"
+                      title="Edit"
+                      className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                      onClick={() => openEdit(e)}
+                    >
+                      <Pencil className="size-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      title="Delete"
+                      className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                      onClick={() => {
+                        if (!confirm(`Delete education at ${e.school}?`)) return;
+                        setError(null);
+                        startTransition(async () => {
+                          const result = await deleteProfileEducation({
+                            profileId,
+                            educationId: e.id,
+                          });
+                          if (!result.ok) {
+                            setError(result.error);
+                            return;
+                          }
+                          onDone();
                         });
-                        if (!result.ok) {
-                          setError(result.error);
-                          return;
-                        }
-                        onDone();
-                      });
-                    }}
-                  >
-                    <Trash2 className="size-3.5" />
-                  </button>
-                </div>
+                      }}
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
             </li>
           ))}
@@ -1590,12 +1613,14 @@ function CertificationsEditor({
   pending,
   startTransition,
   onDone,
+  readOnly = false,
 }: {
   profileId: string;
   certifications: { id: string; name: string; date: string }[];
   pending: boolean;
   startTransition: (fn: () => void) => void;
   onDone: () => void;
+  readOnly?: boolean;
 }) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
@@ -1608,19 +1633,21 @@ function CertificationsEditor({
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
           Certifications
         </p>
-        <button
-          type="button"
-          onClick={() => {
-            setError(null);
-            setName("");
-            setDate("");
-            setAdding(true);
-          }}
-          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50"
-        >
-          <Plus className="size-3.5" />
-          Add
-        </button>
+        {readOnly ? null : (
+          <button
+            type="button"
+            onClick={() => {
+              setError(null);
+              setName("");
+              setDate("");
+              setAdding(true);
+            }}
+            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50"
+          >
+            <Plus className="size-3.5" />
+            Add
+          </button>
+        )}
       </div>
 
       {certifications.length === 0 ? (
@@ -1638,28 +1665,30 @@ function CertificationsEditor({
                 <p className="text-sm font-semibold text-slate-900">{c.name}</p>
                 <p className="text-xs text-slate-400">{c.date || "—"}</p>
               </div>
-              <button
-                type="button"
-                title="Remove"
-                className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
-                onClick={() => {
-                  if (!confirm(`Remove certification “${c.name}”?`)) return;
-                  setError(null);
-                  startTransition(async () => {
-                    const result = await deleteProfileCertification({
-                      profileId,
-                      certificationId: c.id,
+              {readOnly ? null : (
+                <button
+                  type="button"
+                  title="Remove"
+                  className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                  onClick={() => {
+                    if (!confirm(`Remove certification “${c.name}”?`)) return;
+                    setError(null);
+                    startTransition(async () => {
+                      const result = await deleteProfileCertification({
+                        profileId,
+                        certificationId: c.id,
+                      });
+                      if (!result.ok) {
+                        setError(result.error);
+                        return;
+                      }
+                      onDone();
                     });
-                    if (!result.ok) {
-                      setError(result.error);
-                      return;
-                    }
-                    onDone();
-                  });
-                }}
-              >
-                <Trash2 className="size-3.5" />
-              </button>
+                  }}
+                >
+                  <Trash2 className="size-3.5" />
+                </button>
+              )}
             </li>
           ))}
         </ul>

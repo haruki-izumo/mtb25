@@ -7,7 +7,7 @@ import {
 } from "date-fns";
 import type { Role, RoundType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { processAccessWhere } from "@/lib/access";
+import { memberDirectoryWhere, processAccessWhere } from "@/lib/access";
 
 export async function getMeetingsWeek(params: {
   userId: string;
@@ -66,6 +66,7 @@ export async function getMeetingsWeek(params: {
       orderBy: { code: "asc" },
     }),
     prisma.user.findMany({
+      where: memberDirectoryWhere(params.userId, params.role),
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),

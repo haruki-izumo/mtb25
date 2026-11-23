@@ -20,6 +20,23 @@ export const proxy = auth((req) => {
     return NextResponse.redirect(url);
   }
 
+  const interviewerBlocked =
+    pathname === "/projects" ||
+    pathname.startsWith("/projects/") ||
+    pathname === "/team" ||
+    pathname.startsWith("/team/");
+
+  if (
+    isLoggedIn &&
+    req.auth?.user?.role === "INTERVIEWER" &&
+    interviewerBlocked
+  ) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
   return NextResponse.next();
 });
 

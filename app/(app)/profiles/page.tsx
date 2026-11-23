@@ -29,10 +29,11 @@ export default async function ProfilesPage({
   const q = first(sp.q);
   const selectedId = first(sp.id);
 
+  const isInterviewer = session.user.role === "INTERVIEWER";
   const [{ profiles, counts }, interviewers, assignableMembers] =
     await Promise.all([
       getProfilesList(session.user.id, session.user.role, { filter, q }),
-      listInterviewers(),
+      session.user.role === "ADMIN" ? listInterviewers() : Promise.resolve([]),
       session.user.role === "ADMIN" ? listAssignableMembers() : Promise.resolve([]),
     ]);
 
@@ -106,6 +107,7 @@ export default async function ProfilesPage({
             interviewers={interviewers}
             assignableMembers={assignableMembers}
             isAdmin={session.user.role === "ADMIN"}
+            readOnly={isInterviewer}
           />
         </Suspense>
       </div>

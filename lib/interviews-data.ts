@@ -6,7 +6,7 @@ import {
   subYears,
 } from "date-fns";
 import { prisma } from "@/lib/prisma";
-import { processAccessWhere } from "@/lib/access";
+import { memberDirectoryWhere, processAccessWhere } from "@/lib/access";
 import {
   STATUS_GROUPS,
   type StatusGroupId,
@@ -229,6 +229,7 @@ export async function getInterviewFilterOptions(
       orderBy: { code: "asc" },
     }),
     prisma.user.findMany({
+      where: memberDirectoryWhere(userId, role),
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),

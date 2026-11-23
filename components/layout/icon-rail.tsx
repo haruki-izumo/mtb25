@@ -10,6 +10,8 @@ import {
   type NavItem,
 } from "@/lib/nav";
 
+type AppRole = "ADMIN" | "MEMBER" | "INTERVIEWER";
+
 function RailButton({ item, active }: { item: NavItem; active: boolean }) {
   const Icon = item.icon;
   const content = (
@@ -48,13 +50,20 @@ function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function IconRail() {
+export function IconRail({ role }: { role: AppRole }) {
   const pathname = usePathname();
+  const isInterviewer = role === "INTERVIEWER";
+  const primaryNav = isInterviewer
+    ? PRIMARY_NAV.filter((item) => item.href !== "/projects")
+    : PRIMARY_NAV;
+  const secondaryNav = isInterviewer
+    ? SECONDARY_NAV.filter((item) => item.href !== "/team")
+    : SECONDARY_NAV;
 
   return (
     <aside className="fixed inset-y-0 left-0 z-40 flex w-20 flex-col bg-slate-100 py-3">
       <nav className="flex flex-1 flex-col items-center gap-0.5 overflow-y-auto">
-        {PRIMARY_NAV.map((item) => (
+        {primaryNav.map((item) => (
           <RailButton
             key={item.href}
             item={item}
@@ -64,7 +73,7 @@ export function IconRail() {
 
         <div className="my-2 h-px w-10 bg-slate-300" />
 
-        {SECONDARY_NAV.map((item) => (
+        {secondaryNav.map((item) => (
           <RailButton
             key={item.href}
             item={item}

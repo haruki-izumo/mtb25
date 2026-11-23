@@ -183,13 +183,6 @@ export async function getAvailabilityPageData(params: {
   profileId?: string;
   weekStart?: string;
 }) {
-  if (params.role === "INTERVIEWER") {
-    return getInterviewerAvailabilityData({
-      userId: params.userId,
-      weekStart: params.weekStart,
-    });
-  }
-
   const access = profileAccessWhere(params.userId, params.role);
   const profiles = await prisma.profile.findMany({
     where: access ?? {},

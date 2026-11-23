@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { TeamView } from "@/components/team/team-view";
 import { requireSession } from "@/lib/auth-helpers";
@@ -5,7 +6,9 @@ import { getTeamPageData } from "@/lib/team-data";
 
 export default async function TeamPage() {
   const session = await requireSession();
-  const data = await getTeamPageData();
+  if (session.user.role === "INTERVIEWER") redirect("/");
+
+  const data = await getTeamPageData(session.user.id, session.user.role);
 
   return (
     <AppShell

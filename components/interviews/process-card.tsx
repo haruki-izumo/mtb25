@@ -57,9 +57,11 @@ export type ProcessCardData = {
 export function ProcessCard({
   process,
   isAdmin = false,
+  readOnly = false,
 }: {
   process: ProcessCardData;
   isAdmin?: boolean;
+  readOnly?: boolean;
 }) {
   const config = getStatusConfig(process.status);
   const Icon = config.icon;
@@ -138,13 +140,15 @@ export function ProcessCard({
 
           <select
             value={process.status}
+            disabled={readOnly}
             onChange={(e) => {
+              if (readOnly) return;
               const status = e.target.value as ProcessStatus;
               startTransition(async () => {
                 await updateProcessStatus({ processId: process.id, status });
               });
             }}
-            className="h-8 rounded-full border border-slate-200 px-3 text-xs font-semibold"
+            className="h-8 rounded-full border border-slate-200 px-3 text-xs font-semibold disabled:cursor-default disabled:bg-white"
             style={{ color: config.color }}
           >
             {Object.values(STATUS_CONFIG).map((s) => (
@@ -154,33 +158,40 @@ export function ProcessCard({
             ))}
           </select>
 
-          <button
-            type="button"
-            title="Delete process"
-            className="inline-flex size-8 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600"
-            onClick={() => {
-              if (!confirm(`Delete ${process.companyName} process?`)) return;
-              startTransition(async () => {
-                await deleteProcess(process.id);
-              });
-            }}
-          >
-            <Trash2 className="size-4" />
-          </button>
+          {readOnly ? null : (
+            <button
+              type="button"
+              title="Delete process"
+              className="inline-flex size-8 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600"
+              onClick={() => {
+                if (!confirm(`Delete ${process.companyName} process?`)) return;
+                startTransition(async () => {
+                  await deleteProcess(process.id);
+                });
+              }}
+            >
+              <Trash2 className="size-4" />
+            </button>
+          )}
         </div>
       </div>
 
       <input
         value={note}
-        onChange={(e) => setNote(e.target.value)}
+        readOnly={readOnly}
+        onChange={(e) => {
+          if (readOnly) return;
+          setNote(e.target.value);
+        }}
         onBlur={() => {
+          if (readOnly) return;
           if (note === (process.note ?? "")) return;
           startTransition(async () => {
             await updateProcessNote({ processId: process.id, note });
           });
         }}
-        placeholder="Add a note…"
-        className="mt-3 h-9 w-full rounded-xl border border-slate-100 bg-slate-50 px-3 text-sm outline-none focus:border-slate-200 focus:bg-white"
+        placeholder={readOnly ? "No note" : "Add a note…"}
+        className="mt-3 h-9 w-full rounded-xl border border-slate-100 bg-slate-50 px-3 text-sm outline-none focus:border-slate-200 focus:bg-white read-only:cursor-default"
       />
 
       <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
@@ -193,8 +204,15 @@ export function ProcessCard({
             <button
               key={round.id}
               type="button"
-              onClick={() => setEditingRound(round)}
-              className="w-56 shrink-0 rounded-xl border border-slate-200 bg-slate-50/80 p-3 text-left transition hover:border-slate-300 hover:bg-white"
+              onClick={() => {
+                if (!readOnly) setEditingRound(round);
+              }}
+              className={cn(
+                "w-56 shrink-0 rounded-xl border border-slate-200 bg-slate-50/80 p-3 text-left",
+                readOnly
+                  ? "cursor-default"
+                  : "transition hover:border-slate-300 hover:bg-white",
+              )}
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="inline-flex size-6 items-center justify-center rounded-full bg-slate-900 text-[11px] font-bold text-white">
@@ -252,13 +270,15 @@ export function ProcessCard({
           );
         })}
 
-        <button
-          type="button"
-          onClick={() => setAddingRound(true)}
-          className="flex w-40 shrink-0 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white text-sm text-slate-500 transition hover:border-blue-300 hover:text-blue-600"
-        >
-          + Add round
-        </button>
+        {readOnly ? null : (
+          <button
+            type="button"
+            onClick={() => setAddingRound(true)}
+            className="flex w-40 shrink-0 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white text-sm text-slate-500 transition hover:border-blue-300 hover:text-blue-600"
+          >
+            + Add round
+          </button>
+        )}
       </div>
 
       {editingRound ? (
