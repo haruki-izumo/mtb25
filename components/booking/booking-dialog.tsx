@@ -13,6 +13,10 @@ import {
   getBookableSlots,
   type BookingDuration,
 } from "@/lib/availability";
+import {
+  isPlainTextJobDescriptionFile,
+  validateJobDescriptionText,
+} from "@/lib/job-description";
 import { ROUND_TYPE_CONFIG } from "@/lib/rounds";
 import type { RoundType } from "@prisma/client";
 
@@ -327,20 +331,31 @@ export function BookingDialog({
                     accept=".txt,text/plain"
                     className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-200 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-slate-800"
                     onChange={(e) => {
-                      const file = e.target.files?.[0];
+                      const input = e.target;
+                      const file = input.files?.[0];
                       if (!file) return;
                       setError(null);
+                      if (!isPlainTextJobDescriptionFile(file)) {
+                        setError(
+                          "Job description must be a .txt file (not PDF/Word)",
+                        );
+                        setJobDescription("");
+                        setJobDescriptionFileName(null);
+                        input.value = "";
+                        return;
+                      }
                       startTransition(async () => {
-                        const text = (await file.text()).trim();
-                        if (text.length < 20) {
-                          setError(
-                            "Job description file must have at least 20 characters",
-                          );
+                        const checked = validateJobDescriptionText(
+                          await file.text(),
+                        );
+                        if (!checked.ok) {
+                          setError(checked.error);
                           setJobDescription("");
                           setJobDescriptionFileName(null);
+                          input.value = "";
                           return;
                         }
-                        setJobDescription(text);
+                        setJobDescription(checked.text);
                         setJobDescriptionFileName(file.name);
                       });
                     }}
@@ -349,7 +364,11 @@ export function BookingDialog({
                     <p className="text-xs text-emerald-700">
                       Selected: {jobDescriptionFileName}
                     </p>
-                  ) : null}
+                  ) : (
+                    <p className="text-xs text-slate-400">
+                      Required — upload a .txt job description (not PDF)
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <label className="block text-xs font-medium text-slate-600">

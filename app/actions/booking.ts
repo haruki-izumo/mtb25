@@ -14,6 +14,7 @@ import {
   zonedDateKey,
   type BookingDuration,
 } from "@/lib/availability";
+import { validateJobDescriptionText } from "@/lib/job-description";
 
 const bookSchema = z.object({
   profileId: z.string().min(1),
@@ -23,7 +24,23 @@ const bookSchema = z.object({
       companyName: z.string().min(1).max(200),
       jobTitle: z.string().min(1).max(200),
       jobUrl: z.string().url("Job link must be a valid URL"),
-      jobDescription: z.string().min(20, "Job description is required").max(50000),
+      jobDescription: z
+        .string()
+        .min(20, "Job description is required")
+        .max(50000)
+        .superRefine((value, ctx) => {
+          const checked = validateJobDescriptionText(value);
+          if (!checked.ok) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: checked.error,
+            });
+          }
+        })
+        .transform((value) => {
+          const checked = validateJobDescriptionText(value);
+          return checked.ok ? checked.text : value;
+        }),
       resumeFileUrl: z
         .string()
         .min(1, "Resume is required")
