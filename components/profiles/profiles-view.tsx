@@ -2,21 +2,26 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState, useTransition, type MouseEvent } from "react";
 import { Copy, LayoutGrid, List, Pencil, Plus, Star, Trash2 } from "lucide-react";
 import {
   addProfileApiKey,
   addProfileCertification,
+  addProfileEducation,
   addProfileExperience,
   createProfile,
   deleteProfile,
   deleteProfileApiKey,
   deleteProfileCertification,
+  deleteProfileEducation,
   deleteProfileExperience,
   setProfileInterviewer,
   toggleProfileStar,
+  updateProfile,
+  updateProfileEducation,
   updateProfileExperience,
 } from "@/app/actions/profiles";
+import { CountrySelect } from "@/components/profiles/country-select";
 import { countryFlag, DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { cn } from "@/lib/utils";
 
@@ -31,12 +36,39 @@ const PROFILE_TIMEZONES = [
 ] as const;
 
 const PROFILE_COUNTRIES = [
-  { code: "US", label: "United States" },
-  { code: "CA", label: "Canada" },
-  { code: "GB", label: "United Kingdom" },
   { code: "AU", label: "Australia" },
+  { code: "AT", label: "Austria" },
+  { code: "BE", label: "Belgium" },
+  { code: "BR", label: "Brazil" },
+  { code: "BG", label: "Bulgaria" },
+  { code: "CA", label: "Canada" },
+  { code: "HR", label: "Croatia" },
+  { code: "CY", label: "Cyprus" },
+  { code: "CZ", label: "Czechia" },
+  { code: "DK", label: "Denmark" },
+  { code: "EE", label: "Estonia" },
+  { code: "FI", label: "Finland" },
+  { code: "FR", label: "France" },
   { code: "DE", label: "Germany" },
+  { code: "GR", label: "Greece" },
+  { code: "HU", label: "Hungary" },
   { code: "IN", label: "India" },
+  { code: "IE", label: "Ireland" },
+  { code: "IT", label: "Italy" },
+  { code: "LV", label: "Latvia" },
+  { code: "LT", label: "Lithuania" },
+  { code: "LU", label: "Luxembourg" },
+  { code: "MT", label: "Malta" },
+  { code: "NL", label: "Netherlands" },
+  { code: "PL", label: "Poland" },
+  { code: "PT", label: "Portugal" },
+  { code: "RO", label: "Romania" },
+  { code: "SK", label: "Slovakia" },
+  { code: "SI", label: "Slovenia" },
+  { code: "ES", label: "Spain" },
+  { code: "SE", label: "Sweden" },
+  { code: "GB", label: "United Kingdom" },
+  { code: "US", label: "United States" },
 ] as const;
 
 type ProfileRow = {
@@ -54,8 +86,26 @@ type ProfileRow = {
   githubUrl: string | null;
   resumeFileUrl: string | null;
   starred: boolean;
+  interviewerId: string | null;
+  assignedMemberIds: string[];
   processCount: number;
   experienceCount: number;
+};
+
+type ProfileFormValues = {
+  code: string;
+  displayName: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  location?: string;
+  zipCode?: string;
+  country: string;
+  timezone: string;
+  linkedinUrl?: string;
+  githubUrl?: string;
+  interviewerId: string | null;
+  assignedMemberIds: string[];
 };
 
 type Detail = {
@@ -79,6 +129,13 @@ type Detail = {
     location: string | null;
     startDate: string;
     endDate: string | null;
+  }[];
+  education: {
+    id: string;
+    school: string;
+    degree: string;
+    start: string;
+    end: string;
   }[];
   certifications: {
     id: string;
@@ -151,9 +208,19 @@ export function ProfilesView({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [editingProfile, setEditingProfile] = useState<ProfileRow | null>(null);
   const filter = searchParams.get("filter") || "all";
   const view = searchParams.get("view") || "list";
   const tab = searchParams.get("tab") || "profile";
+
+  function openEdit(profile: ProfileRow, e?: MouseEvent) {
+    e?.preventDefault();
+    e?.stopPropagation();
+    if (!isAdmin) return;
+    setError(null);
+    setShowAdd(false);
+    setEditingProfile(profile);
+  }
 
   function push(next: Record<string, string | null>) {
     const params = new URLSearchParams(searchParams.toString());
@@ -241,14 +308,26 @@ export function ProfilesView({
                     </p>
                     <p className="text-xs text-slate-500">{p.code}</p>
                   </div>
-                  <Star
-                    className={cn(
-                      "size-4",
-                      p.starred
-                        ? "fill-amber-400 text-amber-400"
-                        : "text-slate-300",
-                    )}
-                  />
+                  <div className="flex items-center gap-1">
+                    {isAdmin ? (
+                      <button
+                        type="button"
+                        title="Edit profile"
+                        className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                        onClick={(e) => openEdit(p, e)}
+                      >
+                        <Pencil className="size-4" />
+                      </button>
+                    ) : null}
+                    <Star
+                      className={cn(
+                        "size-4",
+                        p.starred
+                          ? "fill-amber-400 text-amber-400"
+                          : "text-slate-300",
+                      )}
+                    />
+                  </div>
                 </div>
                 <p className="mt-2 truncate text-sm text-slate-600">{p.email}</p>
               </Link>
@@ -262,6 +341,9 @@ export function ProfilesView({
                   <th className="px-4 py-3">Name</th>
                   <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3 text-center">Star</th>
+                  {isAdmin ? (
+                    <th className="px-4 py-3 text-center">Edit</th>
+                  ) : null}
                 </tr>
               </thead>
               <tbody>
@@ -301,6 +383,18 @@ export function ProfilesView({
                         />
                       </button>
                     </td>
+                    {isAdmin ? (
+                      <td className="px-4 py-3 text-center">
+                        <button
+                          type="button"
+                          title="Edit profile"
+                          className="inline-flex rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                          onClick={(e) => openEdit(p, e)}
+                        >
+                          <Pencil className="size-4" />
+                        </button>
+                      </td>
+                    ) : null}
                   </tr>
                 ))}
               </tbody>
@@ -343,32 +437,45 @@ export function ProfilesView({
                     />
                   </button>
                   {isAdmin ? (
-                    <button
-                      type="button"
-                      title="Delete profile"
-                      className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
-                      onClick={() => {
-                        if (
-                          !confirm(
-                            `Delete ${detail.fullName} (${detail.code})? This removes their interviews, availability, applications, and API keys.`,
-                          )
-                        ) {
-                          return;
-                        }
-                        setError(null);
-                        startTransition(async () => {
-                          const result = await deleteProfile(detail.id);
-                          if (!result.ok) {
-                            setError(result.error);
+                    <>
+                      <button
+                        type="button"
+                        title="Edit profile"
+                        className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                        onClick={() => {
+                          const row = profiles.find((p) => p.id === detail.id);
+                          if (row) openEdit(row);
+                        }}
+                      >
+                        <Pencil className="size-4" />
+                      </button>
+                      <button
+                        type="button"
+                        title="Delete profile"
+                        className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                        onClick={() => {
+                          if (
+                            !confirm(
+                              `Delete ${detail.fullName} (${detail.code})? This removes their interviews, availability, applications, and API keys.`,
+                            )
+                          ) {
                             return;
                           }
-                          router.push("/profiles");
-                          router.refresh();
-                        });
-                      }}
-                    >
-                      <Trash2 className="size-4" />
-                    </button>
+                          setError(null);
+                          startTransition(async () => {
+                            const result = await deleteProfile(detail.id);
+                            if (!result.ok) {
+                              setError(result.error);
+                              return;
+                            }
+                            router.push("/profiles");
+                            router.refresh();
+                          });
+                        }}
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    </>
                   ) : null}
                 </div>
               </div>
@@ -407,6 +514,13 @@ export function ProfilesView({
                   <ExperienceEditor
                     profileId={detail.id}
                     experiences={detail.experiences}
+                    pending={pending}
+                    startTransition={startTransition}
+                    onDone={() => router.refresh()}
+                  />
+                  <EducationEditor
+                    profileId={detail.id}
+                    education={detail.education}
                     pending={pending}
                     startTransition={startTransition}
                     onDone={() => router.refresh()}
@@ -527,7 +641,8 @@ export function ProfilesView({
       <span className="hidden">{filter}{counts.all}</span>
 
       {showAdd ? (
-        <CreateProfileDialog
+        <ProfileFormDialog
+          mode="create"
           interviewers={interviewers}
           members={assignableMembers}
           pending={pending}
@@ -551,11 +666,44 @@ export function ProfilesView({
           }}
         />
       ) : null}
+
+      {editingProfile ? (
+        <ProfileFormDialog
+          mode="edit"
+          initial={editingProfile}
+          interviewers={interviewers}
+          members={assignableMembers}
+          pending={pending}
+          error={error}
+          onClose={() => {
+            setEditingProfile(null);
+            setError(null);
+          }}
+          onSubmit={(values) => {
+            setError(null);
+            startTransition(async () => {
+              const result = await updateProfile({
+                id: editingProfile.id,
+                ...values,
+              });
+              if (!result.ok) {
+                setError(result.error);
+                return;
+              }
+              setEditingProfile(null);
+              router.push(`/profiles?id=${result.id}`);
+              router.refresh();
+            });
+          }}
+        />
+      ) : null}
     </div>
   );
 }
 
-function CreateProfileDialog({
+function ProfileFormDialog({
+  mode,
+  initial,
   interviewers,
   members,
   pending,
@@ -563,40 +711,40 @@ function CreateProfileDialog({
   onClose,
   onSubmit,
 }: {
+  mode: "create" | "edit";
+  initial?: ProfileRow;
   interviewers: InterviewerOption[];
   members: MemberOption[];
   pending: boolean;
   error: string | null;
   onClose: () => void;
-  onSubmit: (values: {
-    code: string;
-    displayName: string;
-    fullName: string;
-    email: string;
-    phone?: string;
-    location?: string;
-    zipCode?: string;
-    country: string;
-    timezone: string;
-    linkedinUrl?: string;
-    githubUrl?: string;
-    interviewerId: string | null;
-    assignedMemberIds: string[];
-  }) => void;
+  onSubmit: (values: ProfileFormValues) => void;
 }) {
-  const [code, setCode] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [location, setLocation] = useState("");
-  const [zipCode, setZipCode] = useState("");
-  const [country, setCountry] = useState("US");
-  const [timezone, setTimezone] = useState(DEFAULT_TIMEZONE);
-  const [linkedinUrl, setLinkedinUrl] = useState("");
-  const [githubUrl, setGithubUrl] = useState("");
-  const [interviewerId, setInterviewerId] = useState("");
-  const [assignedMemberIds, setAssignedMemberIds] = useState<string[]>([]);
+  const [code, setCode] = useState(initial?.code ?? "");
+  const [displayName, setDisplayName] = useState(initial?.displayName ?? "");
+  const [fullName, setFullName] = useState(initial?.fullName ?? "");
+  const [email, setEmail] = useState(initial?.email ?? "");
+  const [phone, setPhone] = useState(initial?.phone ?? "");
+  const [location, setLocation] = useState(initial?.location ?? "");
+  const [zipCode, setZipCode] = useState(initial?.zipCode ?? "");
+  const [country, setCountry] = useState(initial?.country ?? "US");
+  const [timezone, setTimezone] = useState(
+    initial?.timezone ?? DEFAULT_TIMEZONE,
+  );
+  const [linkedinUrl, setLinkedinUrl] = useState(initial?.linkedinUrl ?? "");
+  const [githubUrl, setGithubUrl] = useState(initial?.githubUrl ?? "");
+  const [interviewerId, setInterviewerId] = useState(
+    initial?.interviewerId ?? "",
+  );
+  const [assignedMemberIds, setAssignedMemberIds] = useState<string[]>(
+    initial?.assignedMemberIds ?? [],
+  );
+
+  const timezoneOptions = PROFILE_TIMEZONES.includes(
+    timezone as (typeof PROFILE_TIMEZONES)[number],
+  )
+    ? PROFILE_TIMEZONES
+    : ([timezone, ...PROFILE_TIMEZONES] as const);
 
   function toggleMember(id: string) {
     setAssignedMemberIds((prev) =>
@@ -627,7 +775,9 @@ function CreateProfileDialog({
           });
         }}
       >
-        <h3 className="text-lg font-semibold text-slate-900">Add profile</h3>
+        <h3 className="text-lg font-semibold text-slate-900">
+          {mode === "edit" ? "Edit profile" : "Add profile"}
+        </h3>
         {error ? (
           <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
             {error}
@@ -716,20 +866,14 @@ function CreateProfileDialog({
         </label>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className="block text-sm">
+          <div className="block text-sm">
             <span className="mb-1 block font-medium text-slate-700">Country</span>
-            <select
+            <CountrySelect
               value={country}
-              onChange={(e) => setCountry(e.target.value)}
-              className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
-            >
-              {PROFILE_COUNTRIES.map((c) => (
-                <option key={c.code} value={c.code}>
-                  {countryFlag(c.code)} {c.label}
-                </option>
-              ))}
-            </select>
-          </label>
+              onChange={setCountry}
+              countries={PROFILE_COUNTRIES}
+            />
+          </div>
           <label className="block text-sm">
             <span className="mb-1 block font-medium text-slate-700">
               Timezone
@@ -739,7 +883,7 @@ function CreateProfileDialog({
               onChange={(e) => setTimezone(e.target.value)}
               className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
             >
-              {PROFILE_TIMEZONES.map((tz) => (
+              {timezoneOptions.map((tz) => (
                 <option key={tz} value={tz}>
                   {tz}
                 </option>
@@ -832,7 +976,13 @@ function CreateProfileDialog({
             disabled={pending}
             className="h-10 rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
           >
-            {pending ? "Creating…" : "Create profile"}
+            {pending
+              ? mode === "edit"
+                ? "Saving…"
+                : "Creating…"
+              : mode === "edit"
+                ? "Save changes"
+                : "Create profile"}
           </button>
         </div>
       </form>
@@ -1109,6 +1259,303 @@ function ExperienceEditor({
                 }
               />
               Currently working here
+            </label>
+
+            <div className="flex justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditing(null);
+                  setError(null);
+                }}
+                className="h-10 rounded-xl px-4 text-sm font-medium text-slate-600 hover:bg-slate-100"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={pending}
+                className="h-10 rounded-xl bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+              >
+                {pending ? "Saving…" : editing.id ? "Save" : "Add"}
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function formatEducationRange(start: string, end: string) {
+  if (!start) return end || "—";
+  return `${start} – ${end || "Present"}`;
+}
+
+function EducationEditor({
+  profileId,
+  education,
+  pending,
+  startTransition,
+  onDone,
+}: {
+  profileId: string;
+  education: {
+    id: string;
+    school: string;
+    degree: string;
+    start: string;
+    end: string;
+  }[];
+  pending: boolean;
+  startTransition: (fn: () => void) => void;
+  onDone: () => void;
+}) {
+  const [editing, setEditing] = useState<{
+    id?: string;
+    school: string;
+    degree: string;
+    startMonth: string;
+    endMonth: string;
+    current: boolean;
+  } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  function openCreate() {
+    setError(null);
+    setEditing({
+      school: "",
+      degree: "",
+      startMonth: "",
+      endMonth: "",
+      current: false,
+    });
+  }
+
+  function openEdit(e: {
+    id: string;
+    school: string;
+    degree: string;
+    start: string;
+    end: string;
+  }) {
+    setError(null);
+    setEditing({
+      id: e.id,
+      school: e.school,
+      degree: e.degree,
+      startMonth: e.start,
+      endMonth: e.end,
+      current: !e.end,
+    });
+  }
+
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          Education
+        </p>
+        <button
+          type="button"
+          onClick={openCreate}
+          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50"
+        >
+          <Plus className="size-3.5" />
+          Add
+        </button>
+      </div>
+
+      {education.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-slate-200 px-3 py-4 text-center text-sm text-slate-500">
+          No education yet
+        </p>
+      ) : (
+        <ul className="space-y-2">
+          {education.map((e) => (
+            <li
+              key={e.id}
+              className="rounded-xl border border-slate-100 px-3 py-2"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-900">
+                    {e.school}
+                  </p>
+                  {e.degree ? (
+                    <p className="text-xs text-slate-500">{e.degree}</p>
+                  ) : null}
+                  <p className="text-xs text-slate-400">
+                    {formatEducationRange(e.start, e.end)}
+                  </p>
+                </div>
+                <div className="flex shrink-0 gap-1">
+                  <button
+                    type="button"
+                    title="Edit"
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                    onClick={() => openEdit(e)}
+                  >
+                    <Pencil className="size-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    title="Delete"
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                    onClick={() => {
+                      if (!confirm(`Delete education at ${e.school}?`)) return;
+                      setError(null);
+                      startTransition(async () => {
+                        const result = await deleteProfileEducation({
+                          profileId,
+                          educationId: e.id,
+                        });
+                        if (!result.ok) {
+                          setError(result.error);
+                          return;
+                        }
+                        onDone();
+                      });
+                    }}
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {error ? (
+        <p className="mt-2 text-xs text-red-600">{error}</p>
+      ) : null}
+
+      {editing ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+          <form
+            className="w-full max-w-md space-y-3 rounded-2xl bg-white p-5 shadow-xl"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const payload = {
+                school: editing.school,
+                degree: editing.degree,
+                startMonth: editing.startMonth,
+                endMonth: editing.current ? "" : editing.endMonth,
+              };
+              setError(null);
+              startTransition(async () => {
+                const result = editing.id
+                  ? await updateProfileEducation({
+                      profileId,
+                      educationId: editing.id,
+                      ...payload,
+                    })
+                  : await addProfileEducation({ profileId, ...payload });
+                if (!result.ok) {
+                  setError(result.error);
+                  return;
+                }
+                setEditing(null);
+                onDone();
+              });
+            }}
+          >
+            <h3 className="text-lg font-semibold text-slate-900">
+              {editing.id ? "Edit education" : "Add education"}
+            </h3>
+            {error ? (
+              <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+                {error}
+              </p>
+            ) : null}
+
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-slate-700">
+                School
+              </span>
+              <input
+                value={editing.school}
+                onChange={(e) =>
+                  setEditing((prev) =>
+                    prev ? { ...prev, school: e.target.value } : prev,
+                  )
+                }
+                required
+                placeholder="UMFST-UMCH University"
+                className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
+              />
+            </label>
+
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-slate-700">
+                Degree
+              </span>
+              <input
+                value={editing.degree}
+                onChange={(e) =>
+                  setEditing((prev) =>
+                    prev ? { ...prev, degree: e.target.value } : prev,
+                  )
+                }
+                placeholder="B.Sc. Computer Science"
+                className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
+              />
+            </label>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block text-sm">
+                <span className="mb-1 block font-medium text-slate-700">
+                  Start
+                </span>
+                <input
+                  type="month"
+                  value={editing.startMonth}
+                  onChange={(e) =>
+                    setEditing((prev) =>
+                      prev ? { ...prev, startMonth: e.target.value } : prev,
+                    )
+                  }
+                  required
+                  className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm"
+                />
+              </label>
+              <label className="block text-sm">
+                <span className="mb-1 block font-medium text-slate-700">
+                  End
+                </span>
+                <input
+                  type="month"
+                  value={editing.endMonth}
+                  disabled={editing.current}
+                  onChange={(e) =>
+                    setEditing((prev) =>
+                      prev ? { ...prev, endMonth: e.target.value } : prev,
+                    )
+                  }
+                  required={!editing.current}
+                  className="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm disabled:bg-slate-50 disabled:text-slate-400"
+                />
+              </label>
+            </div>
+
+            <label className="flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={editing.current}
+                onChange={(e) =>
+                  setEditing((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          current: e.target.checked,
+                          endMonth: e.target.checked ? "" : prev.endMonth,
+                        }
+                      : prev,
+                  )
+                }
+              />
+              Currently studying here
             </label>
 
             <div className="flex justify-end gap-2 pt-1">

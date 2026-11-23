@@ -8,6 +8,16 @@ export type ProfileCertification = {
   date: string;
 };
 
+export type ProfileEducation = {
+  id: string;
+  school: string;
+  degree: string;
+  /** YYYY-MM */
+  start: string;
+  /** YYYY-MM or empty = Present */
+  end: string;
+};
+
 export function normalizeProfileCertifications(
   raw: unknown,
 ): ProfileCertification[] {
@@ -22,6 +32,26 @@ export function normalizeProfileCertifications(
       id: String(obj.id || `legacy-${index}`),
       name,
       date: String(obj.date || "").trim(),
+    });
+  });
+  return out;
+}
+
+export function normalizeProfileEducation(raw: unknown): ProfileEducation[] {
+  if (!Array.isArray(raw)) return [];
+  const out: ProfileEducation[] = [];
+  raw.forEach((item, index) => {
+    if (!item || typeof item !== "object") return;
+    const obj = item as Record<string, unknown>;
+    const school = String(obj.school || obj.institution || "").trim();
+    const degree = String(obj.degree || "").trim();
+    if (!school && !degree) return;
+    out.push({
+      id: String(obj.id || `legacy-${index}`),
+      school,
+      degree,
+      start: String(obj.start || "").trim(),
+      end: String(obj.end || "").trim(),
     });
   });
   return out;
@@ -54,6 +84,7 @@ export async function getProfilesList(
     orderBy: [{ starred: "desc" }, { code: "asc" }],
     include: {
       _count: { select: { processes: true, experiences: true } },
+      assignedMembers: { select: { id: true } },
     },
   });
 
@@ -85,6 +116,8 @@ export async function getProfilesList(
       githubUrl: p.githubUrl,
       resumeFileUrl: p.resumeFileUrl,
       starred: p.starred,
+      interviewerId: p.interviewerId,
+      assignedMemberIds: p.assignedMembers.map((m) => m.id),
       processCount: p._count.processes,
       experienceCount: p._count.experiences,
     })),
