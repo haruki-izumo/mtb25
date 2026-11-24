@@ -7,18 +7,13 @@ import {
 import { requireSession } from "@/lib/auth-helpers";
 import {
   getApplicationsPageData,
-  type ApplicationListState,
+  parseApplicationDateRange,
 } from "@/lib/applications-data";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 function first(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
-}
-
-function parseState(value: string | undefined): ApplicationListState {
-  if (value === "submitted" || value === "open") return value;
-  return "all";
 }
 
 export default async function ApplicationsPage({
@@ -33,7 +28,9 @@ export default async function ApplicationsPage({
     role: session.user.role,
     profileId: first(sp.profileId),
     q: first(sp.q),
-    state: parseState(first(sp.state)),
+    range: parseApplicationDateRange(first(sp.range)),
+    from: first(sp.from),
+    to: first(sp.to),
   });
 
   return (
@@ -55,8 +52,6 @@ export default async function ApplicationsPage({
         <ApplicationsView
           applications={data.applications}
           totalCount={data.totalCount}
-          submittedCount={data.submittedCount}
-          openCount={data.openCount}
           truncated={data.truncated}
           readOnly={session.user.role === "INTERVIEWER"}
         />

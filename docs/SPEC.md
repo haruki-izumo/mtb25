@@ -51,7 +51,7 @@ status pipeline until it ends in an offer or is closed.
   bookedById (User), outcome (PENDING|PASSED|FAILED|RESCHEDULED|CANCELED|NO_SHOW),
   rating Int? (1-5), feedback text?, createdAt
 - Announcement: id, title, body, createdAt (for "Team updates" panel)
-- Application: id, profileId, company, jobTitle, url, status, appliedAt, submitted.
+- Application: id, profileId, company, jobTitle, url, status, appliedAt.
   Rows are created by the resume-generator extension. The Application page lists them per profile.
 
 ## Process status pipeline
@@ -103,8 +103,10 @@ Put status/group definitions in one config file (lib/status.ts) with label, icon
    Editing a round opens a dialog (outcome, rating, feedback, reschedule).
 5. Application (/applications): sidebar lists accessible profiles with counts.
    Main list is every extension generation for the selected profile (or all of them):
-   company, role, job link, submitted flag, status, resume and cover PDFs.
-   Admins and members can mark submitted and change status. Interviewers are read-only
+   company, role, job link, status, resume and cover PDFs.
+   Date range filter: All time / Today / This week / This month / Custom (From→To),
+   evaluated in the user's timezone against createdAt.
+   Admins and members can change status. Interviewers are read-only
    and only see profiles they handle.
 6. Profiles (/profiles): sidebar with All / Starred / by country (flag + count).
    Table (Name with flag, Email, Star) with grid/list toggle and search.

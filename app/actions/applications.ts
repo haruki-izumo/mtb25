@@ -11,11 +11,6 @@ const statusSchema = z.object({
   status: z.enum(APPLICATION_STATUSES),
 });
 
-const submittedSchema = z.object({
-  applicationId: z.string().min(1),
-  submitted: z.boolean(),
-});
-
 async function loadApplicationForUser(applicationId: string) {
   const session = await requireSession();
   const application = await prisma.application.findUnique({
@@ -48,37 +43,6 @@ export async function updateApplicationStatus(input: {
     return {
       ok: false,
       error: err instanceof Error ? err.message : "Failed to update status",
-    };
-  }
-}
-
-export async function setApplicationSubmitted(input: {
-  applicationId: string;
-  submitted: boolean;
-}): Promise<{ ok: true } | { ok: false; error: string }> {
-  try {
-    const parsed = submittedSchema.parse(input);
-    const existing = await loadApplicationForUser(parsed.applicationId);
-    await prisma.application.update({
-      where: { id: parsed.applicationId },
-      data: {
-        submitted: parsed.submitted,
-        ...(parsed.submitted
-          ? {
-              applied: true,
-              appliedAt: existing.appliedAt ?? new Date(),
-              ...(existing.status === "SAVED" ? { status: "APPLIED" as const } : {}),
-            }
-          : {}),
-      },
-    });
-    revalidatePath("/applications");
-    return { ok: true };
-  } catch (err) {
-    return {
-      ok: false,
-      error:
-        err instanceof Error ? err.message : "Failed to update submission",
     };
   }
 }

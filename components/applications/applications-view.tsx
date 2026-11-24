@@ -5,10 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ExternalLink, FileText } from "lucide-react";
 import type { ApplicationStatus } from "@prisma/client";
-import {
-  setApplicationSubmitted,
-  updateApplicationStatus,
-} from "@/app/actions/applications";
+import { updateApplicationStatus } from "@/app/actions/applications";
 import {
   APPLICATION_STATUSES,
   applicationStatusStyle,
@@ -30,7 +27,6 @@ type ApplicationRow = {
   jobTitle: string;
   url: string | null;
   status: ApplicationStatus;
-  submitted: boolean;
   mode: string | null;
   resumeTemplate: string | null;
   resumePdfUrl: string | null;
@@ -48,15 +44,11 @@ type ApplicationRow = {
 export function ApplicationsView({
   applications,
   totalCount,
-  submittedCount,
-  openCount,
   truncated,
   readOnly,
 }: {
   applications: ApplicationRow[];
   totalCount: number;
-  submittedCount: number;
-  openCount: number;
   truncated: boolean;
   readOnly: boolean;
 }) {
@@ -64,7 +56,6 @@ export function ApplicationsView({
   const searchParams = useSearchParams();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const state = searchParams.get("state") || "all";
 
   function push(next: Record<string, string | null>) {
     const params = new URLSearchParams(searchParams.toString());
@@ -92,6 +83,8 @@ export function ApplicationsView({
     });
   }
 
+  const range = searchParams.get("range") || "all";
+
   return (
     <div className={cn("space-y-4", pending && "opacity-70")}>
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -99,7 +92,6 @@ export function ApplicationsView({
           <h1 className="text-xl font-semibold text-slate-900">Applications</h1>
           <p className="text-sm text-slate-500">
             {totalCount} from the resume extension
-            {submittedCount > 0 ? ` · ${submittedCount} submitted` : ""}
           </p>
         </div>
         <input
@@ -115,26 +107,72 @@ export function ApplicationsView({
         />
       </div>
 
-      <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1">
-        {(
-          [
-            ["all", `All ${totalCount}`],
-            ["submitted", `Submitted ${submittedCount}`],
-            ["open", `Not submitted ${openCount}`],
-          ] as const
-        ).map(([id, label]) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => push({ state: id === "all" ? null : id })}
-            className={cn(
-              "rounded-lg px-3 py-1.5 text-xs font-medium",
-              state === id ? "bg-white text-slate-900 shadow-sm" : "text-slate-500",
-            )}
-          >
-            {label}
-          </button>
-        ))}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1">
+          {(
+            [
+              ["all", "All time"],
+              ["today", "Today"],
+              ["week", "This week"],
+              ["month", "This month"],
+              ["custom", "Custom"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() =>
+                push({
+                  range: id === "all" ? null : id,
+                  ...(id === "custom"
+                    ? {}
+                    : { from: null, to: null }),
+                })
+              }
+              className={cn(
+                "rounded-lg px-3 py-1.5 text-xs font-medium transition",
+                range === id
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-500 hover:text-slate-800",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {range === "custom" ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-1.5 text-xs text-slate-500">
+              From
+              <input
+                type="date"
+                value={searchParams.get("from") ?? ""}
+                onChange={(e) =>
+                  push({
+                    range: "custom",
+                    from: e.target.value || null,
+                  })
+                }
+                className="h-9 rounded-xl border border-slate-200 bg-white px-2 text-sm text-slate-800"
+              />
+            </label>
+            <label className="flex items-center gap-1.5 text-xs text-slate-500">
+              To
+              <input
+                type="date"
+                value={searchParams.get("to") ?? ""}
+                onChange={(e) =>
+                  push({
+                    range: "custom",
+                    to: e.target.value || null,
+                  })
+                }
+                className="h-9 rounded-xl border border-slate-200 bg-white px-2 text-sm text-slate-800"
+              />
+            </label>
+          </div>
+        ) : null}
       </div>
 
       {error ? (
@@ -162,7 +200,6 @@ export function ApplicationsView({
                 <th className="px-4 py-3">When</th>
                 <th className="px-4 py-3">Profile</th>
                 <th className="px-4 py-3">Company / role</th>
-                <th className="px-4 py-3">Submission</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Files</th>
               </tr>
@@ -204,40 +241,6 @@ export function ApplicationsView({
                           Job link
                         </a>
                       ) : null}
-                    </td>
-                    <td className="px-4 py-3">
-                      {readOnly ? (
-                        <span
-                          className={cn(
-                            "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold",
-                            row.submitted
-                              ? "bg-emerald-50 text-emerald-700"
-                              : "bg-amber-50 text-amber-800",
-                          )}
-                        >
-                          {row.submitted ? "Submitted" : "Not submitted"}
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            run(() =>
-                              setApplicationSubmitted({
-                                applicationId: row.id,
-                                submitted: !row.submitted,
-                              }),
-                            )
-                          }
-                          className={cn(
-                            "rounded-full px-2.5 py-1 text-xs font-semibold",
-                            row.submitted
-                              ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                              : "bg-amber-50 text-amber-800 hover:bg-amber-100",
-                          )}
-                        >
-                          {row.submitted ? "Submitted" : "Not submitted"}
-                        </button>
-                      )}
                     </td>
                     <td className="px-4 py-3">
                       {readOnly ? (
