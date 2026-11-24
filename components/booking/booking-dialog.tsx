@@ -7,12 +7,16 @@ import {
   bookRound,
   getProfileProcessesForBooking,
 } from "@/app/actions/booking";
-import { uploadResumeFile } from "@/app/actions/uploads";
+import {
+  extractJobDescriptionFile,
+  uploadResumeFile,
+} from "@/app/actions/uploads";
 import {
   BOOKING_DURATIONS,
   getBookableSlots,
   type BookingDuration,
 } from "@/lib/availability";
+import { isJobDescriptionFile } from "@/lib/job-description";
 import { ROUND_TYPE_CONFIG } from "@/lib/rounds";
 import type { RoundType } from "@prisma/client";
 
@@ -320,28 +324,39 @@ export function BookingDialog({
                 />
                 <div className="space-y-1.5">
                   <label className="block text-xs font-medium text-slate-600">
-                    Job description (.txt)
+                    Job description (.txt / .pdf)
                   </label>
                   <input
                     type="file"
-                    accept=".txt,text/plain"
+                    accept=".txt,.pdf,text/plain,application/pdf"
                     className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-200 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-slate-800"
                     onChange={(e) => {
-                      const file = e.target.files?.[0];
+                      const input = e.target;
+                      const file = input.files?.[0];
                       if (!file) return;
                       setError(null);
+                      if (!isJobDescriptionFile(file)) {
+                        setError(
+                          "Job description must be a .txt or .pdf file",
+                        );
+                        setJobDescription("");
+                        setJobDescriptionFileName(null);
+                        input.value = "";
+                        return;
+                      }
                       startTransition(async () => {
-                        const text = (await file.text()).trim();
-                        if (text.length < 20) {
-                          setError(
-                            "Job description file must have at least 20 characters",
-                          );
+                        const fd = new FormData();
+                        fd.set("file", file);
+                        const result = await extractJobDescriptionFile(fd);
+                        if (!result.ok) {
+                          setError(result.error);
                           setJobDescription("");
                           setJobDescriptionFileName(null);
+                          input.value = "";
                           return;
                         }
-                        setJobDescription(text);
-                        setJobDescriptionFileName(file.name);
+                        setJobDescription(result.text);
+                        setJobDescriptionFileName(result.fileName);
                       });
                     }}
                   />
@@ -349,7 +364,11 @@ export function BookingDialog({
                     <p className="text-xs text-emerald-700">
                       Selected: {jobDescriptionFileName}
                     </p>
-                  ) : null}
+                  ) : (
+                    <p className="text-xs text-slate-400">
+                      Required — upload a .txt or .pdf job description
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <label className="block text-xs font-medium text-slate-600">
@@ -451,7 +470,7 @@ export function BookingDialog({
                   return;
                 }
                 if (!jobDescriptionFileName || jobDescription.trim().length < 20) {
-                  setError("Select a .txt job description file");
+                  setError("Select a .txt or .pdf job description file");
                   return;
                 }
                 if (!resumeFileUrl) {
