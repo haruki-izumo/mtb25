@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireSession, assertCanAccessProfile } from "@/lib/auth-helpers";
+import { requireSession, assertCanEditAvailability } from "@/lib/auth-helpers";
 
 const ruleSchema = z.object({
   profileId: z.string().min(1),
@@ -20,7 +20,7 @@ export async function createAvailabilityRule(
     throw new Error("End time must be after start time");
   }
   const session = await requireSession();
-  await assertCanAccessProfile(
+  await assertCanEditAvailability(
     session.user.id,
     session.user.role,
     parsed.profileId,
@@ -52,7 +52,7 @@ export async function updateAvailabilityRule(input: {
     where: { id: parsed.id },
   });
   if (!rule) throw new Error("Rule not found");
-  await assertCanAccessProfile(
+  await assertCanEditAvailability(
     session.user.id,
     session.user.role,
     rule.profileId,
@@ -74,7 +74,7 @@ export async function deleteAvailabilityRule(id: string) {
   const session = await requireSession();
   const rule = await prisma.availabilityRule.findUnique({ where: { id } });
   if (!rule) throw new Error("Rule not found");
-  await assertCanAccessProfile(
+  await assertCanEditAvailability(
     session.user.id,
     session.user.role,
     rule.profileId,
@@ -109,7 +109,7 @@ export async function addOpenOverride(input: z.infer<typeof rangeSchema>) {
   }
 
   const session = await requireSession();
-  await assertCanAccessProfile(
+  await assertCanEditAvailability(
     session.user.id,
     session.user.role,
     parsed.profileId,
@@ -153,7 +153,7 @@ export async function addBlockOverride(input: z.infer<typeof rangeSchema>) {
   }
 
   const session = await requireSession();
-  await assertCanAccessProfile(
+  await assertCanEditAvailability(
     session.user.id,
     session.user.role,
     parsed.profileId,
@@ -176,7 +176,7 @@ export async function deleteAvailabilityOverride(id: string) {
   const session = await requireSession();
   const row = await prisma.availabilityOverride.findUnique({ where: { id } });
   if (!row) throw new Error("Override not found");
-  await assertCanAccessProfile(
+  await assertCanEditAvailability(
     session.user.id,
     session.user.role,
     row.profileId,

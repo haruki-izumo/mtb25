@@ -58,6 +58,7 @@ export function AvailabilityView({
   textSummary,
   isAdmin = false,
   readOnly = false,
+  allowBooking = true,
 }: {
   mode?: "profile" | "interviewer";
   profiles: {
@@ -88,6 +89,8 @@ export function AvailabilityView({
   textSummary: string;
   isAdmin?: boolean;
   readOnly?: boolean;
+  /** Interviewers edit profile hours but do not book from this page. */
+  allowBooking?: boolean;
 }) {
   const isInterviewerMode = mode === "interviewer";
   const subjectTimezone =
@@ -97,7 +100,7 @@ export function AvailabilityView({
     : (profile?.rules ?? []);
   const canEdit = isInterviewerMode ? !!interviewer : !!profile;
   const canMutate = canEdit && !readOnly;
-  const canBook = !readOnly && !isInterviewerMode && !!profile;
+  const canBook = allowBooking && !readOnly && !isInterviewerMode && !!profile;
   const hasProfileChoices = !isInterviewerMode && profiles.length > 0;
   const router = useRouter();
   const searchParams = useSearchParams();

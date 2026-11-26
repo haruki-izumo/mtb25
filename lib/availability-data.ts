@@ -182,8 +182,6 @@ export async function getAvailabilityPageData(params: {
   role: Role;
   profileId?: string;
   weekStart?: string;
-  /** Sidebar list only. Used when an interviewer is editing their own hours. */
-  listOnly?: boolean;
 }) {
   const access = profileAccessWhere(params.userId, params.role);
   const profiles = await prisma.profile.findMany({
@@ -197,17 +195,6 @@ export async function getAvailabilityPageData(params: {
     },
     orderBy: { code: "asc" },
   });
-
-  if (params.listOnly) {
-    return {
-      mode: "profile" as const,
-      profiles,
-      profile: null,
-      weekStart: null,
-      days: [] as AvailabilityDay[],
-      textSummary: "",
-    };
-  }
 
   const requestedId = params.profileId;
   const fallbackId = profiles[0]?.id;

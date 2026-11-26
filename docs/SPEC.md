@@ -21,7 +21,7 @@ status pipeline until it ends in an offer or is closed.
 ## Roles
 - ADMIN: manages profiles, members, all interviews, and projects
 - MEMBER: books/edits interviews for profiles assigned to them; sees team calendar; projects
-- INTERVIEWER: read-only on Meetings, Interview, and Profile. No Projects and no My Team. Sees only profiles they are assigned to handle (`Profile.interviewerId`) and the meetings and processes tied to those profiles. On Availability, edits their own weekly hours; assigned profiles stay view-only.
+- INTERVIEWER: read-only on Meetings, Interview, and Profile. No Projects and no My Team. Sees only profiles they are assigned to handle (`Profile.interviewerId`) and the meetings and processes tied to those profiles. On Availability, can set availability for those profiles.
 - Members are assigned to profiles (many-to-many). Each profile has at most one interviewer
 
 ## Layout (match the screenshots' style)
@@ -95,7 +95,7 @@ Put status/group definitions in one config file (lib/status.ts) with label, icon
    Tab for editing recurring weekly rules. Button "Get availability as Text" →
    modal with copyable plain-text summary for the next 7 days in the selected timezone, e.g.
    "Mon Sep 28: 10:00am–3:00pm EST". Clicking a green slot opens the booking dialog.
-   Interviewers land on their own editable availability. Choosing an assigned profile is view-only.
+   Interviewers edit availability for profiles they handle. They do not book from this page.
 4. Interview (/interviews): sidebar = status groups with counts (see pipeline).
    Top bar: date range segmented control (All time/Today/7d/30d/90d/1y), From→To pickers,
    search, sort (date asc/desc), "Advanced filters" (profile, member, round type).
