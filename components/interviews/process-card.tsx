@@ -554,6 +554,9 @@ function RoundEditDialog({
               ))}
             </div>
           </div>
+          <p className="text-xs text-slate-500">
+            Saving a rating and feedback on a pending meeting moves this interview to Done.
+          </p>
           <label className="block text-sm">
             <span className="mb-1 block font-medium text-slate-700">
               Feedback

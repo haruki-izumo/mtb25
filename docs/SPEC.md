@@ -58,9 +58,11 @@ status pipeline until it ends in an offer or is closed.
 Grouped exactly like the Interviews sidebar:
 - ALL, OFFER
 - UPCOMING: FIRST_STEP, NEXT_ROUND
-- FOLLOW_UP: NEXT_STEP, ASSESSMENT, DONE, RESCHEDULE
-- "Needs update" (derived, red-bordered item): any process with a Round whose endAt < now
-  and outcome = PENDING
+- FOLLOW_UP: NEXT_STEP, ASSESSMENT, RESCHEDULE
+- DONE: processes with status DONE. Saving a rating and feedback on a pending round
+  marks that round passed and sets the process to DONE.
+- "Needs update" (derived, red-bordered item): any process with a Round whose endAt < now,
+  outcome = PENDING, and missing a rating or feedback
 - CLOSED: SKIPPED, FAILED, CANCELED, NOT_HANDLED, NOT_RESCHEDULED
 Each item shows a live count. Status can be changed from a pill dropdown on each card.
 Put status/group definitions in one config file (lib/status.ts) with label, icon, color.

@@ -15,6 +15,8 @@ import {
   zonedDateKey,
   type BookingDuration,
 } from "@/lib/availability";
+import { roundHasRatingAndFeedback } from "@/lib/rounds";
+import { getStatusesInGroup } from "@/lib/status";
 
 const statusSchema = z.object({
   processId: z.string().min(1),
@@ -141,7 +143,7 @@ export async function updateRound(input: {
   const session = await requireSession();
   const round = await prisma.round.findUnique({
     where: { id: parsed.roundId },
-    include: { process: { select: { profileId: true } } },
+    include: { process: { select: { id: true, profileId: true, status: true } } },
   });
   if (!round) throw new Error("Round not found");
   await assertCanAccessProfile(
@@ -149,13 +151,37 @@ export async function updateRound(input: {
     session.user.role,
     round.process.profileId,
   );
-  await prisma.round.update({
-    where: { id: parsed.roundId },
-    data: {
-      outcome: parsed.outcome,
-      rating: parsed.rating,
-      feedback: parsed.feedback,
-    },
+
+  const feedback = parsed.feedback?.trim() ? parsed.feedback.trim() : null;
+  const completed = roundHasRatingAndFeedback({
+    rating: parsed.rating,
+    feedback,
+  });
+  const leaveTerminalStatus = new Set<ProcessStatus>([
+    ...getStatusesInGroup("OFFER"),
+    ...getStatusesInGroup("CLOSED"),
+  ]).has(round.process.status);
+  const outcome =
+    completed && parsed.outcome === "PENDING" && !leaveTerminalStatus
+      ? "PASSED"
+      : parsed.outcome;
+  const markDone = completed && outcome === "PASSED" && !leaveTerminalStatus;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.round.update({
+      where: { id: parsed.roundId },
+      data: {
+        outcome,
+        rating: parsed.rating,
+        feedback,
+      },
+    });
+    if (markDone) {
+      await tx.interviewProcess.update({
+        where: { id: round.process.id },
+        data: { status: "DONE" },
+      });
+    }
   });
   revalidatePath("/interviews");
   revalidatePath("/meetings");

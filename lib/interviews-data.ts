@@ -7,6 +7,7 @@ import {
 } from "date-fns";
 import { prisma } from "@/lib/prisma";
 import { memberDirectoryWhere, processAccessWhere } from "@/lib/access";
+import { roundNeedsUpdate } from "@/lib/rounds";
 import {
   STATUS_GROUPS,
   type StatusGroupId,
@@ -67,7 +68,9 @@ export async function getInterviewSidebarCounts(
     select: {
       id: true,
       status: true,
-      rounds: { select: { endAt: true, outcome: true } },
+      rounds: {
+        select: { endAt: true, outcome: true, rating: true, feedback: true },
+      },
     },
   });
 
@@ -77,6 +80,7 @@ export async function getInterviewSidebarCounts(
     UPCOMING: 0,
     FOLLOW_UP: 0,
     NEEDS_UPDATE: 0,
+    DONE: 0,
     CLOSED: 0,
   };
 
@@ -85,7 +89,7 @@ export async function getInterviewSidebarCounts(
       if (g.id === "ALL" || g.derived) continue;
       if (g.statuses.includes(p.status)) counts[g.id]++;
     }
-    if (p.rounds.some((r) => r.outcome === "PENDING" && r.endAt < now)) {
+    if (p.rounds.some((r) => roundNeedsUpdate(r, now))) {
       counts.NEEDS_UPDATE++;
     }
   }
@@ -163,7 +167,7 @@ export async function getInterviewProcesses(
 
   if (group === "NEEDS_UPDATE") {
     processes = processes.filter((p) =>
-      p.rounds.some((r) => r.outcome === "PENDING" && r.endAt < now),
+      p.rounds.some((r) => roundNeedsUpdate(r, now)),
     );
   } else if (group !== "ALL") {
     const statuses = new Set<ProcessStatus>(getStatusesInGroup(group));
@@ -196,9 +200,7 @@ export async function getInterviewProcesses(
       roundCount: p.rounds.length,
       nextRoundAt: next?.startAt.toISOString() ?? null,
       daysUntil,
-      needsUpdate: p.rounds.some(
-        (r) => r.outcome === "PENDING" && r.endAt < now,
-      ),
+      needsUpdate: p.rounds.some((r) => roundNeedsUpdate(r, now)),
       rounds: p.rounds.map((r) => ({
         id: r.id,
         roundNumber: r.roundNumber,

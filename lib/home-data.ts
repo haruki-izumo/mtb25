@@ -8,6 +8,7 @@ import {
 import type { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { profileAccessWhere } from "@/lib/access";
+import { roundNeedsUpdate } from "@/lib/rounds";
 import { getStatusesInGroup } from "@/lib/status";
 
 export async function getHomeDashboardData(userId: string, role: Role) {
@@ -37,7 +38,7 @@ export async function getHomeDashboardData(userId: string, role: Role) {
         id: true,
         status: true,
         rounds: {
-          select: { endAt: true, outcome: true },
+          select: { endAt: true, outcome: true, rating: true, feedback: true },
         },
       },
     }),
@@ -114,9 +115,7 @@ export async function getHomeDashboardData(userId: string, role: Role) {
     if (upcomingStatuses.has(p.status)) upcomingCount++;
     if (followUpStatuses.has(p.status)) followUpCount++;
     if (nextStepStatuses.has(p.status as "NEXT_STEP")) nextStepCount++;
-    if (
-      p.rounds.some((r) => r.outcome === "PENDING" && r.endAt < now)
-    ) {
+    if (p.rounds.some((r) => roundNeedsUpdate(r, now))) {
       needsUpdateCount++;
     }
   }

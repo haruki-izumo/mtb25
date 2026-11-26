@@ -27,6 +27,7 @@ export function StatusSidebar({
       {STATUS_GROUPS.map((group) => {
         const isActive = active === group.id;
         const isNeeds = group.id === "NEEDS_UPDATE";
+        const isDone = group.id === "DONE";
         return (
           <Link
             key={group.id}
@@ -38,6 +39,8 @@ export function StatusSidebar({
                 : "text-slate-600 hover:bg-white/70",
               isNeeds && "border border-red-200",
               isNeeds && isActive && "border-red-400 ring-red-200",
+              isDone && "border border-emerald-200",
+              isDone && isActive && "border-emerald-400 ring-emerald-200",
             )}
           >
             <span className="flex items-center gap-2">
@@ -52,7 +55,9 @@ export function StatusSidebar({
                 "rounded-full px-2 py-0.5 text-xs font-semibold",
                 isNeeds
                   ? "bg-red-50 text-red-600"
-                  : "bg-slate-100 text-slate-600",
+                  : isDone
+                    ? "bg-emerald-50 text-emerald-700"
+                    : "bg-slate-100 text-slate-600",
               )}
             >
               {counts[group.id]}

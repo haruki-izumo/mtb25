@@ -38,6 +38,30 @@ export const ROUND_OUTCOME_CONFIG: Record<
   NO_SHOW: { label: "No show", icon: XCircle, color: "#dc2626" },
 };
 
+export function roundHasRatingAndFeedback(round: {
+  rating: number | null;
+  feedback: string | null;
+}): boolean {
+  return round.rating != null && (round.feedback?.trim().length ?? 0) > 0;
+}
+
+/** Past meeting still waiting on a rating and feedback. */
+export function roundNeedsUpdate(
+  round: {
+    endAt: Date;
+    outcome: RoundOutcome;
+    rating: number | null;
+    feedback: string | null;
+  },
+  now: Date,
+): boolean {
+  return (
+    round.outcome === "PENDING" &&
+    round.endAt < now &&
+    !roundHasRatingAndFeedback(round)
+  );
+}
+
 /** Event color for calendar: yellow scheduled, cyan recruiter, gray canceled */
 export function roundEventStyle(type: RoundType, outcome: RoundOutcome) {
   if (outcome === "CANCELED") {

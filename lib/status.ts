@@ -20,6 +20,7 @@ export type StatusGroupId =
   | "UPCOMING"
   | "FOLLOW_UP"
   | "NEEDS_UPDATE"
+  | "DONE"
   | "CLOSED";
 
 export type StatusConfig = {
@@ -80,7 +81,7 @@ export const STATUS_CONFIG: Record<ProcessStatus, StatusConfig> = {
     label: "Done",
     icon: CheckCircle2,
     color: "#16a34a",
-    group: "FOLLOW_UP",
+    group: "DONE",
   },
   RESCHEDULE: {
     status: "RESCHEDULE",
@@ -147,7 +148,7 @@ export const STATUS_GROUPS: StatusGroupConfig[] = [
   {
     id: "FOLLOW_UP",
     label: "Follow-up",
-    statuses: ["NEXT_STEP", "ASSESSMENT", "DONE", "RESCHEDULE"],
+    statuses: ["NEXT_STEP", "ASSESSMENT", "RESCHEDULE"],
     color: "#ca8a04",
   },
   {
@@ -156,6 +157,12 @@ export const STATUS_GROUPS: StatusGroupConfig[] = [
     statuses: [],
     derived: true,
     color: "#dc2626",
+  },
+  {
+    id: "DONE",
+    label: "Done",
+    statuses: ["DONE"],
+    color: "#16a34a",
   },
   {
     id: "CLOSED",
