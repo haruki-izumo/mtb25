@@ -3,7 +3,10 @@ import Link from "next/link";
 import { AppShell } from "@/components/layout/app-shell";
 import { AvailabilityView } from "@/components/availability/availability-view";
 import { requireSession } from "@/lib/auth-helpers";
-import { getAvailabilityPageData } from "@/lib/availability-data";
+import {
+  getAvailabilityPageData,
+  getInterviewerAvailabilityData,
+} from "@/lib/availability-data";
 import { countryFlag } from "@/lib/timezone";
 import { cn } from "@/lib/utils";
 
@@ -20,53 +23,82 @@ export default async function AvailabilityPage({
 }) {
   const session = await requireSession();
   const sp = await searchParams;
-  const data = await getAvailabilityPageData({
-    userId: session.user.id,
-    role: session.user.role,
-    profileId: first(sp.profileId),
-    weekStart: first(sp.week),
-  });
+  const profileId = first(sp.profileId);
+  const week = first(sp.week);
+  const isInterviewer = session.user.role === "INTERVIEWER";
+  const editingOwn = isInterviewer && !profileId;
 
-  const readOnly = session.user.role === "INTERVIEWER";
+  const [data, own] = await Promise.all([
+    getAvailabilityPageData({
+      userId: session.user.id,
+      role: session.user.role,
+      profileId: editingOwn ? undefined : profileId,
+      weekStart: week,
+      listOnly: editingOwn,
+    }),
+    editingOwn
+      ? getInterviewerAvailabilityData({
+          userId: session.user.id,
+          weekStart: week,
+        })
+      : Promise.resolve(null),
+  ]);
+
+  const readOnly = isInterviewer && !editingOwn;
+
+  function hrefFor(nextProfileId?: string) {
+    const params = new URLSearchParams();
+    if (nextProfileId) params.set("profileId", nextProfileId);
+    if (week) params.set("week", week);
+    const q = params.toString();
+    return q ? `/availability?${q}` : "/availability";
+  }
 
   return (
     <AppShell
       sidebar={
         <div className="space-y-3">
           <h2 className="text-sm font-semibold text-slate-900">
-            {readOnly ? "Your profiles" : "Profiles"}
+            {isInterviewer ? "Availability" : "Profiles"}
           </h2>
           <p className="text-xs text-slate-500">
-            {readOnly
-              ? "Availability for profiles you are assigned to interview."
+            {isInterviewer
+              ? "Set your own hours. Assigned profiles are view only."
               : "Choose a profile to view and edit weekly availability."}
           </p>
+          {isInterviewer ? (
+            <Link
+              href={hrefFor()}
+              className={cn(
+                "block rounded-xl px-3 py-2 text-sm transition hover:bg-white hover:shadow-sm",
+                editingOwn
+                  ? "bg-white font-semibold shadow-sm ring-1 ring-slate-200"
+                  : "text-slate-600",
+              )}
+            >
+              My availability
+            </Link>
+          ) : null}
           <ul className="space-y-1">
-            {data.profiles.map((p) => {
-              const params = new URLSearchParams();
-              params.set("profileId", p.id);
-              const week = first(sp.week);
-              if (week) params.set("week", week);
-              return (
-                <li key={p.id}>
-                  <Link
-                    href={`/availability?${params.toString()}`}
-                    className={cn(
-                      "block rounded-xl px-3 py-2 text-sm transition hover:bg-white hover:shadow-sm",
-                      data.profile?.id === p.id
-                        ? "bg-white font-semibold shadow-sm ring-1 ring-slate-200"
-                        : "text-slate-600",
-                    )}
-                  >
-                    {countryFlag(p.country)} {p.code}.{p.displayName}
-                  </Link>
-                </li>
-              );
-            })}
+            {data.profiles.map((p) => (
+              <li key={p.id}>
+                <Link
+                  href={hrefFor(p.id)}
+                  className={cn(
+                    "block rounded-xl px-3 py-2 text-sm transition hover:bg-white hover:shadow-sm",
+                    !editingOwn && data.profile?.id === p.id
+                      ? "bg-white font-semibold shadow-sm ring-1 ring-slate-200"
+                      : "text-slate-600",
+                  )}
+                >
+                  {countryFlag(p.country)} {p.code}.{p.displayName}
+                </Link>
+              </li>
+            ))}
           </ul>
-          {data.profiles.length === 0 ? (
+          {data.profiles.length === 0 && !isInterviewer ? (
             <p className="rounded-xl border border-dashed border-slate-200 px-3 py-4 text-center text-xs text-slate-500">
-              {readOnly ? "No profiles assigned to you" : "No profiles yet"}
+              No profiles yet
             </p>
           ) : null}
         </div>
@@ -78,13 +110,13 @@ export default async function AvailabilityPage({
         }
       >
         <AvailabilityView
-          mode="profile"
+          mode={editingOwn ? "interviewer" : "profile"}
           profiles={data.profiles}
-          profile={data.profile}
-          interviewer={null}
-          weekStartIso={data.weekStart}
-          days={data.days}
-          textSummary={data.textSummary}
+          profile={editingOwn ? null : data.profile}
+          interviewer={own?.interviewer ?? null}
+          weekStartIso={editingOwn ? (own?.weekStart ?? null) : data.weekStart}
+          days={editingOwn ? (own?.days ?? []) : data.days}
+          textSummary={editingOwn ? (own?.textSummary ?? "") : data.textSummary}
           isAdmin={session.user.role === "ADMIN"}
           readOnly={readOnly}
         />
