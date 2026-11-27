@@ -7,24 +7,41 @@ import {
   endOfWeek,
   format,
   isSameMonth,
-  isWithinInterval,
   startOfMonth,
   startOfWeek,
   subMonths,
 } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { cn } from "@/lib/utils";
 
-export function MiniMonth({ weekStartIso }: { weekStartIso: string }) {
+function shiftDateKey(dateKey: string, days: number) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const utc = new Date(Date.UTC(year, month - 1, day + days));
+  return utc.toISOString().slice(0, 10);
+}
+
+export function MiniMonth({
+  weekStartIso,
+  timeZone = DEFAULT_TIMEZONE,
+}: {
+  weekStartIso: string;
+  timeZone?: string;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const selectedWeekStart = startOfWeek(new Date(weekStartIso), {
-    weekStartsOn: 0,
-  });
-  const selectedWeekEnd = endOfWeek(selectedWeekStart, { weekStartsOn: 0 });
-  const [cursor, setCursor] = useState(startOfMonth(selectedWeekStart));
+  const weekStartKey = formatInTimeZone(
+    new Date(weekStartIso),
+    timeZone,
+    "yyyy-MM-dd",
+  );
+  const weekEndKey = shiftDateKey(weekStartKey, 6);
+  const [cursor, setCursor] = useState(() =>
+    startOfMonth(new Date(`${weekStartKey}T12:00:00`)),
+  );
 
   const monthStart = startOfMonth(cursor);
   const monthEnd = endOfMonth(cursor);
@@ -62,10 +79,8 @@ export function MiniMonth({ weekStartIso }: { weekStartIso: string }) {
       </div>
       <div className="mt-1 grid grid-cols-7 gap-1">
         {days.map((day) => {
-          const inSelected = isWithinInterval(day, {
-            start: selectedWeekStart,
-            end: selectedWeekEnd,
-          });
+          const dayKey = format(day, "yyyy-MM-dd");
+          const inSelected = dayKey >= weekStartKey && dayKey <= weekEndKey;
           return (
             <button
               key={day.toISOString()}
@@ -74,7 +89,7 @@ export function MiniMonth({ weekStartIso }: { weekStartIso: string }) {
                 const params = new URLSearchParams(searchParams.toString());
                 params.set(
                   "week",
-                  startOfWeek(day, { weekStartsOn: 0 }).toISOString(),
+                  format(startOfWeek(day, { weekStartsOn: 0 }), "yyyy-MM-dd"),
                 );
                 router.push(`/meetings?${params.toString()}`);
               }}

@@ -1,15 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  addDays,
-  addWeeks,
-  format,
-  isSameDay,
-  startOfWeek,
-  subWeeks,
-} from "date-fns";
-import { formatInTimeZone } from "date-fns-tz";
+import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { Check, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ROUND_TYPE_CONFIG, roundEventStyle } from "@/lib/rounds";
@@ -39,43 +31,61 @@ type MeetingRound = {
 
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 8); // 8–20
 
+function shiftDateKey(dateKey: string, days: number) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const utc = new Date(Date.UTC(year, month - 1, day + days));
+  return utc.toISOString().slice(0, 10);
+}
+
+function zonedNoon(dateKey: string, timeZone: string) {
+  return fromZonedTime(`${dateKey}T12:00:00`, timeZone);
+}
+
 export function WeekCalendar({
   weekStartIso,
   rounds,
   profiles,
   members,
   mode,
+  timeZone = DEFAULT_TIMEZONE,
 }: {
   weekStartIso: string;
   rounds: MeetingRound[];
   profiles: { id: string; code: string; displayName: string; country: string }[];
   members: { id: string; name: string }[];
   mode: "week" | "day";
+  timeZone?: string;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const weekStart = startOfWeek(new Date(weekStartIso), { weekStartsOn: 0 });
-  const days =
+  const tz = timeZone;
+  const weekStartKey = formatInTimeZone(new Date(weekStartIso), tz, "yyyy-MM-dd");
+  const dayParam = searchParams.get("day");
+  const dayKeys =
     mode === "day"
-      ? [new Date(searchParams.get("day") || weekStartIso)]
-      : Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+      ? [
+          dayParam && /^\d{4}-\d{2}-\d{2}$/.test(dayParam)
+            ? dayParam
+            : formatInTimeZone(new Date(), tz, "yyyy-MM-dd"),
+        ]
+      : Array.from({ length: 7 }, (_, i) => shiftDateKey(weekStartKey, i));
+  const dayKeyList = dayKeys.join(",");
   const [selected, setSelected] = useState<MeetingRound | null>(null);
   const now = new Date();
-  const tz = DEFAULT_TIMEZONE;
+  const nowKey = formatInTimeZone(now, tz, "yyyy-MM-dd");
+  const nowHour = Number(formatInTimeZone(now, tz, "H"));
+  const nowMinute = Number(formatInTimeZone(now, tz, "m"));
 
   const byDay = useMemo(() => {
+    const keys = dayKeyList.split(",").filter(Boolean);
     const map = new Map<string, MeetingRound[]>();
-    for (const day of days) {
-      const key = format(day, "yyyy-MM-dd");
-      map.set(
-        key,
-        rounds.filter((r) =>
-          isSameDay(new Date(r.startAt), day),
-        ),
-      );
+    for (const key of keys) map.set(key, []);
+    for (const round of rounds) {
+      const key = formatInTimeZone(new Date(round.startAt), tz, "yyyy-MM-dd");
+      map.get(key)?.push(round);
     }
     return map;
-  }, [days, rounds]);
+  }, [dayKeyList, rounds, tz]);
 
   function navigate(next: Record<string, string | null>) {
     const params = new URLSearchParams(searchParams.toString());
@@ -95,28 +105,32 @@ export function WeekCalendar({
           <button
             type="button"
             className="rounded-lg border border-slate-200 bg-white p-2"
-            onClick={() =>
-              navigate({
-                week: subWeeks(weekStart, 1).toISOString(),
-              })
-            }
+              onClick={() =>
+                navigate({
+                  week: shiftDateKey(weekStartKey, -7),
+                })
+              }
           >
             <ChevronLeft className="size-4" />
           </button>
           <button
             type="button"
             className="rounded-lg border border-slate-200 bg-white p-2"
-            onClick={() =>
-              navigate({
-                week: addWeeks(weekStart, 1).toISOString(),
-              })
-            }
+              onClick={() =>
+                navigate({
+                  week: shiftDateKey(weekStartKey, 7),
+                })
+              }
           >
             <ChevronRight className="size-4" />
           </button>
           <h1 className="text-lg font-semibold text-slate-900">
-            {format(weekStart, "MMM d")} –{" "}
-            {format(addDays(weekStart, 6), "MMM d, yyyy")}
+            {formatInTimeZone(zonedNoon(dayKeys[0], tz), tz, "MMM d")} –{" "}
+            {formatInTimeZone(
+              zonedNoon(dayKeys[dayKeys.length - 1], tz),
+              tz,
+              "MMM d, yyyy",
+            )}
           </h1>
         </div>
 
@@ -137,7 +151,7 @@ export function WeekCalendar({
               onClick={() =>
                 navigate({
                   mode: "day",
-                  day: format(now, "yyyy-MM-dd"),
+                  day: nowKey,
                 })
               }
               className={cn(
@@ -223,27 +237,25 @@ export function WeekCalendar({
         <div
           className="grid min-w-[900px]"
           style={{
-            gridTemplateColumns: `64px repeat(${days.length}, minmax(0, 1fr))`,
+            gridTemplateColumns: `64px repeat(${dayKeys.length}, minmax(0, 1fr))`,
           }}
         >
           <div className="border-b border-slate-100" />
-          {days.map((day) => (
+          {dayKeys.map((key) => (
             <div
-              key={day.toISOString()}
+              key={key}
               className="border-b border-l border-slate-100 px-2 py-3 text-center"
             >
               <p className="text-xs font-medium uppercase text-slate-400">
-                {format(day, "EEE")}
+                {formatInTimeZone(zonedNoon(key, tz), tz, "EEE")}
               </p>
               <p
                 className={cn(
                   "mt-0.5 text-sm font-semibold",
-                  isSameDay(day, now)
-                    ? "text-blue-600"
-                    : "text-slate-800",
+                  key === nowKey ? "text-blue-600" : "text-slate-800",
                 )}
               >
-                {format(day, "d")}
+                {formatInTimeZone(zonedNoon(key, tz), tz, "d")}
               </p>
             </div>
           ))}
@@ -254,14 +266,18 @@ export function WeekCalendar({
                 className="border-b border-slate-50 pr-2 text-right text-[11px] text-slate-400"
                 style={{ height: hourHeight }}
               >
-                {format(new Date().setHours(hour, 0, 0, 0), "h a")}
+                {formatInTimeZone(
+                  fromZonedTime(
+                    `${weekStartKey}T${String(hour).padStart(2, "0")}:00:00`,
+                    tz,
+                  ),
+                  tz,
+                  "h a",
+                )}
               </div>
-              {days.map((day) => {
-                const key = format(day, "yyyy-MM-dd");
+              {dayKeys.map((key) => {
                 const dayRounds = byDay.get(key) ?? [];
-                const showNow =
-                  isSameDay(day, now) &&
-                  now.getHours() === hour;
+                const showNow = key === nowKey && nowHour === hour;
 
                 return (
                   <div
@@ -274,16 +290,22 @@ export function WeekCalendar({
                       <div
                         className="absolute inset-x-0 z-20 border-t-2 border-red-500"
                         style={{
-                          top: `${(now.getMinutes() / 60) * 100}%`,
+                          top: `${(nowMinute / 60) * 100}%`,
                         }}
                       />
                     ) : null}
                     {dayRounds
-                      .filter((r) => new Date(r.startAt).getHours() === hour)
+                      .filter(
+                        (r) =>
+                          Number(formatInTimeZone(new Date(r.startAt), tz, "H")) ===
+                          hour,
+                      )
                       .map((r, idx, arr) => {
                         const start = new Date(r.startAt);
                         const end = new Date(r.endAt);
-                        const top = (start.getMinutes() / 60) * hourHeight;
+                        const top =
+                          (Number(formatInTimeZone(start, tz, "m")) / 60) *
+                          hourHeight;
                         const durationHrs =
                           (end.getTime() - start.getTime()) / 3_600_000;
                         const height = Math.max(durationHrs * hourHeight, 28);

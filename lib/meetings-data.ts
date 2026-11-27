@@ -1,13 +1,38 @@
-import {
-  addDays,
-  endOfDay,
-  endOfWeek,
-  startOfDay,
-  startOfWeek,
-} from "date-fns";
+import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import type { Role, RoundType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { memberDirectoryWhere, processAccessWhere } from "@/lib/access";
+import { DEFAULT_TIMEZONE } from "@/lib/timezone";
+
+function shiftDateKey(dateKey: string, days: number) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const utc = new Date(Date.UTC(year, month - 1, day + days));
+  return utc.toISOString().slice(0, 10);
+}
+
+/** Sunday–Saturday containing `anchor`, as instants in `timeZone`. */
+function weekRangeInZone(anchor: Date, timeZone: string) {
+  const anchorKey = formatInTimeZone(anchor, timeZone, "yyyy-MM-dd");
+  // date-fns "i" is ISO weekday: Monday 1 … Sunday 7. Sunday starts the grid.
+  const dow = Number(formatInTimeZone(anchor, timeZone, "i")) % 7;
+  const weekStartKey = shiftDateKey(anchorKey, -dow);
+  const weekEndKey = shiftDateKey(weekStartKey, 6);
+  return {
+    weekStartKey,
+    start: fromZonedTime(`${weekStartKey}T00:00:00`, timeZone),
+    end: fromZonedTime(`${weekEndKey}T23:59:59.999`, timeZone),
+  };
+}
+
+function dayRangeInZone(day: string, timeZone: string) {
+  const dateKey = /^\d{4}-\d{2}-\d{2}$/.test(day)
+    ? day
+    : formatInTimeZone(new Date(day), timeZone, "yyyy-MM-dd");
+  return {
+    start: fromZonedTime(`${dateKey}T00:00:00`, timeZone),
+    end: fromZonedTime(`${dateKey}T23:59:59.999`, timeZone),
+  };
+}
 
 export async function getMeetingsWeek(params: {
   userId: string;
@@ -19,20 +44,23 @@ export async function getMeetingsWeek(params: {
   mode?: "week" | "day";
   day?: string;
 }) {
-  const base = params.weekStart
-    ? startOfDay(new Date(params.weekStart))
-    : startOfWeek(new Date(), { weekStartsOn: 0 });
-  const weekStart = startOfWeek(base, { weekStartsOn: 0 });
-  const weekEnd = endOfWeek(weekStart, { weekStartsOn: 0 });
-
-  const rangeStart =
+  const viewer = await prisma.user.findUnique({
+    where: { id: params.userId },
+    select: { timezone: true },
+  });
+  const timeZone = viewer?.timezone || DEFAULT_TIMEZONE;
+  const anchor = !params.weekStart
+    ? new Date()
+    : /^\d{4}-\d{2}-\d{2}$/.test(params.weekStart)
+      ? fromZonedTime(`${params.weekStart}T12:00:00`, timeZone)
+      : new Date(params.weekStart);
+  const week = weekRangeInZone(anchor, timeZone);
+  const day =
     params.mode === "day" && params.day
-      ? startOfDay(new Date(params.day))
-      : weekStart;
-  const rangeEnd =
-    params.mode === "day" && params.day
-      ? endOfDay(new Date(params.day))
-      : weekEnd;
+      ? dayRangeInZone(params.day, timeZone)
+      : null;
+  const rangeStart = day?.start ?? week.start;
+  const rangeEnd = day?.end ?? week.end;
 
   const rounds = await prisma.round.findMany({
     where: {
@@ -73,10 +101,14 @@ export async function getMeetingsWeek(params: {
   ]);
 
   return {
-    weekStart: weekStart.toISOString(),
-    weekEnd: weekEnd.toISOString(),
+    timeZone,
+    weekStart: week.start.toISOString(),
+    weekEnd: week.end.toISOString(),
     days: Array.from({ length: 7 }, (_, i) =>
-      addDays(weekStart, i).toISOString(),
+      fromZonedTime(
+        `${shiftDateKey(week.weekStartKey, i)}T12:00:00`,
+        timeZone,
+      ).toISOString(),
     ),
     rounds: rounds.map((r) => ({
       id: r.id,

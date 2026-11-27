@@ -39,7 +39,7 @@ export default async function MeetingsPage({
     <AppShell
       sidebar={
         <Suspense fallback={null}>
-          <MiniMonth weekStartIso={data.weekStart} />
+          <MiniMonth weekStartIso={data.weekStart} timeZone={data.timeZone} />
         </Suspense>
       }
     >
@@ -50,6 +50,7 @@ export default async function MeetingsPage({
           profiles={data.profiles}
           members={data.members}
           mode={mode}
+          timeZone={data.timeZone}
         />
       </Suspense>
     </AppShell>
